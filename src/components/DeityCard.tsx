@@ -20,7 +20,7 @@ export function DeityCard({ god, isSelected, onClick }: DeityCardProps) {
         justifyContent: 'flex-start',
         padding: 0,
         backgroundColor: isSelected ? COLORS.bgHover : COLORS.bgBase,
-        border: isSelected ? `2px solid ${god.angerColor}` : `1px solid ${COLORS.border}`,
+        border: isSelected ? `2px solid ${god.angerColor}` : `1px solid #545454`,
         borderRadius: '10px',
         cursor: 'pointer',
         transition: 'all 0.2s ease',

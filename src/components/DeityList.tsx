@@ -20,7 +20,7 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
         width: `${LAYOUT.sidebarWidth}px`,
         height: `calc(100vh - ${LAYOUT.bottomBarHeight}px)`,
         backgroundColor: COLORS.bgBase,
-        borderRight: `1px solid ${COLORS.border}`,
+        borderRight: `1px solid #545454`,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -38,15 +38,25 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
             margin: 0,
             padding: 0,
             fontFamily: FONTS.spectral,
-            fontSize: '10px',
-            fontWeight: 400,
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            color: COLORS.textMuted,
+            fontSize: '16px',
+            fontWeight: 600,
+            color: COLORS.textPrimary,
           }}
         >
-          Pantheon
+          Deities
         </h2>
+        <p
+          style={{
+            margin: '4px 0 0 0',
+            padding: 0,
+            fontFamily: FONTS.spectral,
+            fontSize: '14px',
+            fontWeight: 400,
+            color: COLORS.textSecondary,
+          }}
+        >
+          Sorted by anger level
+        </p>
       </div>
 
       {/* Scrollable list */}

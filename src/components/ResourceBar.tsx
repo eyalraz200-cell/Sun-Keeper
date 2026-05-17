@@ -12,7 +12,7 @@ export function ResourceBar({ prisoners, children, virgins, volunteers }: Resour
     <div
       style={{
         height: `${LAYOUT.bottomBarHeight}px`,
-        borderTop: `1px solid ${COLORS.border}`,
+        borderTop: `1px solid #545454`,
         backgroundColor: COLORS.bgCard,
         display: 'flex',
         alignItems: 'center',
@@ -41,24 +41,25 @@ function ResourceItem({ label, count }: ResourceItemProps) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '12px',
       }}
     >
       <div
         style={{
-          width: '20px',
-          height: '20px',
+          width: '32px',
+          height: '32px',
           backgroundColor: COLORS.textSecondary,
           borderRadius: '50%',
           opacity: 0.5,
+          flexShrink: 0,
         }}
       />
       <div>
         <div
           style={{
-            fontSize: '10px',
+            fontSize: '16px',
             fontWeight: 400,
-            color: COLORS.textMuted,
+            color: COLORS.textPrimary,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -67,7 +68,7 @@ function ResourceItem({ label, count }: ResourceItemProps) {
         </div>
         <div
           style={{
-            fontSize: '13px',
+            fontSize: '16px',
             fontWeight: 400,
             color: COLORS.textPrimary,
           }}

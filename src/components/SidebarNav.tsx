@@ -18,7 +18,7 @@ export function SidebarNav({ onNavClick }: SidebarNavProps) {
         width: `${LAYOUT.navWidth}px`,
         height: `calc(100vh - ${LAYOUT.bottomBarHeight}px)`,
         backgroundColor: COLORS.bgBase,
-        borderRight: `1px solid ${COLORS.border}`,
+        borderRight: `1px solid #545454`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

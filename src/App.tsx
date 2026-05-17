@@ -49,22 +49,42 @@ function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: COLORS.textMuted,
-        fontFamily: FONTS.spectral,
         textAlign: 'center',
         padding: '32px',
       }}
     >
-      <p
-        style={{
-          fontSize: '13px',
-          fontStyle: 'italic',
-          letterSpacing: '0.3px',
-          maxWidth: '300px',
-        }}
-      >
-        Select a deity from the pantheon to view available rituals
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: COLORS.textMuted,
+          }}
+        />
+        <h1
+          style={{
+            margin: 0,
+            padding: 0,
+            fontFamily: FONTS.cinzel,
+            fontSize: '20px',
+            fontWeight: 400,
+            textTransform: 'uppercase',
+            letterSpacing: '1.2px',
+            color: COLORS.textPrimary,
+          }}
+        >
+          NO GOD SELECTED
+        </h1>
+        <div
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: COLORS.textMuted,
+          }}
+        />
+      </div>
     </div>
   )
 
