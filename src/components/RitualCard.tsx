@@ -14,29 +14,21 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
     }
   }
 
-  const resourceLabels = []
-  if (ritual.participants.prisoners > 0) resourceLabels.push(`${ritual.participants.prisoners} prisoner${ritual.participants.prisoners > 1 ? 's' : ''}`)
-  if (ritual.participants.children > 0) resourceLabels.push(`${ritual.participants.children} child${ritual.participants.children > 1 ? 'ren' : ''}`)
-  if (ritual.participants.virgins > 0) resourceLabels.push(`${ritual.participants.virgins} virgin${ritual.participants.virgins > 1 ? 's' : ''}`)
-  if (ritual.participants.volunteers > 0) resourceLabels.push(`${ritual.participants.volunteers} volunteer${ritual.participants.volunteers > 1 ? 's' : ''}`)
-
   return (
     <button
       onClick={handleClick}
       disabled={!ritual.available}
       style={{
         width: '100%',
-        padding: '16px',
+        padding: '24px',
         backgroundColor: isSelected ? COLORS.bgHover : COLORS.bgCard,
-        border: isSelected ? `2px solid ${ritual.outcomeColor}` : `1px solid ${COLORS.border}`,
-        borderLeft: isSelected ? `2px solid ${ritual.outcomeColor}` : `2px solid ${ritual.outcomeColor}22`,
-        borderRadius: '2px',
+        border: isSelected ? `2px solid ${ritual.outcomeColor}` : `1px solid #545454`,
+        borderRadius: '8px',
         cursor: ritual.available ? 'pointer' : 'not-allowed',
         transition: 'all 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '12px',
+        gap: '16px',
         opacity: ritual.available ? 1 : 0.4,
         textAlign: 'left',
       }}
@@ -51,30 +43,19 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
         }
       }}
     >
-      {/* Header: name + outcome dot */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <h3
-          style={{
-            margin: 0,
-            padding: 0,
-            fontFamily: FONTS.spectral,
-            fontSize: '14px',
-            fontWeight: 500,
-            color: COLORS.textPrimary,
-          }}
-        >
-          {ritual.name}
-        </h3>
-        <div
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: ritual.outcomeColor,
-            flexShrink: 0,
-          }}
-        />
-      </div>
+      {/* Title */}
+      <h3
+        style={{
+          margin: 0,
+          padding: 0,
+          fontFamily: FONTS.spectral,
+          fontSize: '16px',
+          fontWeight: 500,
+          color: COLORS.textPrimary,
+        }}
+      >
+        {ritual.name}
+      </h3>
 
       {/* Description */}
       <p
@@ -82,57 +63,113 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
           margin: 0,
           padding: 0,
           fontFamily: FONTS.spectral,
-          fontSize: '11px',
-          fontWeight: 300,
+          fontSize: '12px',
+          fontWeight: 400,
           color: COLORS.textSecondary,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          maxWidth: '100%',
+          lineHeight: '1.4',
         }}
       >
         {ritual.description}
       </p>
 
       {/* Divider */}
-      <div
-        style={{
-          width: '100%',
-          height: '1px',
-          backgroundColor: COLORS.border,
-        }}
-      />
+      <div style={{ width: '100%', height: '1px', backgroundColor: COLORS.border }} />
 
-      {/* Participants */}
-      <div
-        style={{
-          fontFamily: FONTS.spectral,
-          fontSize: '10px',
-          color: COLORS.textMuted,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}
-      >
-        {resourceLabels.length > 0 ? resourceLabels.join(' · ') : 'No participants'}
+      {/* Price/Participants Section */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+        <div
+          style={{
+            width: '16px',
+            height: '16px',
+            backgroundColor: COLORS.textSecondary,
+            opacity: 0.5,
+            borderRadius: '2px',
+            flexShrink: 0,
+          }}
+        />
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: '10px',
+              color: COLORS.textMuted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '8px',
+            }}
+          >
+            Price
+          </div>
+          <div style={{ display: 'flex', gap: '24px' }}>
+            <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
+              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px' }}>
+                Volunteers
+              </div>
+              <div>{ritual.participants.volunteers}</div>
+            </div>
+            <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
+              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px' }}>
+                Virgins
+              </div>
+              <div>{ritual.participants.virgins}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Footer: schedule + duration */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          width: '100%',
-          fontFamily: FONTS.spectral,
-          fontSize: '9px',
-          fontWeight: 400,
-          textTransform: 'uppercase',
-          letterSpacing: '0.6px',
-          color: COLORS.textMuted,
-        }}
-      >
-        <span>{ritual.schedule}</span>
-        <span>{ritual.duration}</span>
+      {/* Schedule/Duration Section */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+        <div
+          style={{
+            width: '16px',
+            height: '16px',
+            backgroundColor: COLORS.textSecondary,
+            opacity: 0.5,
+            borderRadius: '50%',
+            flexShrink: 0,
+          }}
+        />
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: '10px',
+              color: COLORS.textMuted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '8px',
+            }}
+          >
+            {ritual.schedule}
+          </div>
+          <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
+            {ritual.duration}
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ width: '100%', height: '1px', backgroundColor: COLORS.border }} />
+
+      {/* Outcome Section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          style={{
+            fontSize: '10px',
+            color: COLORS.textMuted,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Outcome
+        </div>
+        <div
+          style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: ritual.outcomeColor,
+            flexShrink: 0,
+          }}
+        />
       </div>
 
       {/* Insufficient resources label */}
@@ -140,7 +177,7 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
         <div
           style={{
             fontFamily: FONTS.spectral,
-            fontSize: '9px',
+            fontSize: '10px',
             fontWeight: 400,
             textTransform: 'uppercase',
             letterSpacing: '0.6px',
