@@ -79,35 +79,25 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
         <div
           style={{
-            width: '16px',
-            height: '16px',
+            width: '12px',
+            height: '12px',
             backgroundColor: COLORS.textSecondary,
             opacity: 0.5,
             borderRadius: '2px',
             flexShrink: 0,
+            marginTop: '2px',
           }}
         />
         <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontSize: '10px',
-              color: COLORS.textMuted,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '8px',
-            }}
-          >
-            Price
-          </div>
-          <div style={{ display: 'flex', gap: '24px' }}>
+          <div style={{ display: 'flex', gap: '32px' }}>
             <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
-              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px' }}>
+              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                 Volunteers
               </div>
               <div>{ritual.participants.volunteers}</div>
             </div>
             <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
-              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px' }}>
+              <div style={{ color: COLORS.textMuted, fontSize: '9px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                 Virgins
               </div>
               <div>{ritual.participants.virgins}</div>
@@ -120,25 +110,26 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
         <div
           style={{
-            width: '16px',
-            height: '16px',
+            width: '12px',
+            height: '12px',
             backgroundColor: COLORS.textSecondary,
             opacity: 0.5,
             borderRadius: '50%',
             flexShrink: 0,
+            marginTop: '2px',
           }}
         />
         <div style={{ flex: 1 }}>
           <div
             style={{
-              fontSize: '10px',
+              fontSize: '9px',
               color: COLORS.textMuted,
               textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '8px',
+              letterSpacing: '0.3px',
+              marginBottom: '4px',
             }}
           >
-            {ritual.schedule}
+            Duration
           </div>
           <div style={{ fontFamily: FONTS.spectral, fontSize: '11px', color: COLORS.textPrimary }}>
             {ritual.duration}
