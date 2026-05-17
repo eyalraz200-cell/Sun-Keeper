@@ -98,24 +98,22 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', height: '100vh' }}>
-      <AppShell
-        gods={GODS}
-        selectedGodId={selectedGodId}
-        onSelectGod={handleSelectGod}
-        resources={resources}
-        mainContent={mainContent}
-        
-        
-      />
-      {selectedRitual && (
-        <PantheonEffects
-          ritual={selectedRitual}
-          gods={GODS}
-          onPerformRitual={handlePerformRitual}
-        />
-      )}
-    </div>
+    <AppShell
+      gods={GODS}
+      selectedGodId={selectedGodId}
+      onSelectGod={handleSelectGod}
+      resources={resources}
+      mainContent={mainContent}
+      rightPanelContent={
+        selectedRitual && (
+          <PantheonEffects
+            ritual={selectedRitual}
+            gods={GODS}
+            onPerformRitual={handlePerformRitual}
+          />
+        )
+      }
+    />
   )
 }
 

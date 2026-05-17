@@ -16,6 +16,7 @@ interface AppShellProps {
     volunteers: number
   }
   mainContent: ReactNode
+  rightPanelContent?: ReactNode
 }
 
 export function AppShell({
@@ -24,6 +25,7 @@ export function AppShell({
   onSelectGod,
   resources,
   mainContent,
+  rightPanelContent,
 }: AppShellProps) {
   return (
     <div
@@ -56,15 +58,19 @@ export function AppShell({
           {mainContent}
         </div>
 
-        {/* Right sidebar (placeholder) */}
+        {/* Right sidebar */}
         <div
           style={{
             width: '331px',
             backgroundColor: COLORS.bgBase,
             borderLeft: `1px solid #545454`,
-            opacity: 0.1,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
           }}
-        />
+        >
+          {rightPanelContent}
+        </div>
       </div>
 
       {/* Resource bar at bottom */}
