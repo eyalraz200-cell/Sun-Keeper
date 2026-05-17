@@ -13,10 +13,9 @@ export function PantheonEffects({ ritual, gods, onPerformRitual }: PantheonEffec
     return (
       <div
         style={{
-          width: '300px',
-          height: `calc(100vh - 72px)`,
+          width: '100%',
+          height: '100%',
           backgroundColor: COLORS.bgBase,
-          borderLeft: `1px solid ${COLORS.border}`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -65,10 +64,9 @@ export function PantheonEffects({ ritual, gods, onPerformRitual }: PantheonEffec
   return (
     <div
       style={{
-        width: '300px',
-        height: `calc(100vh - 72px)`,
+        width: '100%',
+        height: '100%',
         backgroundColor: COLORS.bgBase,
-        borderLeft: `1px solid ${COLORS.border}`,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',

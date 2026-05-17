@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { COLORS } from '../tokens'
+import { COLORS, LAYOUT } from '../tokens'
 import { SidebarNav } from './SidebarNav'
 import { DeityList } from './DeityList'
 import { ResourceBar } from './ResourceBar'
@@ -31,21 +31,20 @@ export function AppShell({
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
         width: '100vw',
         height: '100vh',
         backgroundColor: COLORS.bgBase,
       }}
     >
-      {/* Main content area */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left navigation */}
-        <SidebarNav />
+      {/* Left navigation - full height */}
+      <SidebarNav />
 
-        {/* Deity list sidebar */}
-        <DeityList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
+      {/* Deity list sidebar - full height */}
+      <DeityList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
 
-        {/* Main content area (rituals or empty state) */}
+      {/* Main content column - main + resource bar */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Main content area */}
         <div
           style={{
             flex: 1,
@@ -58,28 +57,30 @@ export function AppShell({
           {mainContent}
         </div>
 
-        {/* Right sidebar */}
-        <div
-          style={{
-            width: '331px',
-            backgroundColor: COLORS.bgBase,
-            borderLeft: `1px solid #545454`,
-            overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          {rightPanelContent}
-        </div>
+        {/* Resource bar - only spans main content width */}
+        <ResourceBar
+          prisoners={resources.prisoners}
+          children={resources.children}
+          virgins={resources.virgins}
+          volunteers={resources.volunteers}
+        />
       </div>
 
-      {/* Resource bar at bottom */}
-      <ResourceBar
-        prisoners={resources.prisoners}
-        children={resources.children}
-        virgins={resources.virgins}
-        volunteers={resources.volunteers}
-      />
+      {/* Right panel - full height sibling */}
+      <div
+        style={{
+          width: `${LAYOUT.rightPanelWidth}px`,
+          height: '100%',
+          backgroundColor: COLORS.bgBase,
+          borderLeft: `1px solid #545454`,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+        }}
+      >
+        {rightPanelContent}
+      </div>
     </div>
   )
 }

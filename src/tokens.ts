@@ -11,10 +11,10 @@ export const COLORS = {
 } as const
 
 export const LAYOUT = {
-  navWidth: 56,
-  sidebarWidth: 220,
-  rightPanelWidth: 300,
-  bottomBarHeight: 72,
+  navWidth: 54,
+  sidebarWidth: 191,
+  rightPanelWidth: 331,
+  bottomBarHeight: 88,
 } as const
 
 export const ANGER = {

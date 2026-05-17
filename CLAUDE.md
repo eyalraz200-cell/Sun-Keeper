@@ -4,20 +4,22 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 
 ## Layout Rules (Figma Frame: MacBook Pro 14' - 35)
 
-**Viewport:** 100vw × 100vh, background `#232323`
+**Viewport:** 100vw × 100vh, background `#181818`
 
-**Columns (left to right):**
-- **Left nav strip:** 54px wide, dark background, border-right `#545454`
-- **Deity sidebar:** 191px wide, dark background, border-right `#545454`, scrollable
-- **Main content area:** flex: 1 (fills remaining space minus right panel)
-- **Right panel:** 331px wide, border-left `#545454`, currently 10% opacity (hidden)
-- **Bottom bar:** 88px tall, fixed at bottom, border-top `#545454`
+**Structure: Outer flex ROW (100vw × 100vh)**
+- **Left nav strip:** 54px wide, full 100vh height, border-right `#545454`
+- **Deity sidebar:** 191px wide, full 100vh height, border-right `#545454`, scrollable
+- **Main content column:** flex: 1, flex COLUMN
+  - Main content area: flex: 1, overflow: auto
+  - Resource bar: 88px tall, border-top `#545454`, spans only main content width (NOT under right panel)
+- **Right panel:** 331px wide, full 100vh height, border-left `#545454`, overflow: auto
 
 **Key constraints:**
-- Never add full-width headers above the main layout
-- Right sidebar should remain as a 331px-wide placeholder unless a design update specifies content
+- Left nav and deity sidebar extend full viewport height (100vh) to bottom edge
+- Resource bar is scoped inside main content column — does NOT extend under right panel
+- Right panel is full-height sibling at top level
 - All borders are `#545454` with opacity 1.0
-- Background is always `#232323` (never lighter/darker)
+- Background is always `#181818` (never lighter/darker)
 
 ---
 
@@ -34,10 +36,11 @@ interface AppShellProps {
   onSelectGod: (godId: string) => void
   resources: { prisoners: number, children: number, virgins: number, volunteers: number }
   mainContent: ReactNode
+  rightPanelContent?: ReactNode
 }
 ```
 
-**Renders:** The full layout container. Always uses `display: flex; flex-direction: column`. Composes `SidebarNav`, `DeityList`, main content slot, right panel stub, and `ResourceBar`.
+**Renders:** The full layout container. Uses `display: flex; flex-direction: row` (outer flex row). Structure: SidebarNav (54px) + DeityList (191px) + Main column (flex: 1, contains main content + ResourceBar) + Right panel (331px, full height). Nav and deity sidebar extend full 100vh. ResourceBar only spans main content width (not under right panel).
 
 ---
 
@@ -51,7 +54,7 @@ interface SidebarNavProps {
 }
 ```
 
-**Renders:** 56px-wide vertical strip. Four icon buttons (☉ ◐ ※ ↻) for sections. First button (pantheon) always shows `bgCard` background. Height is `100vh - 72px`.
+**Renders:** 54px-wide vertical strip. Four Phosphor icon buttons (House, Calendar, Sparkle, Clock) for sections. First button (pantheon) always shows `bgCard` background. Height is `100vh` (extends to bottom edge).
 
 ---
 
@@ -116,7 +119,7 @@ interface ResourceBarProps {
 }
 ```
 
-**Renders:** Fixed 88px-tall bottom bar. Four `ResourceItem` with 32px gap. Left padding offset by 276px (navWidth + sidebarWidth).
+**Renders:** 88px-tall bottom bar (inside main content column only). Four `ResourceItem` with Phosphor icons (Link, Sock, SunDim, Sparkle at 32px). Gap between items: 32px. Left/right padding: 32px. Spans only main content width (not under right panel).
 
 ---
 
@@ -148,7 +151,7 @@ interface PantheonEffectsProps {
 }
 ```
 
-**Renders:** 300px-wide right panel. Null state: placeholder text. Ritual selected: three scrollable sections (Divine Ripple, Auspicious Timing, Imperial Counsel) + Perform Ritual button at bottom.
+**Renders:** 331px-wide right panel at full viewport height. Uses width/height 100% to fill parent container. Null state: placeholder text. Ritual selected: three scrollable sections (Divine Ripple, Auspicious Timing, Imperial Counsel) + Perform Ritual button at bottom.
 
 ---
 

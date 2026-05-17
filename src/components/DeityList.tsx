@@ -18,7 +18,7 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
     <div
       style={{
         width: `${LAYOUT.sidebarWidth}px`,
-        height: `calc(100vh - ${LAYOUT.bottomBarHeight}px)`,
+        height: '100vh',
         backgroundColor: COLORS.bgBase,
         borderRight: `1px solid #545454`,
         display: 'flex',

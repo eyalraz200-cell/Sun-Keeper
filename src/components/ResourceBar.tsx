@@ -1,4 +1,5 @@
 import { COLORS, FONTS, LAYOUT } from '../tokens'
+import { Link, Sock, SunDim, Sparkle } from '@phosphor-icons/react'
 
 interface ResourceBarProps {
   prisoners: number
@@ -11,55 +12,50 @@ export function ResourceBar({ prisoners, children, virgins, volunteers }: Resour
   return (
     <div
       style={{
+        flexShrink: 0,
         height: `${LAYOUT.bottomBarHeight}px`,
         borderTop: `1px solid #545454`,
         backgroundColor: COLORS.bgCard,
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: `${LAYOUT.navWidth + LAYOUT.sidebarWidth}px`,
-        paddingRight: '16px',
+        paddingLeft: '32px',
+        paddingRight: '32px',
         gap: '32px',
         fontFamily: FONTS.spectral,
       }}
     >
-      <ResourceItem label="Prisoners" count={prisoners} />
-      <ResourceItem label="Children" count={children} />
-      <ResourceItem label="Virgins" count={virgins} />
-      <ResourceItem label="Volunteers" count={volunteers} />
+      <ResourceItem icon={<Link size={32} color="white" weight="fill" />} label="Prisoners" count={prisoners} />
+      <ResourceItem icon={<Sock size={32} color="white" weight="fill" />} label="Children" count={children} />
+      <ResourceItem icon={<SunDim size={32} color="white" weight="fill" />} label="Virgins" count={virgins} />
+      <ResourceItem icon={<Sparkle size={32} color="white" weight="fill" />} label="Volunteers" count={volunteers} />
     </div>
   )
 }
 
 interface ResourceItemProps {
+  icon: React.ReactNode
   label: string
   count: number
 }
 
-function ResourceItem({ label, count }: ResourceItemProps) {
+function ResourceItem({ icon, label, count }: ResourceItemProps) {
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: '17px',
       }}
     >
-      <div
-        style={{
-          width: '32px',
-          height: '32px',
-          backgroundColor: COLORS.textSecondary,
-          borderRadius: '50%',
-          opacity: 0.5,
-          flexShrink: 0,
-        }}
-      />
+      <div style={{ width: '32px', height: '32px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </div>
       <div>
         <div
           style={{
             fontSize: '16px',
             fontWeight: 400,
-            color: COLORS.textPrimary,
+            color: '#acacac',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -70,7 +66,7 @@ function ResourceItem({ label, count }: ResourceItemProps) {
           style={{
             fontSize: '16px',
             fontWeight: 400,
-            color: COLORS.textPrimary,
+            color: '#ffffff',
           }}
         >
           {count}
