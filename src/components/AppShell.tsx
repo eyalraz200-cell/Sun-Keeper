@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { COLORS } from '../tokens'
+import { COLORS, FONTS } from '../tokens'
 import { SidebarNav } from './SidebarNav'
 import { DeityList } from './DeityList'
 import { ResourceBar } from './ResourceBar'
@@ -16,6 +16,8 @@ interface AppShellProps {
     volunteers: number
   }
   mainContent: ReactNode
+  selectedGodName?: string
+  selectedGodDesc?: string
 }
 
 export function AppShell({
@@ -24,6 +26,8 @@ export function AppShell({
   onSelectGod,
   resources,
   mainContent,
+  selectedGodName,
+  selectedGodDesc,
 }: AppShellProps) {
   return (
     <div
@@ -35,6 +39,47 @@ export function AppShell({
         backgroundColor: COLORS.bgBase,
       }}
     >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 24px',
+          borderBottom: `1px solid ${COLORS.borderDim}`,
+          backgroundColor: COLORS.bgBase,
+          minHeight: '60px',
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontFamily: FONTS.cinzel,
+              fontSize: '20px',
+              fontWeight: 'normal',
+              letterSpacing: '1.2px',
+              color: COLORS.textBase,
+              margin: 0,
+              textTransform: 'uppercase',
+            }}
+          >
+            {selectedGodName ? selectedGodName.toUpperCase() : 'NO GOD SELECTED'}
+          </h1>
+          {selectedGodDesc && (
+            <p
+              style={{
+                fontFamily: FONTS.spectral,
+                fontSize: '14px',
+                color: COLORS.textMuted,
+                margin: '4px 0 0 0',
+              }}
+            >
+              {selectedGodDesc}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Main content area */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left navigation */}
@@ -55,6 +100,16 @@ export function AppShell({
         >
           {mainContent}
         </div>
+
+        {/* Right sidebar (placeholder) */}
+        <div
+          style={{
+            width: '331px',
+            backgroundColor: COLORS.bgBase,
+            borderLeft: `1px solid ${COLORS.borderDim}`,
+            opacity: 0.1,
+          }}
+        />
       </div>
 
       {/* Resource bar at bottom */}

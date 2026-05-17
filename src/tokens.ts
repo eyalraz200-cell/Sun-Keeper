@@ -2,10 +2,12 @@ export const COLORS = {
   bgBase: '#181818',
   bgCard: '#1e1e1e',
   bgHover: '#242424',
+  textBase: '#f0ede8',
   textPrimary: '#f0ede8',
   textSecondary: '#8a8580',
   textMuted: '#5a5652',
   border: '#2a2726',
+  borderDim: '#2a2726',
 } as const
 
 export const LAYOUT = {

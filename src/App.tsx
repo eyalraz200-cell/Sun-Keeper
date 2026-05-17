@@ -105,6 +105,8 @@ function App() {
         onSelectGod={handleSelectGod}
         resources={resources}
         mainContent={mainContent}
+        selectedGodName={selectedGod?.name}
+        selectedGodDesc={selectedGod?.description}
       />
       {selectedRitual && (
         <PantheonEffects
