@@ -204,6 +204,40 @@ Before implementing layout changes: take a screenshot and compare against Figma.
 
 ---
 
+## Workflow for Any UI Change (Mandatory)
+
+**Before writing ANY code to match a Figma design, always follow this workflow:**
+
+### Step 1: Get Figma Screenshot First
+- User provides a specific Figma node URL (with `node-id=` parameter)
+- Call `get_screenshot` on that node to see the target visual design
+- **DO NOT skip this step** — it shows the actual visual truth
+- Avoid `get_design_context` alone; it returns verbose code that obscures what to change
+
+### Step 2: Screenshot Current Implementation
+- Run: `npx playwright screenshot http://localhost:5173 /tmp/current.png`
+- View it side-by-side with the Figma screenshot
+- This is where the visual diff becomes clear
+
+### Step 3: Identify What's Different
+- Compare the two screenshots visually
+- List the specific changes: colors, spacing, typography, layout, borders, etc.
+- **Only implement what's actually different** — don't guess or add extra features
+
+### Step 4: Implement and Verify
+- Make the identified changes
+- After changes: take another Playwright screenshot
+- Compare new screenshot to Figma screenshot to confirm match
+- If not matching, loop back to step 3
+
+### Tips for Sharing Figma URLs
+- Share the specific frame or component URL with the `node-id=` parameter (e.g., `?node-id=22-16012`)
+- Drill down to the exact component you want implemented (ritual card, not entire page)
+- Use Figma's "Copy link to selection" feature for precise node IDs
+- More precise = fewer iterations needed
+
+---
+
 ## Dos and Don'ts
 
 ✅ **DO:**
