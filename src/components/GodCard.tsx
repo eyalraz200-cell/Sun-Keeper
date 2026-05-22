@@ -56,7 +56,7 @@ export function GodCard({ god, isSelected, onClick }: GodCardProps) {
       {/* God name at top */}
       <div
         style={{
-          padding: '8px 12px 8px',
+          padding: '8px 6px 8px',
           textAlign: 'center',
           width: '100%',
           flexShrink: 0,
@@ -71,7 +71,7 @@ export function GodCard({ god, isSelected, onClick }: GodCardProps) {
             fontWeight: isSelected ? 700 : 400,
             textTransform: 'uppercase',
             letterSpacing: '1px',
-            color: isSelected ? '#000000' : isHovered ? '#ffffff' : '#6C6C6C',
+            color: isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

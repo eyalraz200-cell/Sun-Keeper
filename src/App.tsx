@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { AppShell } from './components/AppShell'
 import { COLORS, FONTS } from './tokens'
 import { GODS } from './data/gods'
-import type { God } from './data/gods'
+import type { God, AngerLevel } from './data/gods'
+
+const ANGER_LABELS: Record<AngerLevel, string> = {
+  high: 'Furious',
+  medium: 'Angry',
+  low: 'Uneasy',
+  none: 'Peaceful',
+}
 
 const tlaloc          = GODS.find(g => g.id === 'tlaloc')!
 const quetzalcoatl    = GODS.find(g => g.id === 'quetzalcoatl')!
@@ -27,7 +34,7 @@ const DEITY_VARIANTS: God[] = [
   ...variants(mictlantecuhtli, 'Mictlantecuhtli'),
 ]
 import { RitualCard } from './components/RitualCard'
-import { PantheonEffects } from './components/PantheonEffects'
+import { RightPanel } from './components/RightPanel'
 
 function App() {
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
@@ -42,7 +49,7 @@ function App() {
   }
 
   // Get selected god and ritual
-  const selectedGod = GODS.find(g => g.id === selectedGodId) ?? null
+  const selectedGod = DEITY_VARIANTS.find(g => g.id === selectedGodId) ?? null
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
 
   // Handle god selection
@@ -70,98 +77,49 @@ function App() {
     console.log('Performing ritual:', selectedRitual?.name)
   }
 
-  // Empty state - no god selected
-  const emptyState = (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        padding: '32px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: COLORS.textMuted,
-          }}
-        />
-        <h1
-          style={{
-            margin: 0,
-            padding: 0,
-            fontFamily: FONTS.cinzel,
-            fontSize: '20px',
-            fontWeight: 400,
-            textTransform: 'uppercase',
-            letterSpacing: '1.2px',
-            color: COLORS.textPrimary,
-          }}
-        >
-          NO GOD SELECTED
-        </h1>
-        <div
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: COLORS.textMuted,
-          }}
-        />
-      </div>
-    </div>
-  )
-
-  // Ritual grid - shown when a god is selected
-  const ritualGrid = selectedGod ? (
-    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingTop: '20px' }}>
-      {/* God header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0 31px', marginBottom: '0' }}>
+  const mainContent = (
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingTop: '24px' }}>
+      {/* Header row — always shown */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0 31px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#ffffff' }} />
-          <h1 style={{ margin: 0, fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#ffffff' }}>
-            {selectedGod.name}
+          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: selectedGod ? '#ffffff' : COLORS.textMuted }} />
+          <h1 style={{ margin: 0, fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '1.2px', color: selectedGod ? '#ffffff' : COLORS.textMuted, lineHeight: '1' }}>
+            {selectedGod ? selectedGod.name : 'No God Selected'}
           </h1>
-          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#ffffff' }} />
+          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: selectedGod ? '#ffffff' : COLORS.textMuted }} />
         </div>
-        <div style={{ width: '32px', height: '31px', borderRadius: '50%', border: `2px solid ${selectedGod.angerColor}`, flexShrink: 0 }} />
       </div>
 
       {/* Subtitle */}
-      <p style={{ margin: '0', padding: '0 31px', fontFamily: FONTS.spectral, fontSize: '16px', color: '#b9b9b9' }}>
-        {selectedGod.subtitle}
+      <p style={{ margin: '0', padding: '0 31px', fontFamily: FONTS.spectral, fontSize: '16px', color: selectedGod ? '#b9b9b9' : COLORS.textMuted }}>
+        {selectedGod ? selectedGod.subtitle : 'Select a god to see ritual options'}
       </p>
 
-      {/* Separator - 4px below subtitle */}
+      {/* Separator — always shown */}
       <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
-      {/* Section label - 70px below separator */}
-      <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', color: '#ffffff' }}>
+      {/* Ritual content — always shown, ghosted when no god selected */}
+      <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', color: '#ffffff', opacity: selectedGod ? 1 : 0.12 }}>
         Appeasement Rituals
       </p>
-
-      {/* Card grid - 24px below label */}
-      <div style={{ marginTop: '24px', padding: '0 31px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '19px' }}>
-        {selectedGod.rituals.map(ritual => (
-          <RitualCard key={ritual.id} ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => handleSelectRitual(ritual.id)} />
-        ))}
+      <div style={{ marginTop: '24px', padding: '0 31px', display: 'grid', gridTemplateColumns: 'repeat(4, 250px)', gap: '19px', justifyContent: 'space-between', opacity: selectedGod ? 1 : 0.12 }}>
+        {selectedGod ? (
+          selectedGod.rituals.map(ritual => (
+            <RitualCard key={ritual.id} ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => handleSelectRitual(ritual.id)} />
+          ))
+        ) : (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.08)', borderRadius: '14px', minHeight: '560px', width: '250px' }} />
+          ))
+        )}
       </div>
-
-      {/* SEND ORDER button */}
-      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '32px', paddingBottom: '24px' }}>
-        <button onClick={handlePerformRitual} disabled={!selectedRitual} style={{ width: '183px', height: '44px', border: '1px solid #ffffff', borderRadius: '8px', backgroundColor: 'transparent', color: '#ffffff', fontFamily: FONTS.spectral, fontWeight: 500, fontSize: '16px', textTransform: 'uppercase', cursor: selectedRitual ? 'pointer' : 'not-allowed', opacity: selectedRitual ? 1 : 0.39 }}>
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <button onClick={handlePerformRitual} disabled={!selectedRitual} style={{ width: '183px', height: '44px', border: selectedGod ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', backgroundColor: selectedRitual ? '#ffffff' : 'transparent', color: selectedRitual ? '#000000' : '#ffffff', fontFamily: FONTS.spectral, fontWeight: 500, fontSize: '16px', textTransform: 'uppercase', cursor: selectedRitual ? 'pointer' : 'not-allowed', opacity: selectedGod ? (selectedRitual ? 1 : 0.39) : 0.12 }}>
           SEND ORDER
         </button>
       </div>
     </div>
-  ) : null
-
-  const mainContent = selectedGod ? ritualGrid : emptyState
+  )
 
   return (
     <AppShell
@@ -172,10 +130,9 @@ function App() {
       mainContent={mainContent}
       rightPanelContent={
         selectedRitual && (
-          <PantheonEffects
+          <RightPanel
             ritual={selectedRitual}
             gods={GODS}
-            onPerformRitual={handlePerformRitual}
           />
         )
       }

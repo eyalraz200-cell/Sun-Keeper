@@ -1,14 +1,12 @@
 import type { God, Ritual } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
-import { PrimaryButton } from './PrimaryButton'
 
-interface PantheonEffectsProps {
+interface RightPanelProps {
   ritual: Ritual | null
   gods: God[]
-  onPerformRitual: () => void
 }
 
-export function PantheonEffects({ ritual, gods, onPerformRitual }: PantheonEffectsProps) {
+export function RightPanel({ ritual, gods }: RightPanelProps) {
   if (!ritual) {
     return (
       <div
@@ -203,14 +201,6 @@ export function PantheonEffects({ ritual, gods, onPerformRitual }: PantheonEffec
         </div>
       </div>
 
-      {/* Perform Ritual Button - pinned at bottom */}
-      <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}` }}>
-        <PrimaryButton
-          label="Perform Ritual"
-          onClick={onPerformRitual}
-          disabled={false}
-        />
-      </div>
     </div>
   )
 }

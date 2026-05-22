@@ -15,19 +15,20 @@ export function ResourceBar({ prisoners, children, virgins, volunteers }: Resour
         flexShrink: 0,
         height: `${LAYOUT.bottomBarHeight}px`,
         borderTop: `1px solid #333333`,
-        backgroundColor: COLORS.bgCard,
+        backgroundColor: '#181818',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         paddingLeft: '32px',
         paddingRight: '32px',
-        gap: '32px',
+        gap: '128px',
         fontFamily: FONTS.spectral,
       }}
     >
-      <ResourceItem icon={<Link size={32} color="white" weight="fill" />} label="Prisoners" count={prisoners} />
-      <ResourceItem icon={<Sock size={32} color="white" weight="fill" />} label="Children" count={children} />
-      <ResourceItem icon={<SunDim size={32} color="white" weight="fill" />} label="Virgins" count={virgins} />
-      <ResourceItem icon={<Sparkle size={32} color="white" weight="fill" />} label="Volunteers" count={volunteers} />
+      <ResourceItem icon={<Link size={28} color="white" />} label="Prisoners" count={prisoners} />
+      <ResourceItem icon={<Sock size={28} color="white" />} label="Children" count={children} />
+      <ResourceItem icon={<SunDim size={28} color="white" />} label="Virgins" count={virgins} />
+      <ResourceItem icon={<Sparkle size={28} color="white" />} label="Volunteers" count={volunteers} />
     </div>
   )
 }
@@ -50,14 +51,13 @@ function ResourceItem({ icon, label, count }: ResourceItemProps) {
       <div style={{ width: '32px', height: '32px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
       </div>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <div
           style={{
             fontSize: '16px',
             fontWeight: 400,
             color: '#acacac',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            lineHeight: '1',
           }}
         >
           {label}
@@ -67,6 +67,7 @@ function ResourceItem({ icon, label, count }: ResourceItemProps) {
             fontSize: '16px',
             fontWeight: 400,
             color: '#ffffff',
+            lineHeight: '1',
           }}
         >
           {count}

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState, useEffect } from 'react'
 import { COLORS, LAYOUT } from '../tokens'
 import { SidebarNav } from './SidebarNav'
 import { GodList } from './GodList'
@@ -19,6 +19,8 @@ interface AppShellProps {
   rightPanelContent?: ReactNode
 }
 
+const RIGHT_PANEL_BREAKPOINT = 900
+
 export function AppShell({
   gods,
   selectedGodId,
@@ -27,6 +29,14 @@ export function AppShell({
   mainContent,
   rightPanelContent,
 }: AppShellProps) {
+  const [showRightPanel, setShowRightPanel] = useState(window.innerWidth >= RIGHT_PANEL_BREAKPOINT)
+
+  useEffect(() => {
+    const handler = () => setShowRightPanel(window.innerWidth >= RIGHT_PANEL_BREAKPOINT)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
   return (
     <div
       style={{
@@ -66,21 +76,23 @@ export function AppShell({
         />
       </div>
 
-      {/* Right panel - full height sibling */}
-      <div
-        style={{
-          width: `${LAYOUT.rightPanelWidth}px`,
-          height: '100%',
-          backgroundColor: COLORS.bgBase,
-          borderLeft: `1px solid #333333`,
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
-        }}
-      >
-        {rightPanelContent}
-      </div>
+      {/* Right panel - full height sibling, hidden below breakpoint */}
+      {showRightPanel && (
+        <div
+          style={{
+            width: `${LAYOUT.rightPanelWidth}px`,
+            height: '100%',
+            backgroundColor: COLORS.bgBase,
+            borderLeft: `1px solid #333333`,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            flexShrink: 0,
+          }}
+        >
+          {rightPanelContent}
+        </div>
+      )}
     </div>
   )
 }

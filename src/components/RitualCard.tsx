@@ -1,6 +1,14 @@
+import { useState } from 'react'
 import type { Ritual } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
 import { Link, SunDim, Clock } from '@phosphor-icons/react'
+
+function outcomeLabel(color: string): string {
+  if (color === '#c8322e') return 'Angry'
+  if (color === '#d4662a') return 'Uneasy'
+  if (color === '#c8a83c') return 'Peaceful'
+  return 'Peaceful'
+}
 
 interface RitualCardProps {
   ritual: Ritual
@@ -9,43 +17,31 @@ interface RitualCardProps {
 }
 
 export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
-  const handleClick = () => {
-    if (ritual.available) {
-      onClick()
-    }
-  }
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <button
-      onClick={handleClick}
-      disabled={!ritual.available}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
+        minHeight: '560px',
         padding: '0',
-        backgroundColor: '#232323',
-        border: isSelected ? `2px solid ${ritual.outcomeColor}` : '2px solid rgba(255,255,255,0.18)',
+        backgroundColor: '#181818',
+        border: isSelected ? '2px solid #ffffff' : isHovered ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.08)',
         borderRadius: '14px',
-        cursor: ritual.available ? 'pointer' : 'not-allowed',
+        cursor: 'pointer',
         transition: 'all 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         gap: '0',
-        opacity: ritual.available ? 1 : 0.4,
+        opacity: 1,
         textAlign: 'left',
-      }}
-      onMouseEnter={(e) => {
-        if (ritual.available && !isSelected) {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#232323'
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (ritual.available && !isSelected) {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#232323'
-        }
       }}
     >
       {/* Title */}
-      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '16px', color: '#ffffff', margin: '0', padding: '24px 24px 0' }}>
+      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '16px', color: '#ffffff', margin: '0', padding: '24px 24px 0', textAlign: 'center' }}>
         {ritual.name}
       </h3>
 
@@ -84,21 +80,20 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
         </div>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '12px 0' }} />
+      {/* Divider + Outcome pinned to bottom */}
+      <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '12px 0 0', marginTop: 'auto' }} />
 
       {/* Outcome section - centered */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '8px 24px 24px' }}>
         <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Outcome</span>
-        <div style={{ width: '32px', height: '31px', borderRadius: '50%', border: `2px solid ${ritual.outcomeColor}`, backgroundColor: 'transparent' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: ritual.outcomeColor, flexShrink: 0 }} />
+          <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>
+            {outcomeLabel(ritual.outcomeColor)}
+          </span>
+        </div>
       </div>
 
-      {/* Insufficient resources label */}
-      {!ritual.available && (
-        <div style={{ fontFamily: FONTS.spectral, fontSize: '10px', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', textAlign: 'center', paddingBottom: '12px' }}>
-          INSUFFICIENT RESOURCES
-        </div>
-      )}
     </button>
   )
 }

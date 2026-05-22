@@ -39,6 +39,7 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
       style={{
         width: `${LAYOUT.sidebarWidth}px`,
         height: '100vh',
+        flexShrink: 0,
         backgroundColor: COLORS.bgBase,
         borderRight: `1px solid #333333`,
         display: 'flex',
@@ -49,29 +50,33 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
       {/* Header */}
       <div
         style={{
-          padding: '16px',
+          padding: '24px 16px 16px',
           borderBottom: `1px solid ${COLORS.border}`,
+          position: 'relative',
+          zIndex: 2,
         }}
       >
+        <div style={{ position: 'absolute', inset: 0, boxShadow: '0 12px 24px rgba(0,0,0,0.9)', opacity: isStuck ? 0 : 1, transition: 'opacity 0.3s ease', pointerEvents: 'none' }} />
         <h2
           style={{
             margin: 0,
             padding: 0,
             fontFamily: FONTS.spectral,
             fontSize: '16px',
-            fontWeight: 600,
+            fontWeight: 400,
             color: COLORS.textPrimary,
+            lineHeight: '1',
           }}
         >
-          Deities
+          Gods
         </h2>
         <p
           style={{
-            margin: '4px 0 0 0',
+            margin: '3px 0 0 0',
             padding: 0,
             fontFamily: FONTS.spectral,
             fontSize: '14px',
-            fontWeight: 400,
+            fontWeight: 300,
             color: COLORS.textSecondary,
           }}
         >
@@ -100,16 +105,27 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
                 ref={isSelected ? stickyRef : undefined}
                 style={{
                   position: isSelected ? 'sticky' : 'relative',
-                  top: isSelected ? -12 : undefined,
+                  top: isSelected ? 0 : undefined,
                   zIndex: isSelected ? 1 : 0,
-                  marginInline: isSelected && isStuck ? '-12px' : undefined,
-                  paddingInline: isSelected && isStuck ? '12px' : undefined,
-                  paddingTop: isSelected && isStuck ? '12px' : undefined,
+                  marginInline: isSelected ? '-12px' : undefined,
+                  paddingInline: isSelected ? '12px' : undefined,
                   paddingBottom: isSelected && isStuck ? '16px' : undefined,
-                  borderBottom: isSelected && isStuck ? '1px solid #333333' : undefined,
+                  marginBottom: isSelected && isStuck ? '-16px' : undefined,
+                  boxShadow: isSelected ? `0 -12px 0 0 ${COLORS.bgBase}` : undefined,
                   backgroundColor: isSelected ? COLORS.bgBase : undefined,
                 }}
               >
+                {isSelected && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    boxShadow: '0 12px 24px rgba(0,0,0,0.9)',
+                    borderBottom: '1px solid #333333',
+                    opacity: isStuck ? 1 : 0,
+                    transition: 'opacity 0.3s ease',
+                    pointerEvents: 'none',
+                  }} />
+                )}
                 <GodCard
                   god={god}
                   isSelected={isSelected}

@@ -36,13 +36,13 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
     : isHovered && angerLevel === 'none'
-    ? { color: '#ffffff', weight: 2 }
+    ? { color: '#F0F0F0', weight: 2 }
     : baseEye
 
   const bodySvg = svgRaw
     .replace(/fill="black"/g, 'fill="#6C6C6C"')
     .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, 'fill="#6C6C6C"')
-  const bodyColor = isSelected ? '#000000' : isHovered ? '#ffffff' : '#6C6C6C'
+  const bodyColor = isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C'
   const coloredBody = bodySvg.replace(/fill="#6C6C6C"/g, `fill="${bodyColor}"`)
 
   const eyesMatch = coloredBody.match(/<g id="eyes">([\s\S]*?)<\/g>/)
