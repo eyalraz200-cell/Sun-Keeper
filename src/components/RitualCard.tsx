@@ -4,10 +4,18 @@ import { COLORS, FONTS } from '../tokens'
 import { Link, SunDim, Clock } from '@phosphor-icons/react'
 
 function outcomeLabel(color: string): string {
-  if (color === '#c8322e') return 'Angry'
-  if (color === '#d4662a') return 'Uneasy'
+  if (color === '#c8322e') return 'Furious'
+  if (color === '#d4662a') return 'Angry'
+  if (color === '#d4a83c') return 'Uneasy'
   if (color === '#c8a83c') return 'Peaceful'
   return 'Peaceful'
+}
+
+function outcomeEye(color: string): { color: string; weight: number } {
+  if (color === '#c8322e') return { color: '#FF2435', weight: 6 }
+  if (color === '#d4662a') return { color: '#EF7B2E', weight: 4 }
+  if (color === '#d4a83c') return { color: '#D7C94E', weight: 3 }
+  return { color: '#ffffff', weight: 2 }
 }
 
 interface RitualCardProps {
@@ -87,7 +95,14 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '8px 24px 24px' }}>
         <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Outcome</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: ritual.outcomeColor, flexShrink: 0 }} />
+          <div style={{
+            width: '18px',
+            height: '18px',
+            borderRadius: '50%',
+            backgroundColor: 'transparent',
+            boxShadow: `inset 0 0 0 ${outcomeEye(ritual.outcomeColor).weight}px ${outcomeEye(ritual.outcomeColor).color}`,
+            flexShrink: 0,
+          }} />
           <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>
             {outcomeLabel(ritual.outcomeColor)}
           </span>

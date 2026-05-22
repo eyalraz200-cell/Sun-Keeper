@@ -22,13 +22,17 @@ function getSvgRaw(godId: string): string {
   return GOD_SVG_MAP[key] ?? tlalocRaw
 }
 
+const NAME_AREA_HEIGHT = 38
+const STUCK_PADDING = 24
+
 interface GodCardProps {
   god: God
   isSelected: boolean
   onClick: () => void
+  stuckProgress?: number
 }
 
-export function GodCard({ god, isSelected, onClick }: GodCardProps) {
+export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -38,12 +42,13 @@ export function GodCard({ god, isSelected, onClick }: GodCardProps) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
-        height: '248px',
+        height: `${248 - (54 - 2 * STUCK_PADDING) * stuckProgress}px`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingBottom: '16px',
+        justifyContent: 'center',
+        paddingTop: `${STUCK_PADDING * stuckProgress}px`,
+        paddingBottom: `${16 - (16 - STUCK_PADDING) * stuckProgress}px`,
         backgroundColor: isSelected ? '#ffffff' : COLORS.bgBase,
         border: isSelected ? `1px solid #ffffff` : isHovered ? `1px solid #ffffff` : `1px solid #333333`,
         borderRadius: '10px',
@@ -56,10 +61,16 @@ export function GodCard({ god, isSelected, onClick }: GodCardProps) {
       {/* God name at top */}
       <div
         style={{
-          padding: '8px 6px 8px',
+          boxSizing: 'border-box',
+          paddingTop: `${(8 + 4) * (1 - stuckProgress)}px`,
+          paddingLeft: '6px',
+          paddingRight: '6px',
+          paddingBottom: `${8 * (1 - stuckProgress)}px`,
           textAlign: 'center',
           width: '100%',
           flexShrink: 0,
+          height: `${NAME_AREA_HEIGHT * (1 - stuckProgress)}px`,
+          opacity: Math.max(0, 1 - stuckProgress * 3),
         }}
       >
         <h3

@@ -13,7 +13,7 @@ export const COLORS = {
 export const LAYOUT = {
   navWidth: 54,
   sidebarWidth: 200,
-  rightPanelWidth: 331,
+  rightPanelWidth: 400,
   bottomBarHeight: 88,
 } as const
 

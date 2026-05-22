@@ -6,9 +6,10 @@ interface ResourceBarProps {
   children: number
   virgins: number
   volunteers: number
+  dimmed?: boolean
 }
 
-export function ResourceBar({ prisoners, children, virgins, volunteers }: ResourceBarProps) {
+export function ResourceBar({ prisoners, children, virgins, volunteers, dimmed = false }: ResourceBarProps) {
   return (
     <div
       style={{
@@ -23,6 +24,8 @@ export function ResourceBar({ prisoners, children, virgins, volunteers }: Resour
         paddingRight: '32px',
         gap: '128px',
         fontFamily: FONTS.spectral,
+        opacity: dimmed ? 0.2 : 1,
+        transition: 'opacity 0.2s ease',
       }}
     >
       <ResourceItem icon={<Link size={28} color="white" />} label="Prisoners" count={prisoners} />

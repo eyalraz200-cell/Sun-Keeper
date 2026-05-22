@@ -73,6 +73,7 @@ export function AppShell({
           children={resources.children}
           virgins={resources.virgins}
           volunteers={resources.volunteers}
+          dimmed={!selectedGodId}
         />
       </div>
 
