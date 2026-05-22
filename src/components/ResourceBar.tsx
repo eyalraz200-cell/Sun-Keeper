@@ -14,7 +14,7 @@ export function ResourceBar({ prisoners, children, virgins, volunteers }: Resour
       style={{
         flexShrink: 0,
         height: `${LAYOUT.bottomBarHeight}px`,
-        borderTop: `1px solid #545454`,
+        borderTop: `1px solid #333333`,
         backgroundColor: COLORS.bgCard,
         display: 'flex',
         alignItems: 'center',

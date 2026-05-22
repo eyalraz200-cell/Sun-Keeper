@@ -7,18 +7,18 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 **Viewport:** 100vw × 100vh, background `#181818`
 
 **Structure: Outer flex ROW (100vw × 100vh)**
-- **Left nav strip:** 54px wide, full 100vh height, border-right `#545454`
-- **Deity sidebar:** 191px wide, full 100vh height, border-right `#545454`, scrollable
+- **Left nav strip:** 54px wide, full 100vh height, border-right `#333333`
+- **Deity sidebar:** 191px wide, full 100vh height, border-right `#333333`, scrollable
 - **Main content column:** flex: 1, flex COLUMN
   - Main content area: flex: 1, overflow: auto
-  - Resource bar: 88px tall, border-top `#545454`, spans only main content width (NOT under right panel)
-- **Right panel:** 331px wide, full 100vh height, border-left `#545454`, overflow: auto
+  - Resource bar: 88px tall, border-top `#333333`, spans only main content width (NOT under right panel)
+- **Right panel:** 331px wide, full 100vh height, border-left `#333333`, overflow: auto
 
 **Key constraints:**
 - Left nav and deity sidebar extend full viewport height (100vh) to bottom edge
 - Resource bar is scoped inside main content column — does NOT extend under right panel
 - Right panel is full-height sibling at top level
-- All borders are `#545454` with opacity 1.0
+- All structural divider borders are `#333333`
 - Background is always `#181818` (never lighter/darker)
 
 ---
@@ -70,7 +70,7 @@ interface DeityListProps {
 }
 ```
 
-**Renders:** 191px-wide scrollable sidebar. "Pantheon" header. Gods sorted by anger level. Each god as `DeityCard` with 8px gap.
+**Renders:** 191px-wide scrollable sidebar (scrollbar hidden via `scrollbarWidth: 'none'`). "Deities" header. Gods sorted by anger level (high → medium → low → none). Each god as `DeityCard` with 8px gap. Currently displays 4 Tlaloc anger-state variants (defined as `TLALOC_VARIANTS` in `src/App.tsx`).
 
 ---
 
@@ -86,7 +86,67 @@ interface DeityCardProps {
 }
 ```
 
-**Renders:** Button card, `minHeight: 245px`. Selected: `bgHover` + 2px colored border. Unselected: `bgBase` + 1px border.
+**Renders:** Button card sized naturally (no minHeight). Padding: `8px` top, `16px` bottom. No transition (`transition: 'none'`). Tracks hover with `useState`. Passes `isHovered` and `isSelected` to `GodSvg` via `getSvgRaw(god.id)` lookup in `GOD_SVG_MAP`.
+
+**State matrix:**
+
+| State      | Background  | Border              | Name color  | Name weight | Body color  |
+|------------|-------------|---------------------|-------------|-------------|-------------|
+| Default    | `#181818`   | `1px solid #333333` | `#6C6C6C`   | 400         | `#6C6C6C`   |
+| Hovered    | `#181818`   | `1px solid #ffffff` | `#ffffff`   | 400         | `#ffffff`   |
+| Selected   | `#ffffff`   | `1px solid #ffffff` | `#000000`   | 700 (bold)  | `#000000`   |
+
+---
+
+### GodSvg (generic)
+**File:** `src/components/GodSvg.tsx`
+
+**Props:**
+```ts
+interface GodSvgProps {
+  svgRaw: string      // raw SVG string imported via ?raw
+  angerLevel: AngerLevel
+  isHovered?: boolean
+  isSelected?: boolean
+}
+```
+
+**Renders:** Generic inline SVG component used for all gods. Applies dynamic body color and eye styling based on state. All per-god wrappers (TlalocSvg, QuetzalcoatlSvg, etc.) are thin wrappers that import their SVG `?raw` and pass it here.
+
+**Body color by state:**
+
+| State    | Body fill   |
+|----------|-------------|
+| Default  | `#6C6C6C`   |
+| Hovered  | `#ffffff`   |
+| Selected | `#000000`   |
+
+**Eye color by anger level (default/hover):**
+
+| Anger  | Stroke color | Stroke weight | Selected override |
+|--------|-------------|---------------|-------------------|
+| high   | `#FF2435`   | 6             | `#FF2435`         |
+| medium | `#EF7B2E`   | 4             | `#FF7913`         |
+| low    | `#D7C94E`   | 3             | `#E7C104`         |
+| none   | `#6C6C6C`   | 2             | `#000000`         |
+
+On hover with `none`: eyes → `#ffffff`. On selected with `none`: eyes → `#000000`.
+
+**Implementation:** Parses `cx`, `cy`, `r` from each `<circle>` inside `<g id="eyes">` at render time — no hardcoded coordinates. Replaces the eyes group with inside-stroke circles (doubled stroke-width + `<clipPath>`). ClipPath IDs are derived from `cx` values (e.g. `ec-71938`) to avoid collisions when multiple gods are on screen. All god SVGs must have `r="9"` in their eye circles and a `<g id="eyes">` group (export from Figma with "Include id attribute" enabled).
+
+### TlalocSvg
+**File:** `src/components/TlalocSvg.tsx` — thin wrapper over `GodSvg`, imports `src/assets/Gods/Tlaloc.svg?raw`.
+
+### QuetzalcoatlSvg
+**File:** `src/components/QuetzalcoatlSvg.tsx` — thin wrapper over `GodSvg`, imports `src/assets/Gods/Quetzalcoatl.svg?raw`.
+
+### Adding a new god SVG
+1. Export SVG from Figma with "Include 'id' attribute" enabled, name the eyes group `eyes`
+2. Set eye circle radius to `r="9"` in the SVG file
+3. Drop file into `src/assets/Gods/`
+4. Create `src/components/[Name]Svg.tsx` (copy QuetzalcoatlSvg pattern)
+5. Add to `GOD_SVG_MAP` in `src/components/DeityCard.tsx`
+6. Add 4 variants to `DEITY_VARIANTS` in `src/App.tsx`
 
 ---
 
@@ -241,6 +301,12 @@ Before implementing layout changes: take a screenshot and compare against Figma.
 
 ---
 
+## Font Rendering
+
+`-webkit-font-smoothing: antialiased` has been intentionally removed from `src/index.css`. It causes blurry text on Retina/HiDPI displays. The browser default (`auto`) uses subpixel rendering which looks sharper. Do not re-add it.
+
+---
+
 ## Dos and Don'ts
 
 ✅ **DO:**
@@ -252,19 +318,27 @@ Before implementing layout changes: take a screenshot and compare against Figma.
 - Add headers not in Figma design
 - Hardcode color/font/spacing values
 - Create placeholder panels not in design
+- Add `-webkit-font-smoothing: antialiased`
 
 ---
 
 ## God/Ritual Data Model
 
-**16 gods, 4 rituals each, all anger levels represented.**
+**`AngerLevel`:** `'high' | 'medium' | 'low' | 'none'` — four states, `'none'` means unappeased/grey.
+
+The sidebar shows 4 variants per god (one per anger state), defined in `src/App.tsx` as `DEITY_VARIANTS`. Currently includes Tlaloc and Quetzalcoatl (8 cards total).
 
 ```ts
+type AngerLevel = 'high' | 'medium' | 'low' | 'none'
+
 interface God {
   id: string
   name: string
-  angerLevel: 'high' | 'medium' | 'low'
+  subtitle: string
+  svg: string
+  angerLevel: AngerLevel
   angerColor: string
+  favor: number
   rituals: Ritual[]
 }
 
@@ -272,6 +346,9 @@ interface Ritual {
   id: string
   name: string
   description: string
+  participants: { prisoners: number; children: number; virgins: number; volunteers: number }
+  schedule: string
+  duration: string
   outcomeColor: string
   available: boolean
   effects: Array<{ godId: string; before: number; after: number }>

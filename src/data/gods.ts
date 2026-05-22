@@ -1,4 +1,4 @@
-export type AngerLevel = 'high' | 'medium' | 'low'
+export type AngerLevel = 'high' | 'medium' | 'low' | 'none'
 export type RitualOutcome = 'auspicious' | 'neutral' | 'ominous'
 
 export interface Ritual {

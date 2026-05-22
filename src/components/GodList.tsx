@@ -1,16 +1,16 @@
 import type { God } from '../data/gods'
-import { DeityCard } from './DeityCard'
+import { GodCard } from './GodCard'
 import { COLORS, FONTS, LAYOUT } from '../tokens'
 
-interface DeityListProps {
+interface GodListProps {
   gods: God[]
   selectedGodId: string | null
   onSelect: (godId: string) => void
 }
 
-export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
+export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
   const sortedGods = [...gods].sort((a, b) => {
-    const angerOrder = { high: 0, medium: 1, low: 2 }
+    const angerOrder = { high: 0, medium: 1, low: 2, none: 3 }
     return angerOrder[a.angerLevel] - angerOrder[b.angerLevel]
   })
 
@@ -20,7 +20,7 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
         width: `${LAYOUT.sidebarWidth}px`,
         height: '100vh',
         backgroundColor: COLORS.bgBase,
-        borderRight: `1px solid #545454`,
+        borderRight: `1px solid #333333`,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -64,6 +64,7 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
         style={{
           flex: 1,
           overflow: 'auto',
+          scrollbarWidth: 'none',
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
@@ -71,7 +72,7 @@ export function DeityList({ gods, selectedGodId, onSelect }: DeityListProps) {
         }}
       >
         {sortedGods.map((god) => (
-          <DeityCard
+          <GodCard
             key={god.id}
             god={god}
             isSelected={selectedGodId === god.id}

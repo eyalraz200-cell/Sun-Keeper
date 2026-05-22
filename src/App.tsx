@@ -2,6 +2,30 @@ import { useState } from 'react'
 import { AppShell } from './components/AppShell'
 import { COLORS, FONTS } from './tokens'
 import { GODS } from './data/gods'
+import type { God } from './data/gods'
+
+const tlaloc          = GODS.find(g => g.id === 'tlaloc')!
+const quetzalcoatl    = GODS.find(g => g.id === 'quetzalcoatl')!
+const huitzilopochtli = GODS.find(g => g.id === 'huitzilopochtli')!
+const tezcatlipoca    = GODS.find(g => g.id === 'tezcatlipoca')!
+const mictlantecuhtli = GODS.find(g => g.id === 'mictlantecuhtli')!
+
+function variants(base: God, name: string): God[] {
+  return [
+    { ...base, id: `${base.id}-high`,   name, angerLevel: 'high',   angerColor: '#c8322e' },
+    { ...base, id: `${base.id}-medium`, name, angerLevel: 'medium', angerColor: '#d4662a' },
+    { ...base, id: `${base.id}-low`,    name, angerLevel: 'low',    angerColor: '#c8a83c' },
+    { ...base, id: `${base.id}-none`,   name, angerLevel: 'none',   angerColor: '#6C6C6C' },
+  ]
+}
+
+const DEITY_VARIANTS: God[] = [
+  ...variants(tlaloc,          'Tlaloc'),
+  ...variants(quetzalcoatl,    'Quetzalcoatl'),
+  ...variants(huitzilopochtli, 'Huitzilopochtli'),
+  ...variants(tezcatlipoca,    'Tezcatlipoca'),
+  ...variants(mictlantecuhtli, 'Mictlantecuhtli'),
+]
 import { RitualCard } from './components/RitualCard'
 import { PantheonEffects } from './components/PantheonEffects'
 
@@ -114,7 +138,7 @@ function App() {
       </p>
 
       {/* Separator - 4px below subtitle */}
-      <div style={{ height: '1px', backgroundColor: '#545454', margin: '4px 31px 0' }} />
+      <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
       {/* Section label - 70px below separator */}
       <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', color: '#ffffff' }}>
@@ -141,7 +165,7 @@ function App() {
 
   return (
     <AppShell
-      gods={GODS}
+      gods={DEITY_VARIANTS}
       selectedGodId={selectedGodId}
       onSelectGod={handleSelectGod}
       resources={resources}

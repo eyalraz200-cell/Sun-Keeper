@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { COLORS, LAYOUT } from '../tokens'
 import { SidebarNav } from './SidebarNav'
-import { DeityList } from './DeityList'
+import { GodList } from './GodList'
 import { ResourceBar } from './ResourceBar'
 import type { God } from '../data/gods'
 
@@ -40,7 +40,7 @@ export function AppShell({
       <SidebarNav />
 
       {/* Deity list sidebar - full height */}
-      <DeityList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
+      <GodList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
 
       {/* Main content column - main + resource bar */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -72,7 +72,7 @@ export function AppShell({
           width: `${LAYOUT.rightPanelWidth}px`,
           height: '100%',
           backgroundColor: COLORS.bgBase,
-          borderLeft: `1px solid #545454`,
+          borderLeft: `1px solid #333333`,
           overflow: 'auto',
           display: 'flex',
           flexDirection: 'column',
