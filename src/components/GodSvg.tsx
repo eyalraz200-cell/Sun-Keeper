@@ -39,7 +39,9 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     ? { color: '#ffffff', weight: 2 }
     : baseEye
 
-  const bodySvg = svgRaw.replace(/fill="black"/g, 'fill="#6C6C6C"')
+  const bodySvg = svgRaw
+    .replace(/fill="black"/g, 'fill="#6C6C6C"')
+    .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, 'fill="#6C6C6C"')
   const bodyColor = isSelected ? '#000000' : isHovered ? '#ffffff' : '#6C6C6C'
   const coloredBody = bodySvg.replace(/fill="#6C6C6C"/g, `fill="${bodyColor}"`)
 
