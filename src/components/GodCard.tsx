@@ -38,6 +38,7 @@ export function GodCard({ god, isSelected, onClick }: GodCardProps) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
+        height: '248px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

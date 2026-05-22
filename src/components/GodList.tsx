@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect, Fragment } from 'react'
 import type { God } from '../data/gods'
 import { GodCard } from './GodCard'
 import { COLORS, FONTS, LAYOUT } from '../tokens'
@@ -13,6 +14,25 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
     const angerOrder = { high: 0, medium: 1, low: 2, none: 3 }
     return angerOrder[a.angerLevel] - angerOrder[b.angerLevel]
   })
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const stickyRef = useRef<HTMLDivElement>(null)
+  const [isStuck, setIsStuck] = useState(false)
+
+  useEffect(() => {
+    setIsStuck(false)
+    const container = scrollRef.current
+    if (!container || !selectedGodId) return
+    const handleScroll = () => {
+      if (!stickyRef.current) return
+      const paddingTop = parseFloat(getComputedStyle(container).paddingTop)
+      setIsStuck(
+        stickyRef.current.getBoundingClientRect().top <= container.getBoundingClientRect().top + paddingTop + 1
+      )
+    }
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [selectedGodId])
 
   return (
     <div
@@ -61,6 +81,7 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
 
       {/* Scrollable list */}
       <div
+        ref={scrollRef}
         style={{
           flex: 1,
           overflow: 'auto',
@@ -71,14 +92,33 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
           padding: '12px',
         }}
       >
-        {sortedGods.map((god) => (
-          <GodCard
-            key={god.id}
-            god={god}
-            isSelected={selectedGodId === god.id}
-            onClick={() => onSelect(god.id)}
-          />
-        ))}
+        {sortedGods.map((god) => {
+          const isSelected = selectedGodId === god.id
+          return (
+            <Fragment key={god.id}>
+              <div
+                ref={isSelected ? stickyRef : undefined}
+                style={{
+                  position: isSelected ? 'sticky' : 'relative',
+                  top: isSelected ? -12 : undefined,
+                  zIndex: isSelected ? 1 : 0,
+                  marginInline: isSelected && isStuck ? '-12px' : undefined,
+                  paddingInline: isSelected && isStuck ? '12px' : undefined,
+                  paddingTop: isSelected && isStuck ? '12px' : undefined,
+                  paddingBottom: isSelected && isStuck ? '16px' : undefined,
+                  borderBottom: isSelected && isStuck ? '1px solid #333333' : undefined,
+                  backgroundColor: isSelected ? COLORS.bgBase : undefined,
+                }}
+              >
+                <GodCard
+                  god={god}
+                  isSelected={isSelected}
+                  onClick={() => onSelect(god.id)}
+                />
+              </div>
+            </Fragment>
+          )
+        })}
       </div>
     </div>
   )
