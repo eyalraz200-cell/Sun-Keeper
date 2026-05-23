@@ -3,13 +3,14 @@ import { COLORS, LAYOUT } from '../tokens'
 import { SidebarNav } from './SidebarNav'
 import { GodList } from './GodList'
 import { ResourceBar } from './ResourceBar'
-import type { God } from '../data/gods'
+import type { God, Ritual } from '../data/gods'
 
 interface AppShellProps {
   gods: God[]
   selectedGodId: string | null
   onSelectGod: (godId: string) => void
   resources: { prisoners: number; children: number; virgins: number; volunteers: number }
+  selectedRitual?: Ritual | null
   mainContent: ReactNode
   rightPanelContent?: ReactNode
 }
@@ -21,6 +22,7 @@ export function AppShell({
   selectedGodId,
   onSelectGod,
   resources,
+  selectedRitual,
   mainContent,
   rightPanelContent,
 }: AppShellProps) {
@@ -57,6 +59,7 @@ export function AppShell({
           children={resources.children}
           virgins={resources.virgins}
           volunteers={resources.volunteers}
+          selectedRitual={selectedRitual}
           dimmed={!selectedGodId}
         />
       </div>

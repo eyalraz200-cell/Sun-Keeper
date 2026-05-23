@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import type { Ritual } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
-import { Link, Sock, SunDim, Sparkle } from '@phosphor-icons/react'
+import { ChildrenIcon } from './ChildrenIcon'
+import { VirginIcon } from './VirginIcon'
+import { PrisonerIcon } from './PrisonerIcon'
+import { VolunteerIcon } from './VolunteerIcon'
 
 function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
@@ -48,28 +51,28 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
         textAlign: 'left',
       }}
     >
-      {/* Title */}
-      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '16px', color: '#ffffff', margin: '0', padding: '24px 24px 0', textAlign: 'center' }}>
-        {ritual.name}
-      </h3>
-
-      {/* Description - centered */}
-      <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: '6px 24px 0', padding: '0', lineHeight: '1.4' }}>
-        {ritual.description}
-      </p>
+      {/* Title + Description — fixed height so middle section always aligns */}
+      <div style={{ height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'hidden' }}>
+        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '16px', color: '#ffffff', margin: '0', padding: '24px 24px 0', textAlign: 'center' }}>
+          {ritual.name}
+        </h3>
+        <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: '6px 24px 0', padding: '0', lineHeight: '1.4' }}>
+          {ritual.description}
+        </p>
+      </div>
 
       {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '12px 13px' }} />
+      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 13px 12px' }} />
 
       {/* Price section */}
       <div style={{ padding: '16px 24px 0' }}>
         <p style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px 0' }}>Blood Price</p>
         <div>
         {([
-          { key: 'prisoners', label: 'Prisoners',  icon: <Link     size={16} color="rgba(255,255,255,0.5)" /> },
-          { key: 'volunteers',label: 'Volunteers', icon: <Sparkle  size={16} color="rgba(255,255,255,0.5)" /> },
-          { key: 'children',  label: 'Children',  icon: <Sock     size={16} color="rgba(255,255,255,0.5)" /> },
-          { key: 'virgins',   label: 'Virgins',   icon: <SunDim   size={16} color="rgba(255,255,255,0.5)" /> },
+          { key: 'prisoners', label: 'Prisoners',  icon: <PrisonerIcon size={13} color="rgba(255,255,255,0.5)" /> },
+          { key: 'volunteers',label: 'Volunteers', icon: <VolunteerIcon size={13} color="rgba(255,255,255,0.5)" /> },
+          { key: 'children',  label: 'Children',  icon: <ChildrenIcon size={13} color="rgba(255,255,255,0.5)" /> },
+          { key: 'virgins',   label: 'Virgins',   icon: <VirginIcon size={13} color="rgba(255,255,255,0.5)" /> },
         ] as const).filter(({ key }) => ritual.participants[key] > 0).map(({ key, label, icon }, i, arr) => (
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: i < arr.length - 1 ? '6px' : 0, paddingTop: i === 0 ? '2px' : 0 }}>
             {icon}
@@ -83,11 +86,12 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       {/* Divider */}
       <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '16px 24px' }} />
 
-      {/* Sacred Site section */}
+      {/* Sacrificial Site section */}
       <div style={{ padding: '0 24px 16px' }}>
-        <p style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px 0' }}>Sacred Site</p>
+        <p style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px 0' }}>Ritual Demand</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{ritual.sacredSite.name}</span>
+            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Site</span>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: '12px', color: '#ffffff' }}>{ritual.sacredSite.name}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Duration</span>

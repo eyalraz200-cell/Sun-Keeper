@@ -13,11 +13,21 @@ const SELECTED_EYE_OVERRIDES: Partial<Record<AngerLevel, string>> = {
   none:   '#000000',
 }
 
+export interface EyeAnimation {
+  fromColor: string
+  fromWeight: number
+  toColor: string
+  toWeight: number
+  delay?: number
+  duration?: number
+}
+
 export interface GodSvgProps {
   svgRaw: string
   angerLevel: AngerLevel
   isHovered?: boolean
   isSelected?: boolean
+  eyeAnimation?: EyeAnimation
 }
 
 function parseCircles(eyesBlock: string) {
@@ -31,7 +41,7 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation }: GodSvgProps) {
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
@@ -57,11 +67,29 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
       const uid = c.cx.replace('.', '')
       return `<clipPath id="ec-${uid}"><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}"/></clipPath>`
     }).join('\n')
-    const styledCircles = circles.map((c) => {
-      const uid = c.cx.replace('.', '')
-      return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
-    }).join('\n')
-    eyesGroup = `<defs>\n${defs}\n</defs>\n<g id="eyes">\n${styledCircles}\n</g>`
+
+    if (eyeAnimation) {
+      const { fromColor, fromWeight, toColor, toWeight, delay = 0.8, duration = 2 } = eyeAnimation
+      const animStyle = `<style>@keyframes ritualEyeShift { 0% { stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; } 100% { stroke: ${toColor}; stroke-width: ${toWeight * 2}; } }</style>`
+      const animCircles = circles.map((c) => {
+        const uid = c.cx.replace('.', '')
+        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" clip-path="url(#ec-${uid})" style="stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; animation: ritualEyeShift ${duration}s ease ${delay}s forwards;"/>`
+      }).join('\n')
+      eyesGroup = `<defs>\n${defs}\n</defs>\n${animStyle}\n<g id="eyes">\n${animCircles}\n</g>`
+    } else {
+      const styledCircles = circles.map((c) => {
+        const uid = c.cx.replace('.', '')
+        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
+      }).join('\n')
+      // Outer glow: applied to filled discs so feComposite can clip cleanly to outside
+      const glowDef = isSelected
+        ? `\n<filter id="eye-outer-glow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="5" in="SourceAlpha" result="blur"/><feFlood flood-color="${eye.color}" flood-opacity="0.9" result="colored"/><feComposite in="colored" in2="blur" operator="in" result="coloredBlur"/><feComposite in="coloredBlur" in2="SourceAlpha" operator="out" result="outerGlow"/><feMerge><feMergeNode in="outerGlow"/></feMerge></filter>`
+        : ''
+      const glowCircles = isSelected
+        ? `\n<g filter="url(#eye-outer-glow)">${circles.map(c => `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eye.color}"/>`).join('')}</g>`
+        : ''
+      eyesGroup = `<defs>\n${defs}${glowDef}\n</defs>${glowCircles}\n<g id="eyes">\n${styledCircles}\n</g>`
+    }
   } else {
     // Path-based eyes: recolor fills and add stroke to vary thickness by anger level
     const recolored = eyesContent

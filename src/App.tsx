@@ -1,18 +1,63 @@
 import { useState } from 'react'
+import type { AngerLevel } from './data/gods'
 import { AppShell } from './components/AppShell'
 import { MiddleSection } from './components/MiddleSection'
 import { RightPanel } from './components/RightPanel'
+import { GodSvg } from './components/GodSvg'
 import { GODS } from './data/gods'
+import tlalocRaw from './assets/Gods/Tlaloc.svg?raw'
+import quetzalcoatlRaw from './assets/Gods/Quetzalcoatl.svg?raw'
+import huitzilopochtliRaw from './assets/Gods/huitzilopochtli.svg?raw'
+import tezcatlipocaRaw from './assets/Gods/Tezcatlipoca.svg?raw'
+
+const OUTCOME_LABEL: Record<string, string> = {
+  '#c8322e': 'Furious',
+  '#d4662a': 'Angry',
+  '#d4a83c': 'Uneasy',
+  '#c8a83c': 'Peaceful',
+}
+
+const OUTCOME_EYE: Record<string, { color: string; weight: number }> = {
+  '#c8322e': { color: '#FF2435', weight: 6 },
+  '#d4662a': { color: '#EF7B2E', weight: 4 },
+  '#d4a83c': { color: '#D7C94E', weight: 3 },
+  '#c8a83c': { color: '#ffffff', weight: 2 },
+}
+
+// Eye colors for the dark overlay (hovered/white body context)
+const ANGER_EYE_DARK: Record<AngerLevel, { color: string; weight: number }> = {
+  high:   { color: '#FF2435', weight: 6 },
+  medium: { color: '#EF7B2E', weight: 4 },
+  low:    { color: '#D7C94E', weight: 3 },
+  none:   { color: '#F0F0F0', weight: 2 },
+}
+
+const OUTCOME_TO_ANGER: Record<string, AngerLevel> = {
+  '#c8322e': 'high',
+  '#d4662a': 'medium',
+  '#d4a83c': 'low',
+  '#c8a83c': 'none',
+}
+
+const GOD_SVG_MAP: Record<string, string> = {
+  tlaloc: tlalocRaw,
+  quetzalcoatl: quetzalcoatlRaw,
+  huitzilopochtli: huitzilopochtliRaw,
+  tezcatlipoca: tezcatlipocaRaw,
+  coyolxauhqui: quetzalcoatlRaw,
+  tonatiuh: huitzilopochtliRaw,
+}
 
 function App() {
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
+  const [ritualActive, setRitualActive] = useState(false)
 
   const resources = {
-    prisoners: 12,
-    children: 5,
-    virgins: 8,
-    volunteers: 20,
+    prisoners: 1840,
+    children: 312,
+    virgins: 47,
+    volunteers: 763,
   }
 
   const selectedGod = GODS.find(g => g.id === selectedGodId) ?? null
@@ -37,30 +82,142 @@ function App() {
   }
 
   const handlePerformRitual = () => {
-    console.log('Performing ritual:', selectedRitual?.name)
+    if (!selectedGod) return
+    setRitualActive(true)
+  }
+
+  const handleDismissRitual = () => {
+    setRitualActive(false)
   }
 
   return (
-    <AppShell
-      gods={GODS}
-      selectedGodId={selectedGodId}
-      onSelectGod={handleSelectGod}
-      resources={resources}
-      mainContent={
-        <MiddleSection
-          selectedGod={selectedGod}
-          selectedRitualId={selectedRitualId}
-          onSelectRitual={handleSelectRitual}
-          onPerformRitual={handlePerformRitual}
-        />
-      }
-      rightPanelContent={
-        <RightPanel
-          ritual={selectedRitual}
-          gods={GODS}
-        />
-      }
-    />
+    <>
+      <AppShell
+        gods={GODS}
+        selectedGodId={selectedGodId}
+        onSelectGod={handleSelectGod}
+        resources={resources}
+        selectedRitual={selectedRitual}
+        mainContent={
+          <MiddleSection
+            selectedGod={selectedGod}
+            selectedRitualId={selectedRitualId}
+            onSelectRitual={handleSelectRitual}
+            onPerformRitual={handlePerformRitual}
+          />
+        }
+        rightPanelContent={
+          <RightPanel
+            ritual={selectedRitual}
+            gods={GODS}
+          />
+        }
+      />
+
+      {ritualActive && selectedGod && selectedRitual && (() => {
+        const fromEye = ANGER_EYE_DARK[selectedGod.angerLevel]
+        const toAnger = OUTCOME_TO_ANGER[selectedRitual.outcomeColor] ?? 'none'
+        const toEye = ANGER_EYE_DARK[toAnger]
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: '#181818',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              animation: 'fadeToBlack 0.6s ease forwards',
+            }}
+          >
+            {/* Left/right gradients */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none', zIndex: 2 }} />
+            {/* Top/bottom gradients */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 12%, rgba(0,0,0,0) 88%, rgba(0,0,0,0.5) 100%)', pointerEvents: 'none', zIndex: 2 }} />
+            {/* Face: independently centered, nudged up */}
+            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, calc(-50% - 12vh))', width: '62vmin', height: '62vmin', zIndex: 3, opacity: 0, animation: 'contentFadeIn 2.4s ease 0.8s forwards' }}>
+              <GodSvg
+                svgRaw={GOD_SVG_MAP[selectedGod.id] ?? tlalocRaw}
+                angerLevel={selectedGod.angerLevel}
+                isHovered={true}
+                eyeAnimation={{ fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 2.0, duration: 2 }}
+              />
+            </div>
+            {/* Text: anchored independently */}
+            <div style={{ position: 'absolute', bottom: '23vh', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap', zIndex: 3, opacity: 0, animation: 'contentFadeIn 1.4s ease 3.6s forwards' }}>
+                <span style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 400, color: '#ffffff', letterSpacing: '1px' }}>
+                  {selectedGod.name.toUpperCase()}
+                </span>
+                <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff' }}>
+                  will become
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    boxShadow: `inset 0 0 0 ${OUTCOME_EYE[selectedRitual.outcomeColor]?.weight ?? 2}px ${OUTCOME_EYE[selectedRitual.outcomeColor]?.color ?? '#000000'}`,
+                  }} />
+                  <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff' }}>
+                    {OUTCOME_LABEL[selectedRitual.outcomeColor] ?? 'Peaceful'}
+                  </span>
+                </div>
+                <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff' }}>
+                  in {selectedRitual.duration}
+                </span>
+            </div>
+            {/* Button: anchored independently */}
+            <button
+              onClick={handleDismissRitual}
+              className="ritual-continue-btn"
+              style={{
+                position: 'absolute',
+                bottom: '9vh',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontFamily: "'Cinzel', serif",
+                fontSize: '13px',
+                fontWeight: 400,
+                letterSpacing: '1.5px',
+                border: '1px solid #ffffff',
+                borderRadius: '6px',
+                padding: '10px 36px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                zIndex: 3,
+                opacity: 0,
+                animation: 'contentFadeIn 0.6s ease 5.0s forwards',
+              }}
+            >
+              CONTINUE
+            </button>
+          </div>
+        )
+      })()}
+
+      <style>{`
+        @keyframes fadeToBlack {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes contentFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .ritual-continue-btn {
+          background-color: transparent;
+          color: #ffffff;
+          transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .ritual-continue-btn:hover {
+          background-color: #ffffff;
+          color: #181818;
+        }
+      `}</style>
+    </>
   )
 }
 

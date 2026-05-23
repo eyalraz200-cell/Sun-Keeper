@@ -180,6 +180,10 @@ interface MiddleSectionProps {
 - 4 cards: `justifyContent: 'space-between'`
 - Fewer than 4: `justifyContent: 'center'`, `gap: calc((100% - 1000px) / 3)` — matches the space-between gap of the 4-card layout at the same container width
 
+**Ghost frames (no god selected):**
+- Always mirror the selected-state card layout exactly: same `width`, `minHeight`, `borderRadius`, `border`, and `backgroundColor` as `RitualCard`
+- **Rule:** Any time a visual property is changed on `RitualCard`, the ghost frame in the unselected branch of `MiddleSection` must be updated to match. The ghost is a structural placeholder — it must be visually identical in dimensions and shape to the real card.
+
 ---
 
 ### RitualCard

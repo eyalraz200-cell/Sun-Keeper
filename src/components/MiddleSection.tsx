@@ -26,8 +26,9 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
   const rituals: Ritual[] = selectedGod
     ? (() => {
         const godAnger = angerOrder[selectedGod.angerLevel]
-        const valid = [...selectedGod.rituals].filter(r => (outcomeOrder[r.outcomeColor] ?? 4) >= godAnger)
-        const colors = ['#c8322e', '#d4662a', '#d4a83c', '#c8a83c'].filter(c => (outcomeOrder[c] ?? 4) >= godAnger)
+        const threshold = godAnger < 3 ? godAnger + 1 : 3
+        const valid = [...selectedGod.rituals].filter(r => (outcomeOrder[r.outcomeColor] ?? 4) >= threshold)
+        const colors = ['#c8322e', '#d4662a', '#d4a83c', '#c8a83c'].filter(c => (outcomeOrder[c] ?? 4) >= threshold)
         const used = new Set<string>()
         const result: Ritual[] = []
         // One ritual per outcome color
@@ -89,7 +90,7 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
 
         ) : (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.08)', borderRadius: '14px', minHeight: '465px', width: '250px' }} />
+            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '506px', width: '250px' }} />
           ))
         )}
       </div>
