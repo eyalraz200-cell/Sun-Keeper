@@ -52,6 +52,7 @@ function App() {
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
   const [ritualActive, setRitualActive] = useState(false)
+  const [ritualDismissing, setRitualDismissing] = useState(false)
 
   const resources = {
     prisoners: 1840,
@@ -87,7 +88,11 @@ function App() {
   }
 
   const handleDismissRitual = () => {
-    setRitualActive(false)
+    setRitualDismissing(true)
+    setTimeout(() => {
+      setRitualActive(false)
+      setRitualDismissing(false)
+    }, 700)
   }
 
   return (
@@ -129,7 +134,7 @@ function App() {
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 1000,
-              animation: 'fadeToBlack 0.6s ease forwards',
+              animation: ritualDismissing ? 'fadeFromBlack 0.7s ease forwards' : 'fadeToBlack 0.6s ease forwards',
             }}
           >
             {/* Left/right gradients */}
@@ -140,9 +145,9 @@ function App() {
             <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, calc(-50% - 12vh))', width: '62vmin', height: '62vmin', zIndex: 3, opacity: 0, animation: 'contentFadeIn 2.4s ease 0.8s forwards' }}>
               <GodSvg
                 svgRaw={GOD_SVG_MAP[selectedGod.id] ?? tlalocRaw}
-                angerLevel={selectedGod.angerLevel}
+                angerLevel={ritualDismissing ? toAnger : selectedGod.angerLevel}
                 isHovered={true}
-                eyeAnimation={{ fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 2.0, duration: 2 }}
+                eyeAnimation={ritualDismissing ? undefined : { fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 2.0, duration: 2 }}
               />
             </div>
             {/* Text: anchored independently */}
@@ -202,6 +207,10 @@ function App() {
         @keyframes fadeToBlack {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        @keyframes fadeFromBlack {
+          from { opacity: 1; }
+          to { opacity: 0; }
         }
         @keyframes contentFadeIn {
           from { opacity: 0; }

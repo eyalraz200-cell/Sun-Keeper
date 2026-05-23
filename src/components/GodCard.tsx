@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { God } from '../data/gods'
 import type { AngerLevel } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
@@ -34,9 +34,18 @@ interface GodCardProps {
 
 export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const onScroll = () => setIsHovered(false)
+    const scrollParent = buttonRef.current?.closest('[style*="overflow"]') ?? window
+    scrollParent.addEventListener('scroll', onScroll, { passive: true })
+    return () => scrollParent.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
     <button
+      ref={buttonRef}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

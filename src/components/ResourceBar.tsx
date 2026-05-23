@@ -33,10 +33,10 @@ export function ResourceBar({ prisoners, children, virgins, volunteers, temples 
       }}
     >
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '32px', paddingRight: '32px', paddingTop: '12px', paddingBottom: '12px' }}>
-        <ResourceItem icon={<PrisonerIcon size={20} color="rgba(255,255,255,0.55)" />} label="Prisoners"  count={prisoners} cost={selectedRitual?.participants.prisoners} />
-        <ResourceItem icon={<VolunteerIcon size={20} color="rgba(255,255,255,0.55)" />} label="Volunteers" count={volunteers} cost={selectedRitual?.participants.volunteers} />
-        <ResourceItem icon={<ChildrenIcon size={20} color="rgba(255,255,255,0.55)" />} label="Children"   count={children} cost={selectedRitual?.participants.children} />
-        <ResourceItem icon={<VirginIcon size={20} color="rgba(255,255,255,0.55)" />} label="Virgins"    count={virgins} cost={selectedRitual?.participants.virgins} />
+        <ResourceItem icon={<PrisonerIcon size={20} color="rgba(255,255,255,0.42)" />} label="Prisoners"  count={prisoners} cost={selectedRitual?.participants.prisoners} />
+        <ResourceItem icon={<VolunteerIcon size={20} color="rgba(255,255,255,0.42)" />} label="Volunteers" count={volunteers} cost={selectedRitual?.participants.volunteers} />
+        <ResourceItem icon={<ChildrenIcon size={20} color="rgba(255,255,255,0.42)" />} label="Children"   count={children} cost={selectedRitual?.participants.children} />
+        <ResourceItem icon={<VirginIcon size={20} color="rgba(255,255,255,0.42)" />} label="Virgins"    count={virgins} cost={selectedRitual?.participants.virgins} />
         <div style={{ width: '1px', height: '100%', backgroundColor: 'rgba(255,255,255,0.12)' }} />
         <SiteItem label="Temple" available={temples} total={20} cost={selectedRitual?.sacredSite.name === 'Temple' ? selectedRitual.sacredSite.count : 0} />
         <SiteItem label="Grand Temple" available={greatTemples} total={3} cost={selectedRitual?.sacredSite.name === 'Grand Temple' ? selectedRitual.sacredSite.count : 0} />
@@ -55,10 +55,10 @@ interface SiteItemProps {
 function SiteItem({ label, available, total, cost }: SiteItemProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div style={{ fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 400, color: '#acacac', lineHeight: '1' }}>{label}</div>
+      <div style={{ fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 400, color: '#848484', lineHeight: '1' }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <div style={{ fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 400, color: '#ffffff', lineHeight: '1' }}>{cost ? available - cost : available} available</div>
-        {cost ? <ArrowDown size={12} color="#6c6c6c" weight="bold" /> : null}
+        <div style={{ fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 400, color: '#aaaaaa', lineHeight: '1' }}>{cost ? available - cost : available} available</div>
+        {cost ? <ArrowDown size={12} color="#c0c0c0" weight="bold" /> : null}
       </div>
     </div>
   )
@@ -77,12 +77,12 @@ function ResourceItem({ icon, label, count, cost }: ResourceItemProps) {
       <div style={{ width: '32px', height: '32px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
       </div>
-      <div style={{ fontSize: '16px', fontWeight: 400, color: '#acacac', lineHeight: '1' }}>{label}</div>
+      <div style={{ fontSize: '16px', fontWeight: 400, color: '#848484', lineHeight: '1' }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 400, color: '#ffffff', lineHeight: '1' }}>
+        <div style={{ fontSize: '16px', fontWeight: 400, color: '#aaaaaa', lineHeight: '1' }}>
           {cost ? count - cost : count}
         </div>
-        {cost ? <ArrowDown size={12} color="#6c6c6c" weight="bold" /> : null}
+        {cost ? <ArrowDown size={12} color="#c0c0c0" weight="bold" /> : null}
       </div>
     </div>
   )

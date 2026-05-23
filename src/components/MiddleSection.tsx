@@ -39,7 +39,7 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
         // Fill remaining slots with unused valid rituals (calmest first)
         const rest = valid.filter(r => !used.has(r.id)).sort((a, b) => (outcomeOrder[b.outcomeColor] ?? 4) - (outcomeOrder[a.outcomeColor] ?? 4))
         for (const r of rest) {
-          if (result.length >= 4) break
+          if (result.length >= 3) break
           result.push(r)
         }
         return result.sort((a, b) => (outcomeOrder[a.outcomeColor] ?? 4) - (outcomeOrder[b.outcomeColor] ?? 4))
@@ -75,11 +75,14 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       {/* Separator */}
       <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
-      {/* Ritual content */}
-      <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 300, color: 'rgba(255,255,255,0.55)', opacity: selectedGod ? 1 : 0.12 }}>
-        Appeasement Rituals
-      </p>
-      <div style={{ marginTop: '24px', padding: '0 31px', display: 'flex', gap: (selectedGod && rituals.length < 4) ? 'calc((100% - 1000px) / 3)' : '0', justifyContent: (selectedGod && rituals.length < 4) ? 'center' : 'space-between', opacity: selectedGod ? 1 : 0.12 }}>
+      {/* Ritual label */}
+      <div style={{ marginTop: '100px', width: '100%', display: 'flex', justifyContent: 'center', padding: '0 31px', boxSizing: 'border-box', opacity: selectedGod ? 1 : 0.12 }}>
+        <p style={{ margin: 0, width: '100%', maxWidth: '798px', textAlign: 'left', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.35)' }}>
+          Ritual Options
+        </p>
+      </div>
+
+      <div style={{ marginTop: '14px', display: 'flex', gap: '24px', justifyContent: 'center', opacity: selectedGod ? 1 : 0.12, padding: '0 31px' }}>
         {selectedGod ? (
           <>
             {rituals.map(ritual => (
@@ -89,8 +92,8 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
             ))}</>
 
         ) : (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '506px', width: '250px' }} />
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '506px', width: '250px', flexShrink: 0 }} />
           ))
         )}
       </div>
