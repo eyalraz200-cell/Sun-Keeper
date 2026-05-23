@@ -9,12 +9,7 @@ interface AppShellProps {
   gods: God[]
   selectedGodId: string | null
   onSelectGod: (godId: string) => void
-  resources: {
-    prisoners: number
-    children: number
-    virgins: number
-    volunteers: number
-  }
+  resources: { prisoners: number; children: number; virgins: number; volunteers: number }
   mainContent: ReactNode
   rightPanelContent?: ReactNode
 }
@@ -52,22 +47,11 @@ export function AppShell({
       {/* Deity list sidebar - full height */}
       <GodList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
 
-      {/* Main content column - main + resource bar */}
+      {/* Main content column */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {/* Main content area */}
-        <div
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            backgroundColor: COLORS.bgBase,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <div style={{ flex: 1, overflow: 'auto', backgroundColor: COLORS.bgBase, display: 'flex', flexDirection: 'column' }}>
           {mainContent}
         </div>
-
-        {/* Resource bar - only spans main content width */}
         <ResourceBar
           prisoners={resources.prisoners}
           children={resources.children}

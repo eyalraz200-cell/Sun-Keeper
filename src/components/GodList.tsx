@@ -104,7 +104,7 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
                 fontFamily: FONTS.spectral,
                 fontSize: '16px',
                 fontWeight: 400,
-                color: COLORS.textPrimary,
+                color: '#ffffff',
                 lineHeight: '1',
               }}
             >
@@ -117,7 +117,7 @@ export function GodList({ gods, selectedGodId, onSelect }: GodListProps) {
                 fontFamily: FONTS.spectral,
                 fontSize: '14px',
                 fontWeight: 300,
-                color: COLORS.textSecondary,
+                color: 'rgba(255,255,255,0.7)',
               }}
             >
               Sorted by anger level

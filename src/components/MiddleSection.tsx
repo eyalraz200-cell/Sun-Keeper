@@ -1,12 +1,20 @@
-import type { God, Ritual } from '../data/gods'
+import type { God, Ritual, AngerLevel } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
 import { RitualCard } from './RitualCard'
+import { CtaButton } from './CtaButton'
 
 interface MiddleSectionProps {
   selectedGod: God | null
   selectedRitualId: string | null
   onSelectRitual: (ritualId: string) => void
   onPerformRitual: () => void
+}
+
+const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
+  high:   { color: '#FF2435', weight: 6 },
+  medium: { color: '#EF7B2E', weight: 4 },
+  low:    { color: '#D7C94E', weight: 3 },
+  none:   { color: '#6C6C6C', weight: 2 },
 }
 
 export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual }: MiddleSectionProps) {
@@ -33,7 +41,7 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
           if (result.length >= 4) break
           result.push(r)
         }
-        return result
+        return result.sort((a, b) => (outcomeOrder[a.outcomeColor] ?? 4) - (outcomeOrder[b.outcomeColor] ?? 4))
       })()
     : []
 
@@ -41,12 +49,20 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingTop: '28px' }}>
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0 31px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: selectedGod ? '#ffffff' : COLORS.textMuted }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            flexShrink: 0,
+            backgroundColor: 'transparent',
+            boxShadow: selectedGod
+              ? `inset 0 0 0 ${EYE_STYLES[selectedGod.angerLevel].weight}px ${EYE_STYLES[selectedGod.angerLevel].color}`
+              : `inset 0 0 0 2px ${COLORS.textMuted}`,
+          }} />
           <h1 style={{ margin: 0, fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '1.2px', color: selectedGod ? '#ffffff' : COLORS.textMuted, lineHeight: '1' }}>
             {selectedGod ? selectedGod.name : 'No God Selected'}
           </h1>
-          <div style={{ width: '2px', height: '2px', borderRadius: '50%', backgroundColor: selectedGod ? '#ffffff' : COLORS.textMuted }} />
         </div>
       </div>
 
@@ -59,41 +75,31 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
       {/* Ritual content */}
-      <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 300, color: '#ffffff', opacity: selectedGod ? 1 : 0.12 }}>
+      <p style={{ margin: '70px 31px 0', fontFamily: FONTS.spectral, fontSize: '16px', fontWeight: 300, color: 'rgba(255,255,255,0.55)', opacity: selectedGod ? 1 : 0.12 }}>
         Appeasement Rituals
       </p>
-      <div style={{ marginTop: '24px', padding: '0 31px', display: 'grid', gridTemplateColumns: 'repeat(4, 250px)', gap: '19px', justifyContent: 'space-between', opacity: selectedGod ? 1 : 0.12 }}>
+      <div style={{ marginTop: '24px', padding: '0 31px', display: 'flex', gap: (selectedGod && rituals.length < 4) ? 'calc((100% - 1000px) / 3)' : '0', justifyContent: (selectedGod && rituals.length < 4) ? 'center' : 'space-between', opacity: selectedGod ? 1 : 0.12 }}>
         {selectedGod ? (
-          rituals.map(ritual => (
-            <RitualCard key={ritual.id} ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} />
-          ))
+          <>
+            {rituals.map(ritual => (
+              <div key={ritual.id} style={{ width: '250px', flexShrink: 0 }}>
+                <RitualCard ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} />
+              </div>
+            ))}</>
+
         ) : (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.15)', borderRadius: '14px', minHeight: '560px', width: '250px' }} />
+            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.08)', borderRadius: '14px', minHeight: '465px', width: '250px' }} />
           ))
         )}
       </div>
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <button
+        <CtaButton
+          label="AUTHORIZE RITUAL"
           onClick={onPerformRitual}
-          disabled={!selectedRitual}
-          style={{
-            width: '183px',
-            height: '44px',
-            border: selectedGod ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.25)',
-            borderRadius: '8px',
-            backgroundColor: selectedRitual ? '#ffffff' : 'transparent',
-            color: selectedRitual ? '#000000' : '#ffffff',
-            fontFamily: FONTS.spectral,
-            fontWeight: 500,
-            fontSize: '16px',
-            textTransform: 'uppercase',
-            cursor: selectedRitual ? 'pointer' : 'not-allowed',
-            opacity: selectedGod ? (selectedRitual ? 1 : 0.39) : 0.12,
-          }}
-        >
-          SEND ORDER
-        </button>
+          active={!!selectedRitual}
+          visible={!!selectedGod}
+        />
       </div>
     </div>
   )

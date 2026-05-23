@@ -3,30 +3,6 @@ import { AppShell } from './components/AppShell'
 import { MiddleSection } from './components/MiddleSection'
 import { RightPanel } from './components/RightPanel'
 import { GODS } from './data/gods'
-import type { God, AngerLevel } from './data/gods'
-
-const tlaloc          = GODS.find(g => g.id === 'tlaloc')!
-const quetzalcoatl    = GODS.find(g => g.id === 'quetzalcoatl')!
-const huitzilopochtli = GODS.find(g => g.id === 'huitzilopochtli')!
-const tezcatlipoca    = GODS.find(g => g.id === 'tezcatlipoca')!
-const mictlantecuhtli = GODS.find(g => g.id === 'mictlantecuhtli')!
-
-function variants(base: God, name: string): God[] {
-  return [
-    { ...base, id: `${base.id}-high`,   name, angerLevel: 'high'   as AngerLevel, angerColor: '#c8322e' },
-    { ...base, id: `${base.id}-medium`, name, angerLevel: 'medium' as AngerLevel, angerColor: '#d4662a' },
-    { ...base, id: `${base.id}-low`,    name, angerLevel: 'low'    as AngerLevel, angerColor: '#c8a83c' },
-    { ...base, id: `${base.id}-none`,   name, angerLevel: 'none'   as AngerLevel, angerColor: '#6C6C6C' },
-  ]
-}
-
-const DEITY_VARIANTS: God[] = [
-  ...variants(tlaloc,          'Tlaloc'),
-  ...variants(quetzalcoatl,    'Quetzalcoatl'),
-  ...variants(huitzilopochtli, 'Huitzilopochtli'),
-  ...variants(tezcatlipoca,    'Tezcatlipoca'),
-  ...variants(mictlantecuhtli, 'Mictlantecuhtli'),
-]
 
 function App() {
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
@@ -39,7 +15,7 @@ function App() {
     volunteers: 20,
   }
 
-  const selectedGod = DEITY_VARIANTS.find(g => g.id === selectedGodId) ?? null
+  const selectedGod = GODS.find(g => g.id === selectedGodId) ?? null
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
 
   const handleSelectGod = (godId: string) => {
@@ -66,7 +42,7 @@ function App() {
 
   return (
     <AppShell
-      gods={DEITY_VARIANTS}
+      gods={GODS}
       selectedGodId={selectedGodId}
       onSelectGod={handleSelectGod}
       resources={resources}
@@ -79,12 +55,10 @@ function App() {
         />
       }
       rightPanelContent={
-        selectedRitual && (
-          <RightPanel
-            ritual={selectedRitual}
-            gods={GODS}
-          />
-        )
+        <RightPanel
+          ritual={selectedRitual}
+          gods={GODS}
+        />
       }
     />
   )

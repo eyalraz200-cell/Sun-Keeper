@@ -7,14 +7,14 @@ import tlalocRaw from '../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from '../assets/Gods/huitzilopochtli.svg?raw'
 import tezcatlipocaRaw from '../assets/Gods/Tezcatlipoca.svg?raw'
-import mictlantecuhtliRaw from '../assets/Gods/Mictlantecuhtli.svg?raw'
 
 const GOD_SVG_MAP: Record<string, string> = {
   tlaloc: tlalocRaw,
   quetzalcoatl: quetzalcoatlRaw,
   huitzilopochtli: huitzilopochtliRaw,
   tezcatlipoca: tezcatlipocaRaw,
-  mictlantecuhtli: mictlantecuhtliRaw,
+  coyolxauhqui: quetzalcoatlRaw,
+  tonatiuh: huitzilopochtliRaw,
 }
 
 function getSvgRaw(godId: string): string {
@@ -79,7 +79,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
             padding: 0,
             fontFamily: FONTS.cinzel,
             fontSize: '12px',
-            fontWeight: isSelected ? 700 : 400,
+            fontWeight: 500,
             textTransform: 'uppercase',
             letterSpacing: '1px',
             color: isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
@@ -90,9 +90,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
             overflow: 'hidden',
           }}
         >
-          <span style={{ flexShrink: 0 }}>·</span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{god.name}</span>
-          <span style={{ flexShrink: 0 }}>·</span>
         </h3>
       </div>
 

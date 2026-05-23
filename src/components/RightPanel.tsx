@@ -14,43 +14,8 @@ export function RightPanel({ ritual, gods }: RightPanelProps) {
           width: '100%',
           height: '100%',
           backgroundColor: COLORS.bgBase,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '32px 16px',
-          textAlign: 'center',
         }}
-      >
-        <div
-          style={{
-            width: '60%',
-            height: '1px',
-            backgroundColor: COLORS.border,
-            marginBottom: '16px',
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontFamily: FONTS.spectral,
-            fontSize: '12px',
-            fontStyle: 'italic',
-            color: COLORS.textMuted,
-            lineHeight: '1.6',
-          }}
-        >
-          Select a ritual to reveal its consequences
-        </p>
-        <div
-          style={{
-            width: '60%',
-            height: '1px',
-            backgroundColor: COLORS.border,
-            marginTop: '16px',
-          }}
-        />
-      </div>
+      />
     )
   }
 
@@ -70,7 +35,6 @@ export function RightPanel({ ritual, gods }: RightPanelProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Scrollable content */}
       <div
         style={{
           flex: 1,
@@ -200,7 +164,6 @@ export function RightPanel({ ritual, gods }: RightPanelProps) {
           </p>
         </div>
       </div>
-
     </div>
   )
 }

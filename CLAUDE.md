@@ -70,23 +70,32 @@ interface DeityListProps {
 }
 ```
 
-**Renders:** 191px-wide scrollable sidebar (scrollbar hidden via `scrollbarWidth: 'none'`). "Deities" header. Gods sorted by anger level (high → medium → low → none). Each god as `DeityCard` with 8px gap. Currently displays 4 Tlaloc anger-state variants (defined as `TLALOC_VARIANTS` in `src/App.tsx`).
+**Renders:** 191px-wide scrollable sidebar (scrollbar hidden via `scrollbarWidth: 'none'`). "Deities" header. Gods sorted by anger level (high → medium → low → none). Each god as `GodCard` with 8px gap. Currently displays 6 real gods: Huitzilopochtli (high), Tlaloc (high), Tezcatlipoca (medium), Coyolxauhqui (medium), Quetzalcoatl (low), Tonatiuh (none). Defined in `GODS` in `src/data/gods.ts`, used directly in `src/App.tsx`.
 
 ---
 
-### DeityCard
-**File:** `src/components/DeityCard.tsx`
+### GodCard
+**File:** `src/components/GodCard.tsx`
 
 **Props:**
 ```ts
-interface DeityCardProps {
+interface GodCardProps {
   god: God
   isSelected: boolean
   onClick: () => void
+  stuckProgress?: number
 }
 ```
 
 **Renders:** Button card sized naturally (no minHeight). Padding: `8px` top, `16px` bottom. No transition (`transition: 'none'`). Tracks hover with `useState`. Passes `isHovered` and `isSelected` to `GodSvg` via `getSvgRaw(god.id)` lookup in `GOD_SVG_MAP`.
+
+**SVG map** (`GOD_SVG_MAP` in `GodCard.tsx`):
+- `tlaloc` → `Tlaloc.svg`
+- `quetzalcoatl` → `Quetzalcoatl.svg`
+- `huitzilopochtli` → `huitzilopochtli.svg`
+- `tezcatlipoca` → `Tezcatlipoca.svg`
+- `coyolxauhqui` → `Quetzalcoatl.svg` (placeholder)
+- `tonatiuh` → `huitzilopochtli.svg` (placeholder)
 
 **State matrix:**
 
@@ -144,9 +153,32 @@ On hover with `none`: eyes → `#ffffff`. On selected with `none`: eyes → `#00
 1. Export SVG from Figma with "Include 'id' attribute" enabled, name the eyes group `eyes`
 2. Set eye circle radius to `r="9"` in the SVG file
 3. Drop file into `src/assets/Gods/`
-4. Create `src/components/[Name]Svg.tsx` (copy QuetzalcoatlSvg pattern)
-5. Add to `GOD_SVG_MAP` in `src/components/DeityCard.tsx`
-6. Add 4 variants to `DEITY_VARIANTS` in `src/App.tsx`
+4. Add import and entry to `GOD_SVG_MAP` in `src/components/GodCard.tsx`
+5. Add the god to `GODS` array in `src/data/gods.ts`
+
+---
+
+### MiddleSection
+**File:** `src/components/MiddleSection.tsx`
+
+**Props:**
+```ts
+interface MiddleSectionProps {
+  selectedGod: God | null
+  selectedRitualId: string | null
+  onSelectRitual: (ritualId: string) => void
+  onPerformRitual: () => void
+}
+```
+
+**Renders:** Main content area. Shows god name + subtitle header, then "Appeasement Rituals" label, then a flex row of `RitualCard`s, then a centered "SEND ORDER" button.
+
+**Ritual filtering:** Shows only rituals whose `outcomeColor` is at least as calm as the god's anger level. A `high`-anger god shows all 4 outcome colors; `medium` shows 3 (orange through gold); `low` shows 2; `none` shows 1. One ritual per outcome color, up to 4 total.
+
+**Card layout:**
+- Cards are 250px wide, `flexShrink: 0`, wrapped in a div
+- 4 cards: `justifyContent: 'space-between'`
+- Fewer than 4: `justifyContent: 'center'`, `gap: calc((100% - 1000px) / 3)` — matches the space-between gap of the 4-card layout at the same container width
 
 ---
 
@@ -162,7 +194,16 @@ interface RitualCardProps {
 }
 ```
 
-**Renders:** Full-width card with name, description, divider, participants, schedule. Left border shows `outcomeColor`. If unavailable: opacity 0.4 + "INSUFFICIENT RESOURCES" label.
+**Renders:** 250px-wide card (`minHeight: 465px`, `backgroundColor: #181818`). Sections top to bottom:
+1. **Name** — centered, Spectral 16px light
+2. **Description** — centered, Spectral 12px, `rgba(255,255,255,0.64)`
+3. **Divider** — inset `13px` each side
+4. **Blood Price** — label + Volunteers row (Link icon) + Virgins row (SunDim icon)
+5. **Sacred Site** — label + site name/count row + Duration row (no icons)
+6. **Divider** — inset `13px`, pinned above outcome via `marginTop: auto`
+7. **Resulting State** — centered outcome eye + label
+
+**Outcome eye:** rendered as a circle with `boxShadow: inset 0 0 0 {weight}px {color}`. Colors/weights from `outcomeEye()`: `#c8322e`→red/6, `#d4662a`→orange/4, `#d4a83c`→yellow/3, default→white/2.
 
 ---
 
@@ -199,19 +240,18 @@ interface PrimaryButtonProps {
 
 ---
 
-### PantheonEffects
-**File:** `src/components/PantheonEffects.tsx`
+### RightPanel
+**File:** `src/components/RightPanel.tsx`
 
 **Props:**
 ```ts
-interface PantheonEffectsProps {
-  ritual: Ritual | null
+interface RightPanelProps {
+  ritual: Ritual
   gods: God[]
-  onPerformRitual: () => void
 }
 ```
 
-**Renders:** 331px-wide right panel at full viewport height. Uses width/height 100% to fill parent container. Null state: placeholder text. Ritual selected: three scrollable sections (Divine Ripple, Auspicious Timing, Imperial Counsel) + Perform Ritual button at bottom.
+**Renders:** 331px-wide right panel at full viewport height. Uses width/height 100% to fill parent container. Shows ritual effect details. Only rendered when a ritual is selected (`rightPanelContent` in `AppShell` is conditionally passed from `App.tsx`).
 
 ---
 
@@ -326,7 +366,7 @@ Before implementing layout changes: take a screenshot and compare against Figma.
 
 **`AngerLevel`:** `'high' | 'medium' | 'low' | 'none'` — four states, `'none'` means unappeased/grey.
 
-The sidebar shows 4 variants per god (one per anger state), defined in `src/App.tsx` as `DEITY_VARIANTS`. Currently includes Tlaloc and Quetzalcoatl (8 cards total).
+The sidebar shows 6 real gods, each with a single baked-in anger state. Defined as `GODS` in `src/data/gods.ts`, used directly in `src/App.tsx`.
 
 ```ts
 type AngerLevel = 'high' | 'medium' | 'low' | 'none'
@@ -335,7 +375,6 @@ interface God {
   id: string
   name: string
   subtitle: string
-  svg: string
   angerLevel: AngerLevel
   angerColor: string
   favor: number
@@ -346,11 +385,57 @@ interface Ritual {
   id: string
   name: string
   description: string
-  participants: { prisoners: number; children: number; virgins: number; volunteers: number }
-  schedule: string
+  participants: { volunteers: number; virgins: number; prisoners: number; children: number }
+  sacredSite: { name: string; count: number }
   duration: string
   outcomeColor: string
   available: boolean
   effects: Array<{ godId: string; before: number; after: number }>
 }
 ```
+
+**Sacred site values:** `{ name: 'Temple', count: 1 }` or `{ name: 'Great Temple', count: 1|2 }` — only these two site names are valid.
+
+---
+
+## Ritual Data Conventions
+
+Two compounding rules govern all ritual data:
+1. **Peaceful outcome = most expensive** — fully calming a god requires the most sacrifice
+2. **Angrier god = harder to appease** — a HIGH god's cheapest ritual is still more demanding than a NONE god's only ritual
+
+### Visible cards per god anger level
+| Anger | Cards shown | Cards hidden |
+|---|---|---|
+| high | Furious + Angry + Uneasy + Peaceful | — |
+| medium | Angry + Uneasy + Peaceful | Furious |
+| low | Uneasy + Peaceful | Furious + Angry |
+| none | Peaceful only | all others |
+
+### Cost matrix (approximate totals)
+| | Furious (cheapest) | Angry | Uneasy | Peaceful (most expensive) |
+|---|---|---|---|---|
+| **high** | 80–100P, 1 type, Temple×1, 2d | 150P+60V, 2 types, Temple×1, 3d | 280P+100V+25C, 3 types, GT×1, 4d | 450P+200V+70C+7Vg, 4 types, GT×2, 5d |
+| **medium** | (hidden) 20P | 60P+30V, 2 types, Temple×1, 2d | 120P+70V+15C, 3 types, Temple×1, 3d | 200P+120V+35C+4Vg, GT×1, 4d |
+| **low** | (hidden) 10V | (hidden) 30V | 80V+1Vg, 1 type, Temple×1, 2d | 150V+30P+10C+2Vg, Temple×1, 3d |
+| **none** | (hidden) 10V | (hidden) 20V | (hidden) 40V | 80V, Temple×1, 1d |
+
+### Participant count scales
+- **Prisoners:** tens to hundreds (20–500); absent or minimal for low/none gods
+- **Volunteers:** tens to hundreds; dominant for low/none gods
+- **Children:** tens to hundreds; used by Tlaloc most heavily
+- **Virgins:** single digits only (1–7); absent in cheapest rituals
+
+### Victim type variety
+- Each ritual has 1–4 types; set unused types to `0` (hidden on card)
+- Cheapest rituals: 1 type. Most expensive: 3–4 types
+- Display order: **Prisoners → Volunteers → Children → Virgins**
+
+### Sacred site rules
+- `{ name: 'Temple', count: 1 }` — default
+- `{ name: 'Great Temple', count: 1 }` — intense rituals
+- `{ name: 'Great Temple', count: 2 }` — most expensive (Peaceful) for HIGH gods only
+- Only `Temple` and `Great Temple` are valid site names
+
+### Duration
+- Always in days; cheapest: 1–2 days; most expensive: 4–5 days
