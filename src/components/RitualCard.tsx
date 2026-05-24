@@ -25,22 +25,24 @@ interface RitualCardProps {
   ritual: Ritual
   isSelected: boolean
   onClick: () => void
+  isActive?: boolean
+  onHoverChange?: (isHovered: boolean) => void
 }
 
-export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange }: RitualCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => { setIsHovered(true); onHoverChange?.(true) }}
+      onMouseLeave={() => { setIsHovered(false); onHoverChange?.(false) }}
       style={{
         width: '100%',
         height: '488px',
         padding: '0',
         backgroundColor: '#181818',
-        border: isSelected ? '2px solid #ffffff' : isHovered ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.08)',
+        border: isSelected || isActive ? '2px solid #ffffff' : isHovered ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.08)',
         borderRadius: '14px',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
@@ -49,14 +51,15 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
         gap: '0',
         opacity: 1,
         textAlign: 'left',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
       }}
     >
       {/* Title + Description — fixed height so middle section always aligns */}
       <div style={{ height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', padding: '0 24px' }}>
-        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '18px', color: '#ffffff', margin: '0', textAlign: 'center' }}>
+        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '18px', color: isSelected || isActive || isHovered ? '#ffffff' : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'center' }}>
           {ritual.name}
         </h3>
-        <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: isSelected ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '8px 0 0', padding: '0', lineHeight: '1.4' }}>
+        <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: isSelected || isActive ? 'rgba(255,255,255,0.5)' : isHovered ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '8px 0 0', padding: '0', lineHeight: '1.4' }}>
           {ritual.description}
         </p>
       </div>

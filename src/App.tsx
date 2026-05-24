@@ -4,6 +4,10 @@ import { AppShell } from './components/AppShell'
 import { MiddleSection } from './components/MiddleSection'
 import { RightPanel } from './components/RightPanel'
 import { GodSvg } from './components/GodSvg'
+import { PrisonerIcon } from './components/PrisonerIcon'
+import { VolunteerIcon } from './components/VolunteerIcon'
+import { ChildrenIcon } from './components/ChildrenIcon'
+import { VirginIcon } from './components/VirginIcon'
 import { GODS } from './data/gods'
 import tlalocRaw from './assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from './assets/Gods/Quetzalcoatl.svg?raw'
@@ -51,8 +55,10 @@ const GOD_SVG_MAP: Record<string, string> = {
 function App() {
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
+  const [hoveredRitualId, setHoveredRitualId] = useState<string | null>(null)
   const [ritualActive, setRitualActive] = useState(false)
   const [ritualDismissing, setRitualDismissing] = useState(false)
+  const [activeRituals, setActiveRituals] = useState<Record<string, string>>({})  // godId → ritualId
 
   const resources = {
     prisoners: 1840,
@@ -63,6 +69,7 @@ function App() {
 
   const selectedGod = GODS.find(g => g.id === selectedGodId) ?? null
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
+  const hoveredRitual = selectedGod?.rituals.find(r => r.id === hoveredRitualId) ?? null
 
   const handleSelectGod = (godId: string) => {
     if (selectedGodId === godId) {
@@ -83,7 +90,8 @@ function App() {
   }
 
   const handlePerformRitual = () => {
-    if (!selectedGod) return
+    if (!selectedGod || !selectedRitualId) return
+    setActiveRituals(prev => ({ ...prev, [selectedGod.id]: selectedRitualId }))
     setRitualActive(true)
   }
 
@@ -103,12 +111,16 @@ function App() {
         onSelectGod={handleSelectGod}
         resources={resources}
         selectedRitual={selectedRitual}
+        hoveredRitual={hoveredRitual}
+        activeRituals={activeRituals}
         mainContent={
           <MiddleSection
             selectedGod={selectedGod}
             selectedRitualId={selectedRitualId}
             onSelectRitual={handleSelectRitual}
             onPerformRitual={handlePerformRitual}
+            activeRituals={activeRituals}
+            onHoverRitual={setHoveredRitualId}
           />
         }
         rightPanelContent={
@@ -142,21 +154,47 @@ function App() {
             {/* Top/bottom gradients */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 12%, rgba(0,0,0,0) 88%, rgba(0,0,0,0.5) 100%)', pointerEvents: 'none', zIndex: 2 }} />
             {/* Face: independently centered, nudged up */}
-            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, calc(-50% - 12vh))', width: '62vmin', height: '62vmin', zIndex: 3, opacity: 0, animation: 'contentFadeIn 2.4s ease 0.8s forwards' }}>
+            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, calc(-50% - 12vh - 2.5vmin))', width: '57vmin', height: '57vmin', zIndex: 3, opacity: 0, animation: 'contentFadeIn 2.4s ease 0.8s forwards' }}>
               <GodSvg
                 svgRaw={GOD_SVG_MAP[selectedGod.id] ?? tlalocRaw}
                 angerLevel={ritualDismissing ? toAnger : selectedGod.angerLevel}
                 isHovered={true}
-                eyeAnimation={ritualDismissing ? undefined : { fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 2.0, duration: 2 }}
+                eyeAnimation={ritualDismissing ? undefined : { fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 5.0, duration: 2 }}
               />
             </div>
+            {/* Victim list: fades in early, fades out before eye animation */}
+            {(() => {
+              const { prisoners, volunteers, children, virgins } = selectedRitual.participants
+              const items = [
+                { label: 'Prisoners', count: prisoners, Icon: PrisonerIcon },
+                { label: 'Volunteers', count: volunteers, Icon: VolunteerIcon },
+                { label: 'Children', count: children, Icon: ChildrenIcon },
+                { label: 'Virgins', count: virgins, Icon: VirginIcon },
+              ].filter(item => item.count > 0)
+              return (
+                <div style={{ position: 'absolute', top: 'calc(50% - 12vh - 2.5vmin + 28.5vmin + 54px)', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 3, opacity: 0, animation: 'victimListShow 4.0s ease 2.0s both' }}>
+                  <span style={{ fontFamily: "'Cinzel', serif", fontSize: '16px', fontWeight: 400, color: '#ffffff', letterSpacing: '2px', opacity: 0.5, marginBottom: '4px' }}>Blood Sacrifice</span>
+                  {items.map(({ label, count, Icon }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff', whiteSpace: 'nowrap' }}>
+                        {count.toLocaleString()}
+                      </span>
+                      <Icon size={20} color="#ffffff" />
+                      <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
             {/* Text: anchored independently */}
-            <div style={{ position: 'absolute', bottom: '23vh', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap', zIndex: 3, opacity: 0, animation: 'contentFadeIn 1.4s ease 3.6s forwards' }}>
+            <div style={{ position: 'absolute', top: 'calc(50% - 12vh - 2.5vmin + 28.5vmin + 54px)', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap', zIndex: 3, opacity: 0, animation: 'contentFadeIn 1.4s ease 7.0s forwards' }}>
                 <span style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 400, color: '#ffffff', letterSpacing: '1px' }}>
                   {selectedGod.name.toUpperCase()}
                 </span>
                 <span style={{ fontFamily: "'Spectral', serif", fontSize: '20px', fontWeight: 300, color: '#ffffff' }}>
-                  will become
+                  will turn
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{
@@ -180,11 +218,11 @@ function App() {
               className="ritual-continue-btn"
               style={{
                 position: 'absolute',
-                bottom: '9vh',
+                bottom: '14vh',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                fontFamily: "'Cinzel', serif",
-                fontSize: '13px',
+                fontFamily: "'Spectral', Georgia, serif",
+                fontSize: '16px',
                 fontWeight: 400,
                 letterSpacing: '1.5px',
                 border: '1px solid #ffffff',
@@ -194,7 +232,7 @@ function App() {
                 whiteSpace: 'nowrap',
                 zIndex: 3,
                 opacity: 0,
-                animation: 'contentFadeIn 0.6s ease 5.0s forwards',
+                animation: 'contentFadeIn 0.6s ease 8.4s forwards',
               }}
             >
               CONTINUE
@@ -215,6 +253,12 @@ function App() {
         @keyframes contentFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        @keyframes victimListShow {
+          0% { opacity: 0; }
+          20% { opacity: 1; }
+          75% { opacity: 1; }
+          100% { opacity: 0; }
         }
         .ritual-continue-btn {
           background-color: transparent;

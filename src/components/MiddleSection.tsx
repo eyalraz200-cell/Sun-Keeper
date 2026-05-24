@@ -8,6 +8,8 @@ interface MiddleSectionProps {
   selectedRitualId: string | null
   onSelectRitual: (ritualId: string) => void
   onPerformRitual: () => void
+  activeRituals?: Record<string, string>
+  onHoverRitual?: (ritualId: string | null) => void
 }
 
 const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
@@ -17,7 +19,7 @@ const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
   none:   { color: '#6C6C6C', weight: 2 },
 }
 
-export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual }: MiddleSectionProps) {
+export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual, activeRituals = {}, onHoverRitual }: MiddleSectionProps) {
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
 
   const outcomeOrder: Record<string, number> = { '#c8322e': 0, '#d4662a': 1, '#d4a83c': 2, '#c8a83c': 3 }
@@ -25,6 +27,9 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
   const rituals: Ritual[] = selectedGod
     ? [...selectedGod.rituals].sort((a, b) => (outcomeOrder[a.outcomeColor] ?? 4) - (outcomeOrder[b.outcomeColor] ?? 4))
     : []
+
+  const activeRitualId = selectedGod ? activeRituals[selectedGod.id] ?? null : null
+  const ritualActiveForCurrentGod = !!activeRitualId
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingTop: '28px' }}>
@@ -56,7 +61,7 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
       {/* Ritual label */}
-      <div style={{ marginTop: '100px', width: '100%', display: 'flex', justifyContent: 'center', padding: '0 31px', boxSizing: 'border-box', opacity: selectedGod ? 1 : 0.12 }}>
+      <div style={{ marginTop: '100px', width: '100%', display: 'flex', justifyContent: 'center', padding: '0 31px', boxSizing: 'border-box', opacity: selectedGod ? 1 : 0.12, visibility: ritualActiveForCurrentGod ? 'hidden' : 'visible' }}>
         <p style={{ margin: 0, width: '100%', maxWidth: '798px', textAlign: 'left', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.55)' }}>
           Sacrificial Ritual Options
         </p>
@@ -65,11 +70,19 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       <div style={{ marginTop: '14px', display: 'flex', gap: '24px', justifyContent: 'center', opacity: selectedGod ? 1 : 0.12, padding: '0 31px' }}>
         {selectedGod ? (
           <>
-            {rituals.map(ritual => (
-              <div key={ritual.id} style={{ width: '250px', flexShrink: 0 }}>
-                <RitualCard ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} />
-              </div>
-            ))}</>
+            {rituals.map(ritual => {
+              const isActive = ritual.id === activeRitualId
+              return (
+                <div key={ritual.id} style={{ width: '250px', flexShrink: 0, opacity: ritualActiveForCurrentGod && !isActive ? 0.25 : 1, pointerEvents: ritualActiveForCurrentGod ? 'none' : undefined, position: 'relative' }}>
+                  {isActive && (
+                    <p style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, margin: '0 0 8px', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff', textAlign: 'center', letterSpacing: '0.5px' }}>
+                      Active Ritual
+                    </p>
+                  )}
+                  <RitualCard ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} isActive={isActive} onHoverChange={(hovered) => onHoverRitual?.(hovered ? ritual.id : null)} />
+                </div>
+              )
+            })}</>
 
         ) : (
           Array.from({ length: 3 }).map((_, i) => (
@@ -77,14 +90,16 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
           ))
         )}
       </div>
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <CtaButton
-          label="AUTHORIZE RITUAL"
-          onClick={onPerformRitual}
-          active={!!selectedRitual}
-          visible={!!selectedGod}
-        />
-      </div>
+      {!ritualActiveForCurrentGod && (
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <CtaButton
+            label="AUTHORIZE RITUAL"
+            onClick={onPerformRitual}
+            active={!!selectedRitual}
+            visible={!!selectedGod}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -11,8 +11,10 @@ interface AppShellProps {
   onSelectGod: (godId: string) => void
   resources: { prisoners: number; children: number; virgins: number; volunteers: number }
   selectedRitual?: Ritual | null
+  hoveredRitual?: Ritual | null
   mainContent: ReactNode
   rightPanelContent?: ReactNode
+  activeRituals?: Record<string, string>
 }
 
 const RIGHT_PANEL_BREAKPOINT = 900
@@ -23,8 +25,10 @@ export function AppShell({
   onSelectGod,
   resources,
   selectedRitual,
+  hoveredRitual,
   mainContent,
   rightPanelContent,
+  activeRituals,
 }: AppShellProps) {
   const [showRightPanel, setShowRightPanel] = useState(window.innerWidth >= RIGHT_PANEL_BREAKPOINT)
 
@@ -47,7 +51,7 @@ export function AppShell({
       <SidebarNav />
 
       {/* Deity list sidebar - full height */}
-      <GodList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} />
+      <GodList gods={gods} selectedGodId={selectedGodId} onSelect={onSelectGod} activeRituals={activeRituals} />
 
       {/* Main content column */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -60,6 +64,7 @@ export function AppShell({
           virgins={resources.virgins}
           volunteers={resources.volunteers}
           selectedRitual={selectedRitual}
+          hoveredRitual={hoveredRitual}
           dimmed={!selectedGodId}
         />
       </div>

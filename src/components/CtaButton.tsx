@@ -32,6 +32,7 @@ export function CtaButton({ label, onClick, active = false, visible = true }: Ct
         textTransform: 'uppercase',
         cursor: active ? 'pointer' : 'not-allowed',
         opacity: visible ? (active ? 1 : 0.39) : 0.12,
+        boxShadow: active ? '0 4px 20px rgba(0,0,0,0.45)' : 'none',
         transition: 'background-color 0.15s ease, color 0.15s ease',
       }}
     >
