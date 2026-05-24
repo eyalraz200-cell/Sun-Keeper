@@ -37,7 +37,7 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
-        minHeight: '506px',
+        height: '488px',
         padding: '0',
         backgroundColor: '#181818',
         border: isSelected ? '2px solid #ffffff' : isHovered ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.08)',
@@ -52,59 +52,58 @@ export function RitualCard({ ritual, isSelected, onClick }: RitualCardProps) {
       }}
     >
       {/* Title + Description — fixed height so middle section always aligns */}
-      <div style={{ height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'hidden' }}>
-        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '16px', color: '#ffffff', margin: '0', padding: '24px 24px 0', textAlign: 'center' }}>
+      <div style={{ height: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', padding: '0 24px' }}>
+        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '18px', color: '#ffffff', margin: '0', textAlign: 'center' }}>
           {ritual.name}
         </h3>
-        <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: '6px 24px 0', padding: '0', lineHeight: '1.4' }}>
+        <p style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: isSelected ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '8px 0 0', padding: '0', lineHeight: '1.4' }}>
           {ritual.description}
         </p>
       </div>
 
       {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 13px 12px' }} />
+      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '0 13px' }} />
 
       {/* Price section */}
-      <div style={{ padding: '16px 24px 0' }}>
-        <p style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px 0' }}>Blood Price</p>
-        <div>
+      <div style={{ padding: '20px 24px 0' }}>
         {([
-          { key: 'prisoners', label: 'Prisoners',  icon: <PrisonerIcon size={13} color="rgba(255,255,255,0.5)" /> },
-          { key: 'volunteers',label: 'Volunteers', icon: <VolunteerIcon size={13} color="rgba(255,255,255,0.5)" /> },
-          { key: 'children',  label: 'Children',  icon: <ChildrenIcon size={13} color="rgba(255,255,255,0.5)" /> },
-          { key: 'virgins',   label: 'Virgins',   icon: <VirginIcon size={13} color="rgba(255,255,255,0.5)" /> },
-        ] as const).filter(({ key }) => ritual.participants[key] > 0).map(({ key, label, icon }, i, arr) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: i < arr.length - 1 ? '6px' : 0, paddingTop: i === 0 ? '2px' : 0 }}>
+          { key: 'prisoners', label: 'Prisoners',  icon: <PrisonerIcon size={13} color="rgba(255,255,255,0.65)" /> },
+          { key: 'volunteers',label: 'Volunteers', icon: <VolunteerIcon size={13} color="rgba(255,255,255,0.65)" /> },
+          { key: 'children',  label: 'Children',  icon: <ChildrenIcon size={13} color="rgba(255,255,255,0.65)" /> },
+          { key: 'virgins',   label: 'Virgins',   icon: <VirginIcon size={13} color="rgba(255,255,255,0.65)" /> },
+        ] as const).map(({ key, label, icon }, i, arr) => {
+          const active = ritual.participants[key] > 0
+          return (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: i < arr.length - 1 ? '8px' : 0, opacity: active ? 1 : 0.12 }}>
             {icon}
-            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{label}</span>
-            <span style={{ fontFamily: FONTS.spectral, fontSize: '12px', color: '#ffffff' }}>{ritual.participants[key]}</span>
+            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>{active ? ritual.participants[key] : '—'}</span>
           </div>
-        ))}
-        </div>
+          )
+        })}
       </div>
 
       {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: COLORS.border, margin: '16px 24px' }} />
+      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '20px 13px' }} />
 
       {/* Sacrificial Site section */}
-      <div style={{ padding: '0 24px 16px' }}>
-        <p style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px 0' }}>Ritual Demand</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Site</span>
-            <span style={{ fontFamily: FONTS.spectral, fontSize: '12px', color: '#ffffff' }}>{ritual.sacredSite.name}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Duration</span>
-            <span style={{ fontFamily: FONTS.spectral, fontSize: '12px', color: '#ffffff' }}>{ritual.duration}</span>
-          </div>
+      <div style={{ padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>Site</span>
+          <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>{ritual.sacredSite.name}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>Duration</span>
+          <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>{ritual.duration}</span>
+        </div>
       </div>
 
       {/* Divider + Outcome pinned to bottom */}
-      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 13px', marginTop: 'auto' }} />
+      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '0 13px', marginTop: 'auto' }} />
 
       {/* Outcome section - centered */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px 24px 24px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>Resulting State</span>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 24px 20px' }}>
+        <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>Resulting State</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
             width: '20px',

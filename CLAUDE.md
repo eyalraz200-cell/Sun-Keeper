@@ -404,42 +404,42 @@ interface Ritual {
 
 ## Ritual Data Conventions
 
-Two compounding rules govern all ritual data:
-1. **Peaceful outcome = most expensive** — fully calming a god requires the most sacrifice
-2. **Angrier god = harder to appease** — a HIGH god's cheapest ritual is still more demanding than a NONE god's only ritual
+### Core rules (non-negotiable)
+1. **Every god has exactly 3 ritual cards** — always shown, no filtering by anger level.
+2. **Ritual outcomes must be strictly calmer than the god's current anger level** — a ritual can never result in the same or worse state than the god is already in.
+3. **Same outcome color within a god = similar overall cost** — if two of a god's cards share the same `outcomeColor`, neither can strictly dominate the other across all dimensions (victim counts, duration, site). The victim *type* can differ, but the total investment must feel comparable.
+4. **More appeasement = more sacrifice** — within a god's 3 cards, cost increases toward the most calming option.
 
-### Visible cards per god anger level
-| Anger | Cards shown | Cards hidden |
+### Outcome colors per anger level
+| God anger | Valid outcome colors | Card composition |
 |---|---|---|
-| high | Furious + Angry + Uneasy + Peaceful | — |
-| medium | Angry + Uneasy + Peaceful | Furious |
-| low | Uneasy + Peaceful | Furious + Angry |
-| none | Peaceful only | all others |
+| high | Angry + Uneasy + Peaceful | 3 unique outcome colors |
+| medium | Uneasy + Peaceful | 2× Uneasy + 1× Peaceful |
+| low | Peaceful only | 3× Peaceful |
+| none | Peaceful only | 3× Peaceful |
 
-### Cost matrix (approximate totals)
-| | Furious (cheapest) | Angry | Uneasy | Peaceful (most expensive) |
-|---|---|---|---|---|
-| **high** | 80–100P, 1 type, Temple×1, 2d | 150P+60V, 2 types, Temple×1, 3d | 280P+100V+25C, 3 types, GT×1, 4d | 450P+200V+70C+7Vg, 4 types, GT×2, 5d |
-| **medium** | (hidden) 20P | 60P+30V, 2 types, Temple×1, 2d | 120P+70V+15C, 3 types, Temple×1, 3d | 200P+120V+35C+4Vg, GT×1, 4d |
-| **low** | (hidden) 10V | (hidden) 30V | 80V+1Vg, 1 type, Temple×1, 2d | 150V+30P+10C+2Vg, Temple×1, 3d |
-| **none** | (hidden) 10V | (hidden) 20V | (hidden) 40V | 80V, Temple×1, 1d |
+### Same-outcome cost rule (for medium/low/none gods)
+When two or more cards share the same outcome color, they must have **different victim type profiles** and **no strict domination**. Example for two Uneasy cards:
+- Card A: 70 prisoners + 80 volunteers, 2 days → many captives, moderate devotees
+- Card B: 3 virgins + 180 volunteers, 3 days → no captives, precious virgins, longer
+
+Neither is strictly larger in all dimensions. ✓
 
 ### Participant count scales
-- **Prisoners:** tens to hundreds (20–500); absent or minimal for low/none gods
+- **Prisoners:** tens to hundreds; absent for low/none gods
 - **Volunteers:** tens to hundreds; dominant for low/none gods
-- **Children:** tens to hundreds; used by Tlaloc most heavily
-- **Virgins:** single digits only (1–7); absent in cheapest rituals
+- **Children:** used by Tlaloc most heavily
+- **Virgins:** single digits only (1–7 max); absent in lightest rituals
 
-### Victim type variety
-- Each ritual has 1–4 types; set unused types to `0` (hidden on card)
-- Cheapest rituals: 1 type. Most expensive: 3–4 types
+### Victim type display
+- All 4 types always shown on every card
+- Unused types (`0`) rendered at low opacity with `—` value
 - Display order: **Prisoners → Volunteers → Children → Virgins**
 
 ### Sacred site rules
 - `{ name: 'Temple', count: 1 }` — default
-- `{ name: 'Great Temple', count: 1 }` — intense rituals
-- `{ name: 'Great Temple', count: 2 }` — most expensive (Peaceful) for HIGH gods only
-- Only `Temple` and `Great Temple` are valid site names
+- `{ name: 'Grand Temple', count: 1 }` — intense rituals (3rd card of high-anger gods)
+- Only `Temple` and `Grand Temple` are valid site names
 
 ### Duration
-- Always in days; cheapest: 1–2 days; most expensive: 4–5 days
+- Always in days; lightest card: 1–2 days; most demanding: 4–5 days

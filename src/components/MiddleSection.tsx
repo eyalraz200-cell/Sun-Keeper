@@ -21,29 +21,9 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
 
   const outcomeOrder: Record<string, number> = { '#c8322e': 0, '#d4662a': 1, '#d4a83c': 2, '#c8a83c': 3 }
-  const angerOrder: Record<string, number> = { high: 0, medium: 1, low: 2, none: 3 }
 
   const rituals: Ritual[] = selectedGod
-    ? (() => {
-        const godAnger = angerOrder[selectedGod.angerLevel]
-        const threshold = godAnger < 3 ? godAnger + 1 : 3
-        const valid = [...selectedGod.rituals].filter(r => (outcomeOrder[r.outcomeColor] ?? 4) >= threshold)
-        const colors = ['#c8322e', '#d4662a', '#d4a83c', '#c8a83c'].filter(c => (outcomeOrder[c] ?? 4) >= threshold)
-        const used = new Set<string>()
-        const result: Ritual[] = []
-        // One ritual per outcome color
-        for (const color of colors) {
-          const match = valid.find(r => r.outcomeColor === color)
-          if (match) { result.push(match); used.add(match.id) }
-        }
-        // Fill remaining slots with unused valid rituals (calmest first)
-        const rest = valid.filter(r => !used.has(r.id)).sort((a, b) => (outcomeOrder[b.outcomeColor] ?? 4) - (outcomeOrder[a.outcomeColor] ?? 4))
-        for (const r of rest) {
-          if (result.length >= 3) break
-          result.push(r)
-        }
-        return result.sort((a, b) => (outcomeOrder[a.outcomeColor] ?? 4) - (outcomeOrder[b.outcomeColor] ?? 4))
-      })()
+    ? [...selectedGod.rituals].sort((a, b) => (outcomeOrder[a.outcomeColor] ?? 4) - (outcomeOrder[b.outcomeColor] ?? 4))
     : []
 
   return (
@@ -77,8 +57,8 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
 
       {/* Ritual label */}
       <div style={{ marginTop: '100px', width: '100%', display: 'flex', justifyContent: 'center', padding: '0 31px', boxSizing: 'border-box', opacity: selectedGod ? 1 : 0.12 }}>
-        <p style={{ margin: 0, width: '100%', maxWidth: '798px', textAlign: 'left', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.35)' }}>
-          Ritual Options
+        <p style={{ margin: 0, width: '100%', maxWidth: '798px', textAlign: 'left', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.55)' }}>
+          Sacrificial Ritual Options
         </p>
       </div>
 
@@ -93,7 +73,7 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
 
         ) : (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '506px', width: '250px', flexShrink: 0 }} />
+            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '488px', width: '250px', flexShrink: 0 }} />
           ))
         )}
       </div>
