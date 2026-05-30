@@ -8,7 +8,7 @@ import type { Ritual } from '../data/gods'
 
 interface ResourceBarProps {
   prisoners: number
-  children: number
+  childrenCount: number
   virgins: number
   volunteers: number
   temples?: number
@@ -18,7 +18,7 @@ interface ResourceBarProps {
   dimmed?: boolean
 }
 
-export function ResourceBar({ prisoners, children, virgins, volunteers, temples = 14, greatTemples = 2, selectedRitual, hoveredRitual, dimmed = false }: ResourceBarProps) {
+export function ResourceBar({ prisoners, childrenCount, virgins, volunteers, temples = 14, greatTemples = 2, selectedRitual, hoveredRitual, dimmed = false }: ResourceBarProps) {
   const activeRitual = selectedRitual ?? hoveredRitual ?? null
   const showChange = !!selectedRitual
   return (
@@ -38,7 +38,7 @@ export function ResourceBar({ prisoners, children, virgins, volunteers, temples 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '32px', paddingRight: '32px', paddingTop: '12px', paddingBottom: '12px' }}>
         <ResourceItem icon={(c) => <PrisonerIcon size={20} color={c} />} label="Prisoners"  count={prisoners} cost={activeRitual?.participants.prisoners} ritualActive={!!activeRitual} showChange={showChange} />
         <ResourceItem icon={(c) => <VolunteerIcon size={20} color={c} />} label="Volunteers" count={volunteers} cost={activeRitual?.participants.volunteers} ritualActive={!!activeRitual} showChange={showChange} />
-        <ResourceItem icon={(c) => <ChildrenIcon size={20} color={c} />} label="Children"   count={children} cost={activeRitual?.participants.children} ritualActive={!!activeRitual} showChange={showChange} />
+        <ResourceItem icon={(c) => <ChildrenIcon size={20} color={c} />} label="Children"   count={childrenCount} cost={activeRitual?.participants.children} ritualActive={!!activeRitual} showChange={showChange} />
         <ResourceItem icon={(c) => <VirginIcon size={20} color={c} />} label="Virgins"    count={virgins} cost={activeRitual?.participants.virgins} ritualActive={!!activeRitual} showChange={showChange} />
         <div style={{ width: '1px', height: '100%', backgroundColor: 'rgba(255,255,255,0.12)' }} />
         <SiteItem label="Temple" available={temples} total={20} cost={activeRitual?.sacredSite.name === 'Temple' ? activeRitual.sacredSite.count : 0} ritualActive={!!activeRitual} showChange={showChange} />

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { AngerLevel } from './data/gods'
 import { AppShell } from './components/AppShell'
+import { StartScreen } from './components/StartScreen'
 import { MiddleSection } from './components/MiddleSection'
-import { RightPanel } from './components/RightPanel'
 import { GodSvg } from './components/GodSvg'
 import { PrisonerIcon } from './components/PrisonerIcon'
 import { VolunteerIcon } from './components/VolunteerIcon'
@@ -12,11 +12,11 @@ import { GODS } from './data/gods'
 import tlalocRaw from './assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from './assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from './assets/Gods/huitzilopochtli.svg?raw'
-import tezcatlipocaRaw from './assets/Gods/Tezcatlipoca.svg?raw'
+import mictlantecuhtliRaw from './assets/Gods/Mictlantecuhtli.svg?raw'
 
 const OUTCOME_LABEL: Record<string, string> = {
   '#c8322e': 'Furious',
-  '#d4662a': 'Angry',
+  '#d4662a': 'Offended',
   '#d4a83c': 'Uneasy',
   '#c8a83c': 'Peaceful',
 }
@@ -47,12 +47,14 @@ const GOD_SVG_MAP: Record<string, string> = {
   tlaloc: tlalocRaw,
   quetzalcoatl: quetzalcoatlRaw,
   huitzilopochtli: huitzilopochtliRaw,
-  tezcatlipoca: tezcatlipocaRaw,
+  mictlantecuhtli: mictlantecuhtliRaw,
+  tezcatlipoca: huitzilopochtliRaw,
   coyolxauhqui: quetzalcoatlRaw,
   tonatiuh: huitzilopochtliRaw,
 }
 
 function App() {
+  const [startScreen, setStartScreen] = useState<'visible' | 'dismissing' | 'gone'>('visible')
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
   const [hoveredRitualId, setHoveredRitualId] = useState<string | null>(null)
@@ -70,6 +72,11 @@ function App() {
   const selectedGod = GODS.find(g => g.id === selectedGodId) ?? null
   const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
   const hoveredRitual = selectedGod?.rituals.find(r => r.id === hoveredRitualId) ?? null
+
+  const handleEnter = () => {
+    setStartScreen('dismissing')
+    setTimeout(() => setStartScreen('gone'), 600)
+  }
 
   const handleSelectGod = (godId: string) => {
     if (selectedGodId === godId) {
@@ -105,13 +112,13 @@ function App() {
 
   return (
     <>
+      {startScreen !== 'gone' && (
+        <StartScreen dismissing={startScreen === 'dismissing'} onClick={handleEnter} />
+      )}
       <AppShell
         gods={GODS}
         selectedGodId={selectedGodId}
         onSelectGod={handleSelectGod}
-        resources={resources}
-        selectedRitual={selectedRitual}
-        hoveredRitual={hoveredRitual}
         activeRituals={activeRituals}
         mainContent={
           <MiddleSection
@@ -121,12 +128,12 @@ function App() {
             onPerformRitual={handlePerformRitual}
             activeRituals={activeRituals}
             onHoverRitual={setHoveredRitualId}
-          />
-        }
-        rightPanelContent={
-          <RightPanel
-            ritual={selectedRitual}
-            gods={GODS}
+            prisoners={resources.prisoners}
+            childrenCount={resources.children}
+            virgins={resources.virgins}
+            volunteers={resources.volunteers}
+            selectedRitual={selectedRitual}
+            hoveredRitual={hoveredRitual}
           />
         }
       />

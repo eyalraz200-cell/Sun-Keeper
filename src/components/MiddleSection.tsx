@@ -2,6 +2,7 @@ import type { God, Ritual, AngerLevel } from '../data/gods'
 import { COLORS, FONTS } from '../tokens'
 import { RitualCard } from './RitualCard'
 import { CtaButton } from './CtaButton'
+import { ResourceBar } from './ResourceBar'
 
 interface MiddleSectionProps {
   selectedGod: God | null
@@ -10,6 +11,12 @@ interface MiddleSectionProps {
   onPerformRitual: () => void
   activeRituals?: Record<string, string>
   onHoverRitual?: (ritualId: string | null) => void
+  prisoners: number
+  childrenCount: number
+  virgins: number
+  volunteers: number
+  selectedRitual?: Ritual | null
+  hoveredRitual?: Ritual | null
 }
 
 const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
@@ -19,8 +26,7 @@ const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
   none:   { color: '#6C6C6C', weight: 2 },
 }
 
-export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual, activeRituals = {}, onHoverRitual }: MiddleSectionProps) {
-  const selectedRitual = selectedGod?.rituals.find(r => r.id === selectedRitualId) ?? null
+export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual, activeRituals = {}, onHoverRitual, prisoners, childrenCount, virgins, volunteers, selectedRitual, hoveredRitual }: MiddleSectionProps) {
 
   const outcomeOrder: Record<string, number> = { '#c8322e': 0, '#d4662a': 1, '#d4a83c': 2, '#c8a83c': 3 }
 
@@ -32,9 +38,9 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
   const ritualActiveForCurrentGod = !!activeRitualId
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingTop: '28px' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0 31px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '28px 31px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '20px',
@@ -60,46 +66,67 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       {/* Separator */}
       <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
 
-      {/* Ritual label */}
-      <div style={{ marginTop: '100px', width: '100%', display: 'flex', justifyContent: 'center', padding: '0 31px', boxSizing: 'border-box', opacity: selectedGod ? 1 : 0.12, visibility: ritualActiveForCurrentGod ? 'hidden' : 'visible' }}>
-        <p style={{ margin: 0, width: '100%', maxWidth: '798px', textAlign: 'left', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.55)' }}>
-          Sacrificial Ritual Options
-        </p>
-      </div>
+      {/* flex column: label+cards | CTA — space-evenly distributes equal gaps above, between, and below */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', minHeight: 0, padding: '24px 0' }}>
+        {/* Label + Cards group — shared centered container so label aligns with card left edge */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '0 31px' }}>
+          <div style={{ width: '100%', maxWidth: '843px', display: 'flex', flexDirection: 'column' }}>
+          {/* Label */}
+          <div style={{ opacity: selectedGod ? 1 : 0.12, visibility: ritualActiveForCurrentGod ? 'hidden' : 'visible', marginBottom: '14px' }}>
+            <p style={{ margin: 0, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 200, color: 'rgba(255,255,255,0.55)' }}>
+              Appeasement Ritual Options
+            </p>
+          </div>
 
-      <div style={{ marginTop: '14px', display: 'flex', gap: '24px', justifyContent: 'center', opacity: selectedGod ? 1 : 0.12, padding: '0 31px' }}>
-        {selectedGod ? (
-          <>
-            {rituals.map(ritual => {
-              const isActive = ritual.id === activeRitualId
-              return (
-                <div key={ritual.id} style={{ width: '250px', flexShrink: 0, opacity: ritualActiveForCurrentGod && !isActive ? 0.25 : 1, pointerEvents: ritualActiveForCurrentGod ? 'none' : undefined, position: 'relative' }}>
-                  {isActive && (
-                    <p style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, margin: '0 0 8px', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff', textAlign: 'center', letterSpacing: '0.5px' }}>
-                      Active Ritual
-                    </p>
-                  )}
-                  <RitualCard ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} isActive={isActive} onHoverChange={(hovered) => onHoverRitual?.(hovered ? ritual.id : null)} />
-                </div>
-              )
-            })}</>
+          {/* Cards row */}
+          <div style={{ display: 'flex', gap: '24px', opacity: selectedGod ? 1 : 0.12 }}>
+            {selectedGod ? (
+              <>
+                {rituals.map(ritual => {
+                  const isActive = ritual.id === activeRitualId
+                  return (
+                    <div key={ritual.id} style={{ flex: '1 1 0', maxWidth: '265px', minWidth: 0, opacity: ritualActiveForCurrentGod && !isActive ? 0.25 : 1, pointerEvents: ritualActiveForCurrentGod ? 'none' : undefined, position: 'relative' }}>
+                      {isActive && (
+                        <p style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, margin: '0 0 8px', fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff', textAlign: 'center', letterSpacing: '0.5px' }}>
+                          Active Ritual
+                        </p>
+                      )}
+                      <RitualCard ritual={ritual} isSelected={selectedRitualId === ritual.id} onClick={() => onSelectRitual(ritual.id)} isActive={isActive} onHoverChange={(hovered) => onHoverRitual?.(hovered ? ritual.id : null)} godName={selectedGod.name} />
+                    </div>
+                  )
+                })}
+              </>
+            ) : (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '488px', flex: '1 1 0', maxWidth: '265px', minWidth: 0 }} />
+              ))
+            )}
+          </div>
+          </div>
+        </div>
 
-        ) : (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ backgroundColor: '#181818', border: '2px solid rgba(255,255,255,0.18)', borderRadius: '14px', minHeight: '488px', width: '250px', flexShrink: 0 }} />
-          ))
+        {/* CTA */}
+        {!ritualActiveForCurrentGod && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <CtaButton
+              label="AUTHORIZE RITUAL"
+              onClick={onPerformRitual}
+              active={!!selectedRitual}
+              visible={!!selectedGod}
+            />
+          </div>
         )}
       </div>
-      {!ritualActiveForCurrentGod && (
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <CtaButton
-            label="AUTHORIZE RITUAL"
-            onClick={onPerformRitual}
-            active={!!selectedRitual}
-            visible={!!selectedGod}
-          />
-        </div>
-      )}
+
+      <ResourceBar
+        prisoners={prisoners}
+        childrenCount={childrenCount}
+        virgins={virgins}
+        volunteers={volunteers}
+        selectedRitual={selectedRitual}
+        hoveredRitual={hoveredRitual}
+        dimmed={!selectedGod}
+      />
     </div>
   )
 }

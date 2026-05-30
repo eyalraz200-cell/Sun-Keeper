@@ -8,7 +8,7 @@ import { VolunteerIcon } from './VolunteerIcon'
 
 function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
-  if (color === '#d4662a') return 'Angry'
+  if (color === '#d4662a') return 'Offended'
   if (color === '#d4a83c') return 'Uneasy'
   if (color === '#c8a83c') return 'Peaceful'
   return 'Peaceful'
@@ -27,9 +27,10 @@ interface RitualCardProps {
   onClick: () => void
   isActive?: boolean
   onHoverChange?: (isHovered: boolean) => void
+  godName: string
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, godName }: RitualCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -69,6 +70,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
 
       {/* Price section */}
       <div style={{ padding: '20px 24px 0' }}>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: '10px', fontWeight: 400, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '12px' }}>Cost</span>
         {([
           { key: 'prisoners', label: 'Prisoners',  icon: <PrisonerIcon size={13} color="rgba(255,255,255,0.65)" /> },
           { key: 'volunteers',label: 'Volunteers', icon: <VolunteerIcon size={13} color="rgba(255,255,255,0.65)" /> },
@@ -104,10 +106,10 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
       {/* Divider + Outcome pinned to bottom */}
       <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '0 13px', marginTop: 'auto' }} />
 
-      {/* Outcome section - centered */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 24px 20px' }}>
-        <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>Resulting State</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Outcome section */}
+      <div style={{ padding: '20px 24px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>God's state change</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{
             width: '20px',
             height: '20px',
