@@ -6,13 +6,14 @@ import { GodSvg } from './GodSvg'
 import tlalocRaw from '../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from '../assets/Gods/huitzilopochtli.svg?raw'
-import tezcatlipocaRaw from '../assets/Gods/Tezcatlipoca.svg?raw'
+import mictlantecuhtliRaw from '../assets/Gods/Mictlantecuhtli.svg?raw'
 
 const GOD_SVG_MAP: Record<string, string> = {
   tlaloc: tlalocRaw,
   quetzalcoatl: quetzalcoatlRaw,
   huitzilopochtli: huitzilopochtliRaw,
-  tezcatlipoca: tezcatlipocaRaw,
+  mictlantecuhtli: mictlantecuhtliRaw,
+  tezcatlipoca: huitzilopochtliRaw,
   coyolxauhqui: quetzalcoatlRaw,
   tonatiuh: huitzilopochtliRaw,
 }
@@ -30,9 +31,12 @@ interface GodCardProps {
   isSelected: boolean
   onClick: () => void
   stuckProgress?: number
+  isCollapsed?: boolean
+  noBorder?: boolean
+  wrathful?: boolean
 }
 
-export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCardProps) {
+export function GodCard({ god, isSelected, onClick, stuckProgress = 0, isCollapsed = false, noBorder = false, wrathful = false }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -51,15 +55,15 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
       onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
-        height: `${248 - (54 - 2 * STUCK_PADDING) * stuckProgress}px`,
+        height: isCollapsed ? 'auto' : `${248 - (54 - 2 * STUCK_PADDING) * stuckProgress}px`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: `${STUCK_PADDING * stuckProgress}px`,
-        paddingBottom: `${16 - (16 - STUCK_PADDING) * stuckProgress}px`,
-        backgroundColor: isSelected ? '#ffffff' : COLORS.bgBase,
-        border: isSelected ? `1px solid #ffffff` : isHovered ? `1px solid #ffffff` : `1px solid #333333`,
+        paddingTop: isCollapsed ? '8px' : `${STUCK_PADDING * stuckProgress}px`,
+        paddingBottom: isCollapsed ? '8px' : `${16 - (16 - STUCK_PADDING) * stuckProgress}px`,
+        backgroundColor: wrathful ? '#FF2435' : isSelected ? '#ffffff' : COLORS.bgBase,
+        border: noBorder ? 'none' : wrathful ? '1px solid #FF2435' : isSelected ? `1px solid #ffffff` : isHovered ? `1px solid #ffffff` : `1px solid #333333`,
         borderRadius: '10px',
         cursor: 'pointer',
         transition: 'none',
@@ -71,14 +75,14 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
       <div
         style={{
           boxSizing: 'border-box',
-          paddingTop: `${(8 + 4) * (1 - stuckProgress)}px`,
+          paddingTop: isCollapsed ? '0px' : `${(8 + 4) * (1 - stuckProgress)}px`,
           paddingLeft: '6px',
           paddingRight: '6px',
-          paddingBottom: `${8 * (1 - stuckProgress)}px`,
+          paddingBottom: isCollapsed ? '0px' : `${8 * (1 - stuckProgress)}px`,
           textAlign: 'center',
           width: '100%',
           flexShrink: 0,
-          height: `${NAME_AREA_HEIGHT * (1 - stuckProgress)}px`,
+          height: isCollapsed ? 'auto' : `${NAME_AREA_HEIGHT * (1 - stuckProgress)}px`,
           opacity: Math.max(0, 1 - stuckProgress * 3),
         }}
       >
@@ -91,7 +95,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
             fontWeight: 500,
             textTransform: 'uppercase',
             letterSpacing: '1px',
-            color: isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
+            color: wrathful ? '#ffffff' : isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -104,19 +108,21 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0 }: GodCard
       </div>
 
       {/* God SVG image - fixed 110×160 */}
-      <div
-        style={{
-          position: 'relative',
-          width: '125px',
-          height: '194px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={isHovered} isSelected={isSelected} />
-      </div>
+      {!isCollapsed && (
+        <div
+          style={{
+            position: 'relative',
+            width: '125px',
+            height: '194px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={wrathful || isHovered} isSelected={isSelected} filledEyes={wrathful} eyeAnimation={wrathful ? { fromColor: '#000000', fromWeight: 6, toColor: '#000000', toWeight: 6, delay: 0, duration: 0, id: 'wrath-card' } : undefined} />
+        </div>
+      )}
     </button>
   )
 }

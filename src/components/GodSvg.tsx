@@ -20,6 +20,7 @@ export interface EyeAnimation {
   toWeight: number
   delay?: number
   duration?: number
+  id?: string
 }
 
 export interface GodSvgProps {
@@ -28,6 +29,7 @@ export interface GodSvgProps {
   isHovered?: boolean
   isSelected?: boolean
   eyeAnimation?: EyeAnimation
+  filledEyes?: boolean
 }
 
 function parseCircles(eyesBlock: string) {
@@ -41,7 +43,7 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false }: GodSvgProps) {
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
@@ -63,17 +65,27 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
   if (/<circle/.test(eyesContent)) {
     // Circle-based eyes: replace with inside-stroke technique
     const circles = parseCircles(eyesContent)
+
+    if (filledEyes) {
+      const eyeColor = eyeAnimation ? eyeAnimation.toColor : eye.color
+      const filledCircles = circles.map((c) =>
+        `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eyeColor}"/>`
+      ).join('\n')
+      eyesGroup = `<g id="eyes">\n${filledCircles}\n</g>`
+    } else {
+
     const defs = circles.map((c) => {
       const uid = c.cx.replace('.', '')
       return `<clipPath id="ec-${uid}"><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}"/></clipPath>`
     }).join('\n')
 
     if (eyeAnimation) {
-      const { fromColor, fromWeight, toColor, toWeight, delay = 0.8, duration = 2 } = eyeAnimation
-      const animStyle = `<style>@keyframes ritualEyeShift { 0% { stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; } 100% { stroke: ${toColor}; stroke-width: ${toWeight * 2}; } }</style>`
+      const { fromColor, fromWeight, toColor, toWeight, delay = 0.8, duration = 2, id = 'ritual' } = eyeAnimation
+      const animName = `eyeShift-${id}`
+      const animStyle = `<style>@keyframes ${animName} { 0% { stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; } 100% { stroke: ${toColor}; stroke-width: ${toWeight * 2}; } }</style>`
       const animCircles = circles.map((c) => {
         const uid = c.cx.replace('.', '')
-        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" clip-path="url(#ec-${uid})" style="stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; animation: ritualEyeShift ${duration}s ease ${delay}s forwards;"/>`
+        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" clip-path="url(#ec-${uid})" style="stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; animation: ${animName} ${duration}s ease ${delay}s forwards;"/>`
       }).join('\n')
       eyesGroup = `<defs>\n${defs}\n</defs>\n${animStyle}\n<g id="eyes">\n${animCircles}\n</g>`
     } else {
@@ -90,6 +102,8 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
         : ''
       eyesGroup = `<defs>\n${defs}${glowDef}\n</defs>${glowCircles}\n<g id="eyes">\n${styledCircles}\n</g>`
     }
+
+    } // end !filledEyes
   } else {
     // Path-based eyes: recolor fills and add stroke to vary thickness by anger level
     const recolored = eyesContent

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { AngerLevel } from './data/gods'
 import { AppShell } from './components/AppShell'
 import { StartScreen } from './components/StartScreen'
+import { StartScreenWrathful } from './components/StartScreenWrathful'
+import { ScreenChooser } from './components/ScreenChooser'
 import { MiddleSection } from './components/MiddleSection'
 import { GodSvg } from './components/GodSvg'
 import { PrisonerIcon } from './components/PrisonerIcon'
@@ -54,6 +56,7 @@ const GOD_SVG_MAP: Record<string, string> = {
 }
 
 function App() {
+  const [chosenScreen, setChosenScreen] = useState<'regular' | 'wrathful' | null>(null)
   const [startScreen, setStartScreen] = useState<'visible' | 'dismissing' | 'gone'>('visible')
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
@@ -61,6 +64,7 @@ function App() {
   const [ritualActive, setRitualActive] = useState(false)
   const [ritualDismissing, setRitualDismissing] = useState(false)
   const [activeRituals, setActiveRituals] = useState<Record<string, string>>({})  // godId → ritualId
+  const [isGodListExpanded, setIsGodListExpanded] = useState(false)
 
   const resources = {
     prisoners: 1840,
@@ -112,14 +116,21 @@ function App() {
 
   return (
     <>
-      {startScreen !== 'gone' && (
+      {chosenScreen === null && <ScreenChooser onChoose={setChosenScreen} />}
+      {chosenScreen === 'regular' && startScreen !== 'gone' && (
         <StartScreen dismissing={startScreen === 'dismissing'} onClick={handleEnter} />
+      )}
+      {chosenScreen === 'wrathful' && startScreen !== 'gone' && (
+        <StartScreenWrathful dismissing={startScreen === 'dismissing'} onClick={handleEnter} />
       )}
       <AppShell
         gods={GODS}
         selectedGodId={selectedGodId}
         onSelectGod={handleSelectGod}
         activeRituals={activeRituals}
+        isGodListExpanded={isGodListExpanded}
+        onGodListExpandedChange={setIsGodListExpanded}
+        wrathfulMode={chosenScreen === 'wrathful'}
         mainContent={
           <MiddleSection
             selectedGod={selectedGod}
@@ -134,6 +145,7 @@ function App() {
             volunteers={resources.volunteers}
             selectedRitual={selectedRitual}
             hoveredRitual={hoveredRitual}
+            isGodListExpanded={isGodListExpanded}
           />
         }
       />
