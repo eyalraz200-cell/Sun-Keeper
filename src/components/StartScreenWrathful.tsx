@@ -1,15 +1,31 @@
 import { useState } from 'react'
 import { GodSvg } from './GodSvg'
 import { FONTS } from '../tokens'
-import huitzilopochtliRaw from '../assets/Gods/huitzilopochtli.svg?raw'
+import { GODS } from '../data/gods'
+import { GOD_SVG_MAP } from './GodCard'
 
 interface StartScreenWrathfulProps {
   dismissing: boolean
   onClick: () => void
+  godId: string
 }
 
-export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathfulProps) {
+const PUNISHMENT_LINE: Record<string, string> = {
+  huitzilopochtli: 'Your Armies Fall. War Is No Longer Yours To Win',
+  tlaloc:          'The Rains Cease. Your Fields Wither And Crack',
+  tezcatlipoca:    'Shadows Consume Your Court. Counsel Turns To Lies',
+  quetzalcoatl:    'Wisdom Fades. Your Civilization Begins To Unravel',
+  mictlantecuhtli: 'The Dead Rise Restless. Plague Walks Among Your People',
+  ehecatl:         'Foul Winds Scatter Your Fleets. The Harvest Is Lost',
+  xiuhtecuhtli:    'The Sacred Fires Die. Cold Creeps Into Every Hearth',
+  chalchiuhtlicue: 'The Waters Rise Without Warning. Your Cities Drown',
+  tonatiuh:        'The Sun Dims. Crops Wither And Darkness Spreads',
+}
+
+export function StartScreenWrathful({ dismissing, onClick, godId }: StartScreenWrathfulProps) {
   const [phase, setPhase] = useState<'intro' | 'punishment'>('intro')
+  const god = GODS.find(g => g.id === godId)!
+  const svg = GOD_SVG_MAP[godId]
 
   return (
     <div
@@ -66,7 +82,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
         transition: 'width 2.4s cubic-bezier(0.4,0,0.2,1), height 2.4s cubic-bezier(0.4,0,0.2,1), transform 2.4s cubic-bezier(0.4,0,0.2,1)',
       }}>
         <GodSvg
-          svgRaw={huitzilopochtliRaw}
+          svgRaw={svg}
           angerLevel="high"
           isHovered={true}
           filledEyes={true}
@@ -108,7 +124,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             letterSpacing: '0.5px',
             textTransform: 'capitalize',
           }}>
-            <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>Huitzilopochtli</span>
+            <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>{god.name}</span>
             {} Was Left Unappeased.
           </span>
         </div>
@@ -151,7 +167,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             opacity: 0,
             animation: 'wrathFadeIn 1.8s ease 4.0s both',
           }}>
-            Your Armies Fall. War Is No Longer Yours To Win
+            {PUNISHMENT_LINE[godId] ?? 'Divine Wrath Descends. Your People Suffer For Your Failure'}
           </span>
           <span style={{
             fontFamily: FONTS.spectral,
@@ -162,7 +178,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             opacity: 0,
             animation: 'wrathFadeIn 1.8s ease 4.0s both',
           }}>
-            Until <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>Huitzilopochtli</span> Is Appeased.
+            Until <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>{god.name}</span> Is Appeased.
           </span>
         </div>
       )}

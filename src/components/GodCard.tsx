@@ -7,15 +7,22 @@ import tlalocRaw from '../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from '../assets/Gods/huitzilopochtli.svg?raw'
 import mictlantecuhtliRaw from '../assets/Gods/Mictlantecuhtli.svg?raw'
+import tezcatlipocaRaw from '../assets/Gods/Tezcatlipoca.svg?raw'
+import ehecatlRaw from '../assets/Gods/Ehecatl.svg?raw'
+import xiuhtecuhtliRaw from '../assets/Gods/Xiuhtecuhtli.svg?raw'
+import chalchiuhtlicueRaw from '../assets/Gods/Chalchiuhtlicue.svg?raw'
+import tonatiuhRaw from '../assets/Gods/Tonatiuh.svg?raw'
 
-const GOD_SVG_MAP: Record<string, string> = {
+export const GOD_SVG_MAP: Record<string, string> = {
   tlaloc: tlalocRaw,
   quetzalcoatl: quetzalcoatlRaw,
   huitzilopochtli: huitzilopochtliRaw,
   mictlantecuhtli: mictlantecuhtliRaw,
-  tezcatlipoca: huitzilopochtliRaw,
-  coyolxauhqui: quetzalcoatlRaw,
-  tonatiuh: huitzilopochtliRaw,
+  tezcatlipoca: tezcatlipocaRaw,
+  ehecatl: ehecatlRaw,
+  xiuhtecuhtli: xiuhtecuhtliRaw,
+  chalchiuhtlicue: chalchiuhtlicueRaw,
+  tonatiuh: tonatiuhRaw,
 }
 
 function getSvgRaw(godId: string): string {

@@ -12,7 +12,7 @@ interface GodListProps {
   isExpanded?: boolean
   onToggleExpanded?: () => void
   onCloseExpanded?: () => void
-  wrathfulMode?: boolean
+  wrathfulGodId?: string | null
 }
 
 export function ActiveRitualSummaryCard({ count, isHovered }: { count: number; isHovered: boolean }) {
@@ -49,21 +49,22 @@ const GRID_COLS = 5
 const GRID_CARD_WIDTH = LAYOUT.sidebarWidth - 24
 const OVERLAY_WIDTH = GRID_PADDING * 2 + GRID_COLS * GRID_CARD_WIDTH + (GRID_COLS - 1) * GRID_GAP
 
-export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isExpanded = false, onToggleExpanded, onCloseExpanded, wrathfulMode = false }: GodListProps) {
+export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isExpanded = false, onToggleExpanded, onCloseExpanded, wrathfulGodId = null }: GodListProps) {
   const activeGodIds = new Set(Object.keys(activeRituals))
   const activeRitualGods = gods.filter(g => activeGodIds.has(g.id))
 
-  const sortedGods = [...gods]
-    .filter(g => !activeGodIds.has(g.id) && g.angerLevel !== 'none')
-    .sort((a, b) => {
-      const angerOrder = { high: 0, medium: 1, low: 2, none: 3 }
-      return angerOrder[a.angerLevel] - angerOrder[b.angerLevel]
-    })
+  const wrathFirst = (a: { id: string; angerLevel: string }, b: { id: string; angerLevel: string }) => {
+    if (a.id === wrathfulGodId) return -1
+    if (b.id === wrathfulGodId) return 1
+    const angerOrder: Record<string, number> = { high: 0, medium: 1, low: 2, none: 3 }
+    return angerOrder[a.angerLevel] - angerOrder[b.angerLevel]
+  }
 
-  const allGodsSorted = [...gods].sort((a, b) => {
-    const order = { high: 0, medium: 1, low: 2, none: 3 }
-    return order[a.angerLevel] - order[b.angerLevel]
-  })
+  const sortedGods = [...gods]
+    .filter(g => !activeGodIds.has(g.id))
+    .sort(wrathFirst)
+
+  const allGodsSorted = [...gods].sort(wrathFirst)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const stickyRef = useRef<HTMLDivElement>(null)
@@ -245,7 +246,7 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
                     isSelected={isSelected}
                     onClick={() => onSelect(god.id)}
                     stuckProgress={isSelected ? 1 - headerOpacity : 0}
-                    wrathful={wrathfulMode && god.id === 'huitzilopochtli'}
+                    wrathful={god.id === wrathfulGodId}
                   />
                 </div>
               )
@@ -308,7 +309,7 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
                   god={god}
                   isSelected={selectedGodId === god.id}
                   onClick={() => { onSelect(god.id); if (god.id !== selectedGodId) onCloseExpanded?.() }}
-                  wrathful={wrathfulMode && god.id === 'huitzilopochtli'}
+                  wrathful={god.id === wrathfulGodId}
                 />
               </div>
             ))}

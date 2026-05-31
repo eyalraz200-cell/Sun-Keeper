@@ -17,6 +17,7 @@ interface MiddleSectionProps {
   volunteers: number
   selectedRitual?: Ritual | null
   hoveredRitual?: Ritual | null
+  isGodListExpanded?: boolean
 }
 
 const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
@@ -26,7 +27,7 @@ const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
   none:   { color: '#6C6C6C', weight: 2 },
 }
 
-export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual, activeRituals = {}, onHoverRitual, prisoners, childrenCount, virgins, volunteers, selectedRitual, hoveredRitual }: MiddleSectionProps) {
+export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, onPerformRitual, activeRituals = {}, onHoverRitual, prisoners, childrenCount, virgins, volunteers, selectedRitual, hoveredRitual, isGodListExpanded = false }: MiddleSectionProps) {
 
   const outcomeOrder: Record<string, number> = { '#c8322e': 0, '#d4662a': 1, '#d4a83c': 2, '#c8a83c': 3 }
 
@@ -64,10 +65,10 @@ export function MiddleSection({ selectedGod, selectedRitualId, onSelectRitual, o
       </p>
 
       {/* Separator */}
-      <div style={{ height: '1px', backgroundColor: '#333333', margin: '4px 31px 0' }} />
+      <div style={{ height: '1px', backgroundColor: '#333333', margin: '7px 31px 0', opacity: isGodListExpanded ? 0.2 : 1, transition: 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)' }} />
 
       {/* flex column: label+cards | CTA — space-evenly distributes equal gaps above, between, and below */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', minHeight: 0, padding: '24px 0' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', minHeight: 0, padding: '24px 0', opacity: isGodListExpanded ? 0.15 : 1, transition: 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         {/* Label + Cards group — shared centered container so label aligns with card left edge */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '0 31px' }}>
           <div style={{ width: '100%', maxWidth: '843px', display: 'flex', flexDirection: 'column' }}>

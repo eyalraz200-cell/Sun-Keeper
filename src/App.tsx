@@ -11,10 +11,7 @@ import { VolunteerIcon } from './components/VolunteerIcon'
 import { ChildrenIcon } from './components/ChildrenIcon'
 import { VirginIcon } from './components/VirginIcon'
 import { GODS } from './data/gods'
-import tlalocRaw from './assets/Gods/Tlaloc.svg?raw'
-import quetzalcoatlRaw from './assets/Gods/Quetzalcoatl.svg?raw'
-import huitzilopochtliRaw from './assets/Gods/huitzilopochtli.svg?raw'
-import mictlantecuhtliRaw from './assets/Gods/Mictlantecuhtli.svg?raw'
+import { GOD_SVG_MAP } from './components/GodCard'
 
 const OUTCOME_LABEL: Record<string, string> = {
   '#c8322e': 'Furious',
@@ -45,18 +42,10 @@ const OUTCOME_TO_ANGER: Record<string, AngerLevel> = {
   '#c8a83c': 'none',
 }
 
-const GOD_SVG_MAP: Record<string, string> = {
-  tlaloc: tlalocRaw,
-  quetzalcoatl: quetzalcoatlRaw,
-  huitzilopochtli: huitzilopochtliRaw,
-  mictlantecuhtli: mictlantecuhtliRaw,
-  tezcatlipoca: huitzilopochtliRaw,
-  coyolxauhqui: quetzalcoatlRaw,
-  tonatiuh: huitzilopochtliRaw,
-}
 
 function App() {
   const [chosenScreen, setChosenScreen] = useState<'regular' | 'wrathful' | null>(null)
+  const [wrathfulGodId, setWrathfulGodId] = useState<string | null>(null)
   const [startScreen, setStartScreen] = useState<'visible' | 'dismissing' | 'gone'>('visible')
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null)
@@ -116,12 +105,20 @@ function App() {
 
   return (
     <>
-      {chosenScreen === null && <ScreenChooser onChoose={setChosenScreen} />}
+      {chosenScreen === null && (
+        <ScreenChooser onChoose={(screen) => {
+          if (screen === 'wrathful') {
+            const id = GODS[Math.floor(Math.random() * GODS.length)].id
+            setWrathfulGodId(id)
+          }
+          setChosenScreen(screen)
+        }} />
+      )}
       {chosenScreen === 'regular' && startScreen !== 'gone' && (
         <StartScreen dismissing={startScreen === 'dismissing'} onClick={handleEnter} />
       )}
-      {chosenScreen === 'wrathful' && startScreen !== 'gone' && (
-        <StartScreenWrathful dismissing={startScreen === 'dismissing'} onClick={handleEnter} />
+      {chosenScreen === 'wrathful' && startScreen !== 'gone' && wrathfulGodId && (
+        <StartScreenWrathful dismissing={startScreen === 'dismissing'} onClick={handleEnter} godId={wrathfulGodId} />
       )}
       <AppShell
         gods={GODS}
@@ -130,7 +127,7 @@ function App() {
         activeRituals={activeRituals}
         isGodListExpanded={isGodListExpanded}
         onGodListExpandedChange={setIsGodListExpanded}
-        wrathfulMode={chosenScreen === 'wrathful'}
+        wrathfulGodId={wrathfulGodId}
         mainContent={
           <MiddleSection
             selectedGod={selectedGod}
@@ -175,7 +172,7 @@ function App() {
             {/* Face: independently centered, nudged up */}
             <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, calc(-50% - 12vh - 2.5vmin))', width: '57vmin', height: '57vmin', zIndex: 3, opacity: 0, animation: 'contentFadeIn 2.4s ease 0.8s forwards' }}>
               <GodSvg
-                svgRaw={GOD_SVG_MAP[selectedGod.id] ?? tlalocRaw}
+                svgRaw={GOD_SVG_MAP[selectedGod.id] ?? ''}
                 angerLevel={ritualDismissing ? toAnger : selectedGod.angerLevel}
                 isHovered={true}
                 eyeAnimation={ritualDismissing ? undefined : { fromColor: fromEye.color, fromWeight: fromEye.weight, toColor: toEye.color, toWeight: toEye.weight, delay: 5.0, duration: 2 }}

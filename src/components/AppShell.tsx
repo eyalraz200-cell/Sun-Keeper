@@ -12,7 +12,7 @@ interface AppShellProps {
   activeRituals?: Record<string, string>
   isGodListExpanded: boolean
   onGodListExpandedChange: (expanded: boolean) => void
-  wrathfulMode?: boolean
+  wrathfulGodId?: string | null
 }
 
 export function AppShell({
@@ -23,7 +23,7 @@ export function AppShell({
   activeRituals,
   isGodListExpanded,
   onGodListExpandedChange,
-  wrathfulMode,
+  wrathfulGodId,
 }: AppShellProps) {
 
   return (
@@ -44,7 +44,7 @@ export function AppShell({
         selectedGodId={selectedGodId}
         onSelect={onSelectGod}
         activeRituals={activeRituals}
-        wrathfulMode={wrathfulMode}
+        wrathfulGodId={wrathfulGodId}
         isExpanded={isGodListExpanded}
         onToggleExpanded={() => onGodListExpandedChange(!isGodListExpanded)}
         onCloseExpanded={() => onGodListExpandedChange(false)}

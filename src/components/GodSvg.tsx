@@ -55,6 +55,7 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
 
   const bodySvg = svgRaw
     .replace(/fill="black"/g, 'fill="#6C6C6C"')
+    .replace(/fill="white"/g, 'fill="#6C6C6C"')
     .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, 'fill="#6C6C6C"')
   const bodyColor = bodyColorOverride ?? (isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C')
   const coloredBody = bodySvg.replace(/fill="#6C6C6C"/g, `fill="${bodyColor}"`)
@@ -111,16 +112,21 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     } else {
       const styledCircles = circles.map((c) => {
         const uid = c.cx.replace('.', '')
-        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
+        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${isSelected ? '#ffffff' : 'none'}" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
       }).join('\n')
-      // Outer glow: applied to filled discs so feComposite can clip cleanly to outside
-      const glowDef = isSelected
-        ? `\n<filter id="eye-outer-glow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="5" in="SourceAlpha" result="blur"/><feFlood flood-color="${eye.color}" flood-opacity="0.9" result="colored"/><feComposite in="colored" in2="blur" operator="in" result="coloredBlur"/><feComposite in="coloredBlur" in2="SourceAlpha" operator="out" result="outerGlow"/><feMerge><feMergeNode in="outerGlow"/></feMerge></filter>`
+      const ringCircles = isSelected
+        ? circles.map((c) => {
+            const r = parseFloat(c.r)
+            const count = 6
+            const sw = 1
+            const opacities = [0.40, 0.30, 0.21, 0.13, 0.07, 0.03]
+            return Array.from({ length: count }, (_, i) => {
+              const ri = r + sw * 0.5 + sw * i
+              return `<circle cx="${c.cx}" cy="${c.cy}" r="${ri.toFixed(1)}" fill="none" stroke="${eye.color}" stroke-width="${sw}" opacity="${opacities[i]}"/>`
+            }).join('\n')
+          }).join('\n')
         : ''
-      const glowCircles = isSelected
-        ? `\n<g filter="url(#eye-outer-glow)">${circles.map(c => `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eye.color}"/>`).join('')}</g>`
-        : ''
-      eyesGroup = `<defs>\n${defs}${glowDef}\n</defs>${glowCircles}\n<g id="eyes">\n${styledCircles}\n</g>`
+      eyesGroup = `<defs>\n${defs}\n</defs>${ringCircles ? `\n${ringCircles}` : ''}\n<g id="eyes">\n${styledCircles}\n</g>`
     }
 
     } // end !filledEyes
