@@ -30,6 +30,8 @@ export interface GodSvgProps {
   isSelected?: boolean
   eyeAnimation?: EyeAnimation
   filledEyes?: boolean
+  eyeGlow?: boolean
+  bodyColor?: string
 }
 
 function parseCircles(eyesBlock: string) {
@@ -43,7 +45,7 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride }: GodSvgProps) {
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
@@ -54,7 +56,7 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
   const bodySvg = svgRaw
     .replace(/fill="black"/g, 'fill="#6C6C6C"')
     .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, 'fill="#6C6C6C"')
-  const bodyColor = isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C'
+  const bodyColor = bodyColorOverride ?? (isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C')
   const coloredBody = bodySvg.replace(/fill="#6C6C6C"/g, `fill="${bodyColor}"`)
 
   const eyesMatch = coloredBody.match(/<g id="eyes">([\s\S]*?)<\/g>/)
@@ -68,10 +70,28 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
 
     if (filledEyes) {
       const eyeColor = eyeAnimation ? eyeAnimation.toColor : eye.color
-      const filledCircles = circles.map((c) =>
-        `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eyeColor}"/>`
-      ).join('\n')
-      eyesGroup = `<g id="eyes">\n${filledCircles}\n</g>`
+      const defs = circles.map((c) => {
+        const uid = c.cx.replace('.', '')
+        return `<clipPath id="eg-${uid}"><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}"/></clipPath>`
+      }).join('\n')
+      const eyeCircles = circles.map((c) => {
+        const r = parseFloat(c.r)
+        const uid = c.cx.replace('.', '')
+        const rings = eyeGlow ? [
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.88).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.35"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.74).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.25"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.60).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.17"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.46).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.11"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.32).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.07"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.18).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.04"/>`,
+        ].join('\n') : ''
+        return [
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eyeColor}"/>`,
+          rings,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" stroke="${bodyColor}" stroke-width="1" clip-path="url(#eg-${uid})"/>`,
+        ].join('\n')
+      }).join('\n')
+      eyesGroup = `<defs>\n${defs}\n</defs>\n<g id="eyes">\n${eyeCircles}\n</g>`
     } else {
 
     const defs = circles.map((c) => {

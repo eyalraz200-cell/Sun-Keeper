@@ -63,7 +63,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0, isCollaps
         paddingTop: isCollapsed ? '8px' : `${STUCK_PADDING * stuckProgress}px`,
         paddingBottom: isCollapsed ? '8px' : `${16 - (16 - STUCK_PADDING) * stuckProgress}px`,
         backgroundColor: wrathful ? '#FF2435' : isSelected ? '#ffffff' : COLORS.bgBase,
-        border: noBorder ? 'none' : wrathful ? '1px solid #FF2435' : isSelected ? `1px solid #ffffff` : isHovered ? `1px solid #ffffff` : `1px solid #333333`,
+        border: noBorder ? 'none' : wrathful ? (isSelected || isHovered ? '1px solid #ffffff' : '1px solid #FF2435') : isSelected ? `1px solid #ffffff` : isHovered ? `1px solid #ffffff` : `1px solid #333333`,
         borderRadius: '10px',
         cursor: 'pointer',
         transition: 'none',
@@ -95,7 +95,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0, isCollaps
             fontWeight: 500,
             textTransform: 'uppercase',
             letterSpacing: '1px',
-            color: wrathful ? '#ffffff' : isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
+            color: wrathful ? (isSelected || isHovered ? '#ffffff' : 'rgba(255,255,255,0.90)') : isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -120,7 +120,7 @@ export function GodCard({ god, isSelected, onClick, stuckProgress = 0, isCollaps
             flexShrink: 0,
           }}
         >
-          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={wrathful || isHovered} isSelected={isSelected} filledEyes={wrathful} eyeAnimation={wrathful ? { fromColor: '#000000', fromWeight: 6, toColor: '#000000', toWeight: 6, delay: 0, duration: 0, id: 'wrath-card' } : undefined} />
+          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={isHovered} isSelected={isSelected} filledEyes={wrathful} eyeGlow={wrathful} bodyColor={wrathful ? (isSelected || isHovered ? '#F0F0F0' : '#E6E6E6') : undefined} eyeAnimation={wrathful ? { fromColor: '#000000', fromWeight: 6, toColor: '#000000', toWeight: 6, delay: 0, duration: 0, id: 'wrath-card' } : undefined} />
         </div>
       )}
     </button>

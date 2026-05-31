@@ -38,7 +38,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
         .wrath-cta-btn {
           background-color: transparent;
           color: #ffffff;
-          transition: background-color 0.15s ease, color 0.15s ease;
+          transition: none;
         }
         .wrath-cta-btn:hover {
           background-color: #ffffff;
@@ -55,28 +55,29 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
         left: '50%',
         top: '50%',
         transform: phase === 'punishment'
-          ? 'translate(-50%, calc(-50% - 18vh))'
+          ? 'translate(-50%, calc(-50% - 20vh))'
           : 'translate(-50%, calc(-50% - 12vh - 2.5vmin))',
-        width: phase === 'punishment' ? '32vmin' : '57vmin',
-        height: phase === 'punishment' ? '32vmin' : '57vmin',
+        width: phase === 'punishment' ? '40vmin' : '57vmin',
+        height: phase === 'punishment' ? '40vmin' : '57vmin',
         opacity: 0,
         animation: 'wrathGodFadeIn 2.5s ease 0.4s forwards',
         pointerEvents: 'none',
         zIndex: 3,
-        transition: 'width 1.4s cubic-bezier(0.4,0,0.2,1), height 1.4s cubic-bezier(0.4,0,0.2,1), transform 1.4s cubic-bezier(0.4,0,0.2,1)',
+        transition: 'width 2.4s cubic-bezier(0.4,0,0.2,1), height 2.4s cubic-bezier(0.4,0,0.2,1), transform 2.4s cubic-bezier(0.4,0,0.2,1)',
       }}>
         <GodSvg
           svgRaw={huitzilopochtliRaw}
           angerLevel="high"
           isHovered={true}
           filledEyes={true}
+          eyeGlow={true}
           eyeAnimation={{
             fromColor: '#000000',
             fromWeight: 6,
             toColor: '#000000',
             toWeight: 6,
-            delay: 1.0,
-            duration: 0.8,
+            delay: 0,
+            duration: 0,
             id: 'wrath-main',
           }}
         />
@@ -117,7 +118,7 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
       {phase === 'punishment' && (
         <div style={{
           position: 'absolute',
-          top: 'calc(50% + 5vh)',
+          top: 'calc(50% + 7vh)',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -127,7 +128,6 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
           zIndex: 3,
-          animation: 'wrathFadeIn 1.4s ease 1.0s both',
         }}>
           <span style={{
             fontFamily: FONTS.cinzel,
@@ -137,6 +137,8 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             textTransform: 'uppercase',
             color: '#ffffff',
             marginBottom: '14px',
+            opacity: 0,
+            animation: 'wrathFadeIn 1.6s ease 2.8s both',
           }}>
             Divine Punishment
           </span>
@@ -146,6 +148,8 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             fontWeight: 300,
             color: '#ffffff',
             letterSpacing: '0.5px',
+            opacity: 0,
+            animation: 'wrathFadeIn 1.8s ease 4.0s both',
           }}>
             Your Armies Fall. War Is No Longer Yours To Win
           </span>
@@ -155,6 +159,8 @@ export function StartScreenWrathful({ dismissing, onClick }: StartScreenWrathful
             fontWeight: 300,
             color: '#ffffff',
             letterSpacing: '0.5px',
+            opacity: 0,
+            animation: 'wrathFadeIn 1.8s ease 4.0s both',
           }}>
             Until <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>Huitzilopochtli</span> Is Appeased.
           </span>
