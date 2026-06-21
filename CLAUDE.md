@@ -562,3 +562,14 @@ interface Ritual {
 - Create placeholder panels not in design
 - Add `-webkit-font-smoothing: antialiased`
 - Make god names bold or mixed-case
+
+---
+
+## Git Workflow Policy (authorized in advance)
+
+The user has explicitly authorized autonomous git commits and pushes for this project, so Claude does **not** need to ask before each one:
+
+- **Commit** after every logical change (a feature, fix, refactor, or other discrete piece of work) — small, frequent commits with descriptive messages, not one giant batch at the end.
+- **Push** to the remote automatically right after each commit — no need to check in first.
+- Still never use destructive operations (`--force` push, `reset --hard`, rewriting published history, skipping hooks) without explicit confirmation — this blanket authorization covers normal commit + push only.
+- If a change is exploratory/experimental and the user signals they might want to discard it, hold off on committing until that's resolved.
