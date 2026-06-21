@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { RESOURCE_TOTALS } from './tokens'
-import { AppShell } from './components/AppShell'
+import { AppShell } from './components/layout/AppShell'
 import { GODS } from './data/gods'
 import { AiChat } from './components/AiChat'
 

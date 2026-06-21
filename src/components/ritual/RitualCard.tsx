@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import type { Ritual } from '../data/gods'
-import { COLORS, FONTS } from '../tokens'
-import { ChildrenIcon } from './ChildrenIcon'
-import { VirginIcon } from './VirginIcon'
-import { PrisonerIcon } from './PrisonerIcon'
-import { VolunteerIcon } from './VolunteerIcon'
+import type { Ritual } from '../../data/gods'
+import { FONTS } from '../../tokens'
+import { ChildrenIcon } from '../icons/ChildrenIcon'
+import { VirginIcon } from '../icons/VirginIcon'
+import { PrisonerIcon } from '../icons/PrisonerIcon'
+import { VolunteerIcon } from '../icons/VolunteerIcon'
 
 function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
@@ -37,7 +37,7 @@ interface RitualCardProps {
   footer?: React.ReactNode
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, godName, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
@@ -117,7 +117,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         <div style={{ flex: 1, padding: '0 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={labelStyle}>Price</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
-            {participantItems.map(({ key, label, icon }) => {
+            {participantItems.map(({ key, icon }) => {
               const active = participants[key] > 0
               return (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '5px', opacity: active ? 1 : 0.12 }}>

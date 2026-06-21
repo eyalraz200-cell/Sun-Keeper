@@ -1,5 +1,5 @@
-import type { God, Ritual } from '../data/gods'
-import { COLORS } from '../tokens'
+import type { God, Ritual } from '../../data/gods'
+import { COLORS } from '../../tokens'
 
 interface RightPanelProps {
   ritual: Ritual | null

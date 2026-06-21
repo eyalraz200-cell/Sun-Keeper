@@ -1,8 +1,8 @@
-import { FONTS } from '../tokens'
-import { PrisonerIcon } from './PrisonerIcon'
-import { VolunteerIcon } from './VolunteerIcon'
-import { ChildrenIcon } from './ChildrenIcon'
-import { VirginIcon } from './VirginIcon'
+import { FONTS } from '../../tokens'
+import { PrisonerIcon } from '../icons/PrisonerIcon'
+import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { ChildrenIcon } from '../icons/ChildrenIcon'
+import { VirginIcon } from '../icons/VirginIcon'
 
 interface ResourceScreenProps {
   prisoners: number

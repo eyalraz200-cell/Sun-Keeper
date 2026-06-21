@@ -1,7 +1,6 @@
-import { COLORS, FONTS } from '../tokens'
-import { GODS } from '../data/gods'
-import { GodCard } from './GodCard'
-import { GOD_SVG_MAP } from './GodCard'
+import { COLORS, FONTS } from '../../tokens'
+import { GODS } from '../../data/gods'
+import { GodCard } from '../gods/GodCard'
 
 const FESTIVAL_EVENTS = [
   { day: 1,  duration: 1, god: 'Tlaloc',          godId: 'tlaloc',          label: 'Festival day for' },

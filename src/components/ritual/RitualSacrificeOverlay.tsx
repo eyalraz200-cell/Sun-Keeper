@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { FONTS } from '../tokens'
-import { FireIcon } from './FireIcon'
-import { PrisonerIcon } from './PrisonerIcon'
-import { ChildrenIcon } from './ChildrenIcon'
-import { VirginIcon } from './VirginIcon'
-import { VolunteerIcon } from './VolunteerIcon'
-import chichenItzaSrc from '../assets/Other/Chichen Itza.svg'
+import { FONTS } from '../../tokens'
+import { FireIcon } from '../icons/FireIcon'
+import { PrisonerIcon } from '../icons/PrisonerIcon'
+import { ChildrenIcon } from '../icons/ChildrenIcon'
+import { VirginIcon } from '../icons/VirginIcon'
+import { VolunteerIcon } from '../icons/VolunteerIcon'
+import chichenItzaSrc from '../../assets/Other/Chichen Itza.svg'
 
 type VictimKey = 'prisoners' | 'volunteers' | 'children' | 'virgins'
 

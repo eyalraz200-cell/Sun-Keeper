@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { COLORS, FONTS } from '../tokens'
-import { GODS } from '../data/gods'
-import { PrisonerIcon } from './PrisonerIcon'
-import { VolunteerIcon } from './VolunteerIcon'
-import { ChildrenIcon } from './ChildrenIcon'
-import { VirginIcon } from './VirginIcon'
+import { COLORS, FONTS } from '../../tokens'
+import { GODS } from '../../data/gods'
+import { PrisonerIcon } from '../icons/PrisonerIcon'
+import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { ChildrenIcon } from '../icons/ChildrenIcon'
+import { VirginIcon } from '../icons/VirginIcon'
 
 const FESTIVAL_EVENTS = [
   { day: 1,  duration: 1, god: 'Tlaloc',          godId: 'tlaloc',          label: 'Festival day for' },
@@ -66,7 +66,6 @@ export function CalendarScreen() {
     { key: 'virgins'    as const, label: 'Virgins',    icon: <VirginIcon    size={13} color="rgba(255,255,255,0.65)" /> },
   ]
 
-  const currentEye = hoveredGod ? outcomeEye(hoveredGod.angerColor) : null
   const bestEye = bestRitual ? outcomeEye(bestRitual.outcomeColor) : null
 
   return (

@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { COLORS, RESOURCE_TOTALS } from '../tokens'
+import { COLORS, RESOURCE_TOTALS } from '../../tokens'
 import { SidebarNav } from './SidebarNav'
-import { CalendarScreen } from './CalendarScreen'
-import { DashboardScreen } from './DashboardScreen'
-import { HomeScreen } from './HomeScreen'
-import { NewScreen } from './NewScreen'
-import { ResourceScreen } from './ResourceScreen'
-import { PantheonScreen } from './PantheonScreen'
+import { CalendarScreen } from '../screens/CalendarScreen'
+import { DashboardScreen } from '../screens/DashboardScreen'
+import { HomeScreen } from '../screens/HomeScreen'
+import { NewScreen } from '../screens/NewScreen'
+import { ResourceScreen } from '../screens/ResourceScreen'
+import { PantheonScreen } from '../screens/PantheonScreen'
 
 interface AppShellProps {
   resources?: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number }

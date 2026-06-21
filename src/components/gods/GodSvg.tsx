@@ -1,4 +1,4 @@
-import type { AngerLevel } from '../data/gods'
+import type { AngerLevel } from '../../data/gods'
 
 const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
   high:   { color: '#FF2435', weight: 6 },

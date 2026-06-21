@@ -1,11 +1,11 @@
 import { useRef, useState, useCallback } from 'react'
 import { ArrowLeft } from '@phosphor-icons/react'
-import { FONTS } from '../tokens'
-import { GodSvg } from './GodSvg'
-import { GOD_SVG_MAP } from './GodCard'
-import { GODS } from '../data/gods'
-import { PANTHEON_NODES, PANTHEON_EDGES, NODE_POSITIONS } from '../data/godIndex'
-import type { PantheonNode } from '../data/godIndex'
+import { FONTS } from '../../tokens'
+import { GodSvg } from '../gods/GodSvg'
+import { GOD_SVG_MAP } from '../gods/GodCard'
+import { GODS } from '../../data/gods'
+import { PANTHEON_NODES, PANTHEON_EDGES, NODE_POSITIONS } from '../../data/godIndex'
+import type { PantheonNode } from '../../data/godIndex'
 
 // Card dimensions by tier: [cardWidth, svgWidth, svgHeight]
 // Name area always 38px (matching GodCard), card paddingBottom always 16px
@@ -17,9 +17,6 @@ const CARD_DIMS: Record<number, [number, number, number]> = {
 const OMETEOTL_DIMS: [number, number, number] = [191, 125, 194]
 const NAME_H = 38
 const CARD_PADDING_BOTTOM = 16
-
-// Map god id → anger level from the GODS array
-const GOD_ANGER = Object.fromEntries(GODS.map(g => [g.id, g.angerLevel]))
 
 const EDGE_STYLE = {
   family: { stroke: '#ffffff', strokeWidth: 1, strokeDasharray: undefined, opacity: 0.2 },

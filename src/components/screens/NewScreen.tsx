@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GODS, type God, type Ritual } from '../data/gods'
+import { GODS, type God, type Ritual } from '../../data/gods'
 
 const CARD_WIDTH = 255
 const CARD_HEIGHT = 248

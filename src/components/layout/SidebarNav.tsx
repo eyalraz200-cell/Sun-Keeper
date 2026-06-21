@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { COLORS, LAYOUT } from '../tokens'
+import { COLORS, LAYOUT } from '../../tokens'
 import { SquaresFour } from '@phosphor-icons/react'
-import { PrisonerIcon } from './PrisonerIcon'
-import logoUrl from '../assets/logo.svg'
+import { PrisonerIcon } from '../icons/PrisonerIcon'
+import logoUrl from '../../assets/logo.svg'
 
 function GearIcon({ size, color }: { size: number; color: string }) {
   return (
