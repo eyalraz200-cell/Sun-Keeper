@@ -11,6 +11,12 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 - Group title = **18px** render-layer eye circle (see "Standard eye mode" rule under `RitualCard`/`GodSvg` below — `high: #FF2435/6px`, `medium: #EF7B2E/4px`, `low: #D7C94E/3px`, `none: #6C6C6C/2px`, NOT the data-layer ANGER palette) + sentence-case label in `FONTS.spectral` 14px weight 300 white (NOT uppercase): "Furious" / "Offended" / "Uneasy" / "At Peace"
 - Titles are hidden while a god is selected (detail panel open), same as the page-level "Gods" header
 
+**Expanded card view (detail panel):** clicking a god card (`HomeGodCard`) on the overview screen sets `selectedGodId` and swaps the grid for `HomeGodDetailPanel`:
+- Larger god SVG (320px × 488px) on the left
+- The god's 3 ritual cards on the right (`RitualCardWithChoose`)
+- Clicking the god name/back area (`onBack`) returns to the grid
+- `HomeGodCard` and `HomeGodDetailPanel` are defined locally in `HomeScreen.tsx` — they are separate from the shared `GodCard.tsx` component used in the sidebar `GodList`.
+
 ---
 
 ## Ritual Screen Modes
@@ -258,6 +264,17 @@ interface GodCardProps {
 **Name:** Cinzel 12px, weight 500, uppercase, 1px letter-spacing. Fades out as `stuckProgress` → 1 (opacity = `max(0, 1 - stuckProgress * 3)`).
 
 **SVG area:** `125px × 194px`, hidden when `isCollapsed`. No transition on any property.
+
+**Ritual Panel** — the "card within a card" on the right side of `GodCard`:
+- Positioned `left: INNER_CARD_LEFT`, `right: RITUAL_PANEL_RIGHT_GAP (12px)`, `top/bottom: 14px` inside the outer god card
+- Own border + `borderRadius: 10px`, matching the outer card's border color/highlight state
+- Two states:
+  - **No ritual selected**: fire icon + "No Ritual" / "Selected" text, centered — `#4d4d4d` default, `#999999` on hover/selected (never white)
+  - **Ritual chosen**: participant icons/counts, sacred site, duration, divider, outcome circle
+- `INNER_CARD_LEFT` is derived from `FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP` — the gap between the god's face and the ritual panel always matches the card's left padding.
+- **Sizing rule:** both the gap from the face (left edge) AND the gap from the card's right edge (`RITUAL_PANEL_RIGHT_GAP`) are fixed and must never be touched to resize the panel. `RITUAL_PANEL_WIDTH` is the only thing that changes — `CARD_WIDTH` is *derived* from `INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP`, so the outer `GodCard` itself grows/shrinks to fit, instead of either gap ever changing.
+- **Hover transition:** the panel's border-color and background-color change **instantly** on hover (no `transition` property) — border goes `#333333` → `#808080`, fill goes `transparent` → `#2e2e2e`. This matches the god's face (`GodSvg`), which also snaps instantly because it's raw SVG markup with the color baked into each `fill="..."` attribute, not a CSS-transitionable property. The outer `GodCard` no longer scales on hover (removed) — its border also brightens instantly, but by a smaller step: `#333333` → `#4d4d4d`.
+- **Content color on hover:** the fire icon and "No Ritual Selected" text brighten from `#4d4d4d` to `#999999` on hover/selected — deliberately NOT white, unlike the border/fill above.
 
 ---
 
