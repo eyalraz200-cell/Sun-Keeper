@@ -2,7 +2,28 @@
 
 This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKOsT`) in every conversation. Read this before making code changes.
 
+## App Architecture (current, live)
+
+`App.tsx` renders `AppShell` + `AiChat` directly — there is **no startup/intro flow active**. `AppShell` (`src/components/layout/AppShell.tsx`) holds `activeScreen` state, renders `SidebarNav` (54px nav strip) plus whichever screen is active, full-bleed, with no secondary deity sidebar and no right panel.
+
+**Archived components:** `src/components/_archived/` contains `ScreenChooser`, `StartScreen`, `StartScreenWrathful`, `GodList`, `MiddleSection`, `ResourceBar`, `RightPanel`, and `CtaButton` — leftovers from an earlier design iteration (a cinematic intro flow + a dedicated ritual screen with a deity sidebar and wrathful Huitzilopochtli mode). They're excluded from the TypeScript build (`tsconfig.app.json` excludes this folder) and not imported anywhere live. Treat them as historical reference only — don't wire them back up or copy their patterns without being asked, since the rest of this doc no longer matches how they work.
+
+---
+
 ## Screens
+
+`activeScreen` state lives in `AppShell.tsx`, switched via `SidebarNav` icon clicks:
+
+| `activeScreen` value | Screen component | Nav icon |
+|---|---|---|
+| `overview` (default) | `screens/HomeScreen.tsx` | Pyramid |
+| `dashboard` | `screens/DashboardScreen.tsx` | Squares (Phosphor `SquaresFour`) |
+| `calendar` | `screens/CalendarScreen.tsx` | Calendar |
+| `resources` | `screens/ResourceScreen.tsx` | Prisoner icon |
+| `index` | `screens/PantheonScreen.tsx` | Skull |
+| `new` | `screens/NewScreen.tsx` | *(not wired to any nav button — currently unreachable from the UI; treat as WIP)* |
+
+`settings` and `profile` nav buttons exist in `SidebarNav` but have no screen wired up in `AppShell` — clicking them renders nothing.
 
 **@overview screen** (`activeScreen === 'overview'`):
 - The default screen on app load (pyramid icon in `SidebarNav`)
@@ -10,31 +31,17 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 - God cards are grouped into sections by `angerLevel` (`high` → `medium` → `low` → `none`), each with its own group title — no flat ungrouped grid
 - Group title = **18px** render-layer eye circle (see "Standard eye mode" rule under `RitualCard`/`GodSvg` below — `high: #FF2435/6px`, `medium: #EF7B2E/4px`, `low: #D7C94E/3px`, `none: #6C6C6C/2px`, NOT the data-layer ANGER palette) + sentence-case label in `FONTS.spectral` 14px weight 300 white (NOT uppercase): "Furious" / "Offended" / "Uneasy" / "At Peace"
 - Titles are hidden while a god is selected (detail panel open), same as the page-level "Gods" header
+- A resource bar (`HomeResourceBar`, defined locally inside `HomeScreen.tsx` — there is no separate `ResourceBar.tsx` component anymore) shows available Prisoners/Children/Virgins/Volunteers and Temple counts at the top of the screen
 
 **Expanded card view (detail panel):** clicking a god card (`HomeGodCard`) on the overview screen sets `selectedGodId` and swaps the grid for `HomeGodDetailPanel`:
 - Larger god SVG (320px × 488px) on the left
 - The god's 3 ritual cards on the right (`RitualCardWithChoose`)
 - Clicking the god name/back area (`onBack`) returns to the grid
-- `HomeGodCard` and `HomeGodDetailPanel` are defined locally in `HomeScreen.tsx` — they are separate from the shared `GodCard.tsx` component used in the sidebar `GodList`.
+- `HomeGodCard` and `HomeGodDetailPanel` are defined locally in `HomeScreen.tsx` — they are separate from the shared `GodCard.tsx` component used in the main grid.
 
----
+**Ritual sacrifice flow:** clicking "Authorize All Selected Rituals" on the overview screen sets `sacrificeCost` and renders `RitualSacrificeOverlay` (see Component API Reference below) — a drag-and-drop interaction, not a passive animated cutscene.
 
-## Ritual Screen Modes
-
-The ritual screen (MiddleSection) has two named modes, controlled by `ritualMode: RitualScreenMode` (defined in `src/tokens.ts`):
-
-**@ritual mode** (`ritualMode === 'ritual'`):
-- 3 ritual cards side-by-side in a row
-- CTA "AUTHORIZE RITUAL" button visible below cards
-- God list sidebar in normal collapsed state
-
-**@expanded mode** (`ritualMode === 'expanded'`):
-- Ritual cards stacked vertically (compact layout)
-- No CTA button
-- God list sidebar expanded (full-grid overlay)
-- Main content column has `marginRight: 31px`
-
-State lives in `App.tsx` as `const [ritualMode, setRitualMode] = useState<RitualScreenMode>('expanded')`. Passed as `ritualMode` prop to `AppShell`, `MiddleSection`, and `AiChat`.
+The other screens (`DashboardScreen`, `CalendarScreen`, `ResourceScreen`, `PantheonScreen`, `NewScreen`) don't yet have a detailed spec in this doc — audit them against Figma individually before making pixel-level claims about their layout.
 
 ---
 
@@ -43,190 +50,59 @@ State lives in `App.tsx` as `const [ritualMode, setRitualMode] = useState<Ritual
 **Viewport:** 100vw × 100vh, background `#181818`
 
 **Structure: Outer flex ROW (100vw × 100vh)**
-- **Left nav strip:** 54px wide, full 100vh height, border-right `#333333`
-- **Deity sidebar:** 191px wide, full 100vh height, border-right `#333333`, scrollable
-- **Main content column:** flex: 1, flex COLUMN
-  - Main content area: flex: 1, overflow: auto
-  - Resource bar: 88px tall, border-top `#333333`, spans only main content width (NOT under right panel)
-- **Right panel:** 331px wide, full 100vh height, border-left `#333333`, overflow: auto
+- **Left nav strip (`SidebarNav`):** 54px wide, full 100vh height, border-right `#333333`
+- **Main content column:** flex: 1, renders the active screen full-bleed — there is currently no secondary deity sidebar and no right panel in the live UI (both existed in the archived design iteration; see App Architecture above)
 
 **Key constraints:**
-- Left nav and deity sidebar extend full viewport height (100vh) to bottom edge
-- Resource bar is scoped inside main content column — does NOT extend under right panel
-- Right panel is full-height sibling at top level
-- All structural divider borders are `#333333`
+- `SidebarNav` extends full viewport height (100vh) to bottom edge
 - Background is always `#181818` (never lighter/darker)
-
----
-
-## App Flow
-
-### Entry Points
-The app has a startup flow controlled by `chosenScreen` state in `App.tsx`:
-
-1. **ScreenChooser** (`chosenScreen === null`) — always shown first
-2. **StartScreen** (`chosenScreen === 'regular'`) — regular cinematic intro
-3. **StartScreenWrathful** (`chosenScreen === 'wrathful'`) — secondary/wrathful intro
-4. After either start screen dismisses → **AppShell** with full UI
-
-When wrathful is chosen, a random god is picked and stored as `wrathfulGodId` in App state. `wrathfulGodId` is passed to `StartScreenWrathful` (for face/name) and down to `AppShell` → `GodList` → `GodCard` (to render that god's card in wrathful red style).
 
 ---
 
 ## Component API Reference
 
-### ScreenChooser
-**File:** `src/components/ScreenChooser.tsx`
-
-**Props:**
-```ts
-interface ScreenChooserProps {
-  onChoose: (screen: 'regular' | 'wrathful') => void
-}
-```
-
-**Renders:** Full-screen dark overlay (`#181818`, `zIndex: 3000`). Centered "CHOOSE YOUR OPENING" label in Cinzel, 11px, letter-spacing 5px, `rgba(255,255,255,0.3)`. Two buttons side by side:
-- **Regular** — white border (`rgba(255,255,255,0.4)`), white text; hover fills white bg, text `#181818`
-- **Secondary** — red border (`rgba(200,50,46,0.5)`), red text; hover fills red bg, white text
-
-Both buttons: Spectral 15px, 1.5px letter-spacing, 6px border-radius, `12px 40px` padding. Fade-in animations on mount (label: 0.8s delay 0.2s; buttons: 0.8s delay 0.5s).
-
----
-
-### StartScreen (Regular)
-**File:** `src/components/StartScreen.tsx`
-
-**Props:**
-```ts
-interface StartScreenProps {
-  dismissing: boolean
-  onClick: () => void
-}
-```
-
-**Renders:** Cinematic intro screen. `position: fixed`, `zIndex: 1500`. Fades out on dismiss.
-
----
-
-### StartScreenWrathful (Secondary)
-**File:** `src/components/StartScreenWrathful.tsx`
-
-**Props:**
-```ts
-interface StartScreenWrathfulProps {
-  dismissing: boolean
-  onClick: () => void
-  godId: string  // randomly chosen at ScreenChooser time in App.tsx
-}
-```
-
-**Renders:** Two-phase cinematic screen. `position: fixed`, `backgroundColor: '#FF2435'`, `zIndex: 2000`.
-
-**Background:** Radial gradient overlay `radial-gradient(ellipse at center, transparent 30%, rgba(80,0,0,0.6) 100%)` for corner darkening.
-
-**God face (both phases):**
-- Intro: `57vmin × 57vmin`, centered at `translate(-50%, calc(-50% - 12vh - 2.5vmin))`
-- Punishment: `40vmin × 40vmin`, centered at `translate(-50%, calc(-50% - 20vh))`
-- Transition between phases: `2.4s cubic-bezier(0.4,0,0.2,1)` on width, height, and transform
-- Initial fade-in: `wrathGodFadeIn 2.5s ease 0.4s forwards`
-- Rendered with `filledEyes={true}`, `eyeGlow={true}` (black filled eyes + concentric rings + body-color inside stroke), `isHovered={true}` (white body `#F0F0F0`)
-- `eyeAnimation` forces black eyes: `{ fromColor: '#000000', toColor: '#000000', delay: 0, duration: 0 }`
-
-**Intro phase text:** Anchored at `top: calc(50% - 12vh - 2.5vmin + 28.5vmin + 54px)` (just below the face). Fades in `1.6s ease 2.6s`. Single line: god name in Cinzel (uppercase, weight 400) + " Was Left Unappeased." in Spectral 28px weight 300, white.
-
-**Punishment phase text:** Anchored at `top: calc(50% + 7vh)`. Two separate staggered animations:
-1. **"DIVINE PUNISHMENT"** — Cinzel 11px, weight 500, 4px letter-spacing, uppercase, `marginBottom: 14px`. Fades in `1.6s ease 2.8s both`
-2. **Description lines** — Spectral 28px weight 300, white. Two lines (`gap: 2px`). Both fade in `1.8s ease 4.0s both`:
-   - "Your Armies Fall. War Is No Longer Yours To Win"
-   - "Until [HUITZILOPOCHTLI in Cinzel] Is Appeased."
-
-**CTA button** (both phases, same element):
-- Label: "VIEW PUNISHMENT" (intro) → "CONTINUE" (punishment)
-- Position: `bottom: 9vh`, centered
-- Spectral 16px, 1.5px letter-spacing, white border + text
-- Hover: instant (`transition: none`) — fills white bg, text `#FF2435`
-- Initial reveal: `wrathGodFadeIn 1.2s ease 5.5s forwards`
-- Intro click → transitions to punishment phase; Punishment click → calls `onClick` (enters app)
-
----
-
 ### AppShell
-**File:** `src/components/AppShell.tsx`
+**File:** `src/components/layout/AppShell.tsx`
 
 **Props:**
 ```ts
 interface AppShellProps {
-  gods: God[]
-  selectedGodId: string | null
-  onSelectGod: (godId: string) => void
-  mainContent: ReactNode
-  activeRituals?: Record<string, string>
-  isGodListExpanded: boolean
-  onGodListExpandedChange: (expanded: boolean) => void
-  wrathfulGodId?: string | null
+  resources?: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number }
+  resourceTotals?: typeof RESOURCE_TOTALS
+  aiPanelOpen?: boolean
 }
 ```
 
-**Renders:** Full layout container. Passes `wrathfulGodId` down to `GodList`. When god list is expanded, renders a `rgba(0,0,0,0.5)` scrim over the main content area (click to close).
+**Renders:** `SidebarNav` + whichever screen matches internal `activeScreen` state (see Screens table above). No god/ritual selection state lives here — each screen manages its own.
 
 ---
 
 ### SidebarNav
-**File:** `src/components/SidebarNav.tsx`
-
-**Renders:** 54px-wide vertical strip. Four Phosphor icon buttons. Height is `100vh`.
-
----
-
-### GodList
-**File:** `src/components/GodList.tsx`
+**File:** `src/components/layout/SidebarNav.tsx`
 
 **Props:**
 ```ts
-interface GodListProps {
-  gods: God[]
-  selectedGodId: string | null
-  onSelect: (godId: string) => void
-  activeRituals?: Record<string, string>
-  isExpanded?: boolean
-  onToggleExpanded?: () => void
-  onCloseExpanded?: () => void
-  wrathfulGodId?: string | null
+interface SidebarNavProps {
+  activeScreen?: string
+  onNavClick?: (section: string) => void
 }
 ```
 
-**Renders:** Expandable deity sidebar. Two views: collapsed (scrollable list with sticky selected card) and expanded (5-column grid overlay). Width expands from `sidebarWidth` to `OVERLAY_WIDTH` with a `0.35s cubic-bezier` transition. `zIndex` is `1` when collapsed, `200` when expanded.
-
-**Collapsed view behavior:**
-- Selected card is `position: sticky`, sticks at `top: 24px`
-- As card sticks, height compresses and padding adjusts via `stuckProgress` (0→1)
-- Header fades out as card slides over it
-- Scroll events clear hover state to prevent stuck hovers
-
-**Expanded view behavior:**
-- 5 columns of `GodCard` in a grid — shows ALL gods
-- Clicking a card in expanded view selects it AND closes the expanded view (but only when selecting a *different* god — deselecting the same god does NOT collapse the list)
-- A scrim (`rgba(0,0,0,0.5)`) covers the main content area when expanded; click scrim to close
-
-**Wrathful mode:** When `wrathfulGodId` is set, passes `wrathful={true}` to that specific god's `GodCard` in both collapsed list and expanded grid. The wrathful god is randomly chosen at ScreenChooser time and can be any god.
-
-**Active rituals:** Gods with active rituals are removed from the main list and shown in a collapsed drawer at the bottom that reveals individual cards on hover.
+**Renders:** 54px-wide vertical strip, full `100vh`. Logo at top, then 5 screen nav buttons (Pyramid/Squares/Calendar/Prisoner/Skull — see Screens table), then a `settings`/`profile` pair pinned to the bottom via `marginTop: auto`. Active button color `#ffffff`, hover `#a8a4a0`, default `#6a6762`.
 
 ---
 
 ### GodCard
-**File:** `src/components/GodCard.tsx`
+**File:** `src/components/gods/GodCard.tsx`
 
 **Props:**
 ```ts
 interface GodCardProps {
   god: God
-  isSelected: boolean
-  onClick: () => void
-  stuckProgress?: number    // 0–1, drives sticky compression
-  isCollapsed?: boolean     // collapsed drawer mode (name only, no SVG)
-  noBorder?: boolean
-  wrathful?: boolean        // wrathful Huitzilopochtli style
+  isSelected?: boolean
+  onClick?: () => void
+  chosenRitual?: Ritual | null
+  domRef?: (el: HTMLDivElement | null) => void
 }
 ```
 
@@ -243,27 +119,16 @@ interface GodCardProps {
 
 **No placeholder/duplicate SVGs.** Every god in `GODS` must have its own unique SVG file. If a god's SVG doesn't exist yet, do not add the god to `GODS` or `GOD_SVG_MAP` — wait until the real SVG is available. `coyolxauhqui` is pending a real SVG before it can be re-added.
 
-**Standard state matrix (non-wrathful):**
+**Current state matrix** (`highlighted = isSelected || isHovered` — selected and hovered currently render identically, there is no distinct "selected" look):
 
-| State    | Background | Border              | Name color | Body color |
-|----------|------------|---------------------|------------|------------|
-| Default  | `#181818`  | `1px solid #333333` | `#6C6C6C`  | `#6C6C6C`  |
-| Hovered  | `#181818`  | `1px solid #ffffff` | `#F0F0F0`  | `#F0F0F0`  |
-| Selected | `#ffffff`  | `1px solid #ffffff` | `#000000`  | `#000000`  |
+| State                | Border              | Name color | Body color (passed to `GodSvg`) |
+|----------------------|---------------------|------------|----------------------------------|
+| Default              | `1px solid #262626` | `#6c6c6c`  | *(unset — `GodSvg` computes its own default)* |
+| Highlighted (hover/selected) | `1px solid #4d4d4d` | `#F0F0F0`  | `#e0e0e0` |
 
-**Wrathful state matrix (wrathful=true, Huitzilopochtli only):**
+Background is always `COLORS.bgBase`, regardless of state. There is currently no wrathful/Huitzilopochtli-specific styling wired into `GodCard` — that lived in the now-archived `StartScreenWrathful` flow.
 
-| State           | Background | Border              | Name color             | Body color |
-|-----------------|------------|---------------------|------------------------|------------|
-| Default         | `#FF2435`  | `1px solid #FF2435` | `rgba(255,255,255,0.9)`| `#E6E6E6`  |
-| Hovered         | `#FF2435`  | `1px solid #ffffff` | `#ffffff`              | `#F0F0F0`  |
-| Selected        | `#FF2435`  | `1px solid #ffffff` | `#ffffff`              | `#F0F0F0`  |
-
-**Wrathful eye rendering:** `filledEyes={true}`, `eyeGlow={true}`, `bodyColor` from table above, `eyeAnimation` forcing black eyes (`#000000`, weight 6, delay 0, duration 0). See GodSvg `filledEyes` mode below.
-
-**Name:** Cinzel 12px, weight 500, uppercase, 1px letter-spacing. Fades out as `stuckProgress` → 1 (opacity = `max(0, 1 - stuckProgress * 3)`).
-
-**SVG area:** `125px × 194px`, hidden when `isCollapsed`. No transition on any property.
+**SVG area:** `125px × 194px` (`FACE_LEFT`/`FACE_WIDTH` constants), positioned at `top: 38px`.
 
 **Ritual Panel** — the "card within a card" on the right side of `GodCard`:
 - Positioned `left: INNER_CARD_LEFT`, `right: RITUAL_PANEL_RIGHT_GAP (12px)`, `top/bottom: 14px` inside the outer god card
@@ -273,13 +138,13 @@ interface GodCardProps {
   - **Ritual chosen**: participant icons/counts, sacred site, duration, divider, outcome circle
 - `INNER_CARD_LEFT` is derived from `FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP` — the gap between the god's face and the ritual panel always matches the card's left padding.
 - **Sizing rule:** both the gap from the face (left edge) AND the gap from the card's right edge (`RITUAL_PANEL_RIGHT_GAP`) are fixed and must never be touched to resize the panel. `RITUAL_PANEL_WIDTH` is the only thing that changes — `CARD_WIDTH` is *derived* from `INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP`, so the outer `GodCard` itself grows/shrinks to fit, instead of either gap ever changing.
-- **Hover transition:** the panel's border-color and background-color change **instantly** on hover (no `transition` property) — border goes `#333333` → `#808080`, fill goes `transparent` → `#2e2e2e`. This matches the god's face (`GodSvg`), which also snaps instantly because it's raw SVG markup with the color baked into each `fill="..."` attribute, not a CSS-transitionable property. The outer `GodCard` no longer scales on hover (removed) — its border also brightens instantly, but by a smaller step: `#333333` → `#4d4d4d`.
+- **Hover transition:** the panel's border-color and background-color change **instantly** on hover (no `transition` property) — border goes `#333333` → `#808080`, fill goes `transparent` → `#2e2e2e`. This matches the god's face (`GodSvg`), which also snaps instantly because it's raw SVG markup with the color baked into each `fill="..."` attribute, not a CSS-transitionable property. The outer `GodCard` border also brightens instantly: `#262626` → `#4d4d4d`.
 - **Content color on hover:** the fire icon and "No Ritual Selected" text brighten from `#4d4d4d` to `#999999` on hover/selected — deliberately NOT white, unlike the border/fill above.
 
 ---
 
 ### GodSvg (generic)
-**File:** `src/components/GodSvg.tsx`
+**File:** `src/components/gods/GodSvg.tsx`
 
 **Props:**
 ```ts
@@ -289,9 +154,10 @@ interface GodSvgProps {
   isHovered?: boolean
   isSelected?: boolean
   eyeAnimation?: EyeAnimation
-  filledEyes?: boolean     // use filled-circle eye mode (wrathful/starting screen)
-  eyeGlow?: boolean        // add concentric rings inside filled eyes
+  filledEyes?: boolean     // use filled-circle eye mode — currently unused by any live caller, kept for a possible future wrathful-style mode
+  eyeGlow?: boolean        // add concentric rings inside filled eyes — same, unused live
   bodyColor?: string       // override computed body color
+  hideEyes?: boolean
 }
 
 interface EyeAnimation {
@@ -309,7 +175,7 @@ interface EyeAnimation {
 - If `bodyColor` prop is passed: use it directly (overrides all state logic)
 - Otherwise: `isSelected → #000000`, `isHovered → #F0F0F0`, default → `#6C6C6C`
 
-**Standard eye mode (filledEyes=false):**
+**Standard eye mode (filledEyes=false) — this is the mode actually used everywhere live today:**
 
 Inside-stroke technique using doubled `stroke-width` + `<clipPath>` to achieve an inward stroke. ClipPath IDs use `cx` value to avoid collisions (`ec-{cx}`).
 
@@ -322,11 +188,11 @@ Inside-stroke technique using doubled `stroke-width` + `<clipPath>` to achieve a
 
 On hover with `none` anger: eyes → `#F0F0F0`. When `isSelected`: outer glow filter applied via `feGaussianBlur` + `feComposite`.
 
-If `eyeAnimation` is passed (non-filledEyes mode): eyes animate from `fromColor`/`fromWeight` to `toColor`/`toWeight` using CSS `@keyframes eyeShift-{id}`. Used in the ritual overlay screen.
+If `eyeAnimation` is passed (non-filledEyes mode): eyes animate from `fromColor`/`fromWeight` to `toColor`/`toWeight` using CSS `@keyframes eyeShift-{id}`.
 
-**Filled eye mode (filledEyes=true):**
+**Filled eye mode (filledEyes=true) — currently dormant, no live caller passes `filledEyes={true}`:**
 
-Used for wrathful Huitzilopochtli card and secondary start screen. Eye color = `eyeAnimation.toColor` if provided, otherwise `eye.color`.
+Originally built for the wrathful Huitzilopochtli card and the now-archived secondary start screen. Eye color = `eyeAnimation.toColor` if provided, otherwise `eye.color`.
 
 Each eye renders (in order, inside `<defs>` + `<g id="eyes">`):
 1. **Black fill** — solid filled circle at full radius
@@ -342,28 +208,15 @@ Each eye renders (in order, inside `<defs>` + `<g id="eyes">`):
 2. Drop into `src/assets/Gods/`
 3. **Normalize eye radius** — SVGs exported from Figma often have `r="8"` or other values. Run: `grep -o 'r="[^"]*"' <file>.svg | sort | uniq` to check, then fix any non-`9` radius inside the `<g id="eyes">` group: `sed -i '' 's/r="8"/r="9"/g' <file>.svg`. GodSvg requires exactly `r="9"`.
 4. **Normalize fill color** — SVGs exported from Figma often use `fill="white"` or `fill="#FEFEFE"`. GodSvg handles both, but verify no other unexpected fill values: `grep -o 'fill="[^"]*"' <file>.svg | sort | uniq -c`
-5. Add import and entry to `GOD_SVG_MAP` in `src/components/GodCard.tsx`
+5. Add import and entry to `GOD_SVG_MAP` in `src/components/gods/GodCard.tsx`
 6. Add the god to `GODS` array in `src/data/gods.ts`
 
 **Rule: no placeholder SVGs.** Never map a god's ID to another god's SVG file. If the real SVG doesn't exist yet, skip steps 5–6 entirely until it does.
 
 ---
 
-### MiddleSection
-**File:** `src/components/MiddleSection.tsx`
-
-**Renders:** Main content area. Shows god name + subtitle header, "Appeasement Ritual Options" label, 3 `RitualCard`s, and an "AUTHORIZE RITUAL" button.
-
-**Ritual display:** Every god always shows exactly 3 ritual cards — all 3 of the god's rituals, no filtering. Cards are `250px` wide, `flexShrink: 0`.
-
-**Card layout:**
-- 3 cards: centered with consistent gap
-- Ghost frames shown when no god selected — must exactly match `RitualCard` dimensions/shape
-
----
-
 ### RitualCard
-**File:** `src/components/RitualCard.tsx`
+**File:** `src/components/ritual/RitualCard.tsx`
 
 **Props:**
 ```ts
@@ -371,6 +224,15 @@ interface RitualCardProps {
   ritual: Ritual
   isSelected: boolean
   onClick: () => void
+  isActive?: boolean
+  onHoverChange?: (isHovered: boolean) => void
+  wrathful?: boolean
+  overrideOutcome?: string
+  overrideParticipants?: Ritual['participants']
+  overrideSite?: Ritual['sacredSite']
+  overrideDuration?: string
+  isCompact?: boolean
+  footer?: React.ReactNode
 }
 ```
 
@@ -383,42 +245,30 @@ interface RitualCardProps {
 6. **Divider** — inset 13px, `marginTop: auto` (pins to bottom)
 7. **Resulting State** — centered outcome eye circle + label
 
-**Outcome eye:** `boxShadow: inset 0 0 0 {weight}px {color}`, circle is **20px** in this component specifically. The ritual's `outcomeColor` data field (`#c8322e`/`#d4662a`/`#d4a83c`/other — the ANGER-token palette) is NOT the rendered color — it's looked up via `outcomeEye()` in `RitualCard.tsx` to the actual rendered color/weight, which is the same "Standard eye mode" table the real god SVG eyes use (see GodSvg section below):
+**Outcome eye:** `boxShadow: inset 0 0 0 {weight}px {color}`, circle is **20px** in this component specifically. The ritual's `outcomeColor` data field (`#c8322e`/`#d4662a`/`#d4a83c`/other — the ANGER-token palette) is NOT the rendered color — it's looked up via `outcomeEye()` in `RitualCard.tsx` to the actual rendered color/weight, which is the same "Standard eye mode" table the real god SVG eyes use (see GodSvg section above):
 - `outcomeColor #c8322e` → renders `#FF2435` / weight 6 → label "Furious"
 - `outcomeColor #d4662a` → renders `#EF7B2E` / weight 4 → label "Offended"
 - `outcomeColor #d4a83c` → renders `#D7C94E` / weight 3 → label "Uneasy"
 - default → renders `#ffffff` / weight 2 → label "Peaceful"
 
-**Do not confuse the data-layer ANGER palette (`#c8322e`/`#d4662a`/`#c8a83c`, used for `god.angerColor`/`ritual.outcomeColor` data fields and small list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`) with the render-layer eye palette (`#FF2435`/`#EF7B2E`/`#D7C94E`/`#6C6C6C`, weights 6/4/3/2) used for actual circle/eye visuals.** Any new standalone anger/outcome circle (icon + label, not a small list dot) must use the render-layer palette, sized **18px** to match the real god SVG eye's hole-to-ring ratio exactly (`r="9"` circle, doubled-stroke-width + clipPath technique — see GodSvg section). This RitualCard instance uses 20px because it predates that rule; don't copy its size for new circles, only its color/weight lookup.
+**Do not confuse the data-layer ANGER palette (`#c8322e`/`#d4662a`/`#c8a83c`, used for `god.angerColor`/`ritual.outcomeColor` data fields and small list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`) with the render-layer eye palette (`#FF2435`/`#EF7B2E`/`#D7C94E`/`#6C6C6C`, weights 6/4/3/2) used for actual circle/eye visuals.** Any new standalone anger/outcome circle (icon + label, not a small list dot) must use the render-layer palette, sized **18px** to match the real god SVG eye's hole-to-ring ratio exactly (`r="9"` circle, doubled-stroke-width + clipPath technique — see GodSvg section). This RitualCard instance uses 20px because it predates that rule; don't copy its size for new circles, only its color/weight lookup. Note: `outcomeEye()` is also re-exported from `GodCard.tsx` for use in `HomeScreen.tsx` — there are two independent local implementations, kept in sync by convention rather than a shared import.
 
 **Participant display order:** Prisoners → Volunteers → Children → Virgins
 
 ---
 
-### ResourceBar
-**File:** `src/components/ResourceBar.tsx`
+### RitualSacrificeOverlay
+**File:** `src/components/ritual/RitualSacrificeOverlay.tsx`
 
-**Renders:** 88px-tall bottom bar (inside main content column only). Four resource items with Phosphor icons at 32px. Gap: 32px. Padding: 32px each side.
+**Props:**
+```ts
+interface RitualSacrificeOverlayProps {
+  counts: Record<'prisoners' | 'volunteers' | 'children' | 'virgins', number>
+  onComplete: () => void
+}
+```
 
----
-
-### RightPanel
-**File:** `src/components/RightPanel.tsx`
-
-**Renders:** 331px-wide right panel, full viewport height. Shows ritual effect details. Only rendered when a ritual is selected.
-
----
-
-### Ritual Overlay (in App.tsx)
-
-When a ritual is performed, a full-screen `#181818` overlay renders with:
-- **God face:** `57vmin`, centered at `translate(-50%, calc(-50% - 12vh - 2.5vmin))`. Fades in `2.4s ease 0.8s`.
-- **Left/right gradients:** `linear-gradient(to right, rgba(0,0,0,0.85) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.85) 100%)`
-- **Top/bottom gradients:** `linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.5) 100%)`
-- **Victim list:** anchored at `top: calc(50% - 12vh - 2.5vmin + 28.5vmin + 54px)`. Shows `victimListShow` animation (fades in then out). Filtered to non-zero counts only.
-- **Outcome text:** same anchor point as victim list, fades in at 7.0s.
-- **Eye animation:** god's eyes animate from current anger color to outcome color at 5.0s delay, 2s duration.
-- **CONTINUE button:** `bottom: 14vh`, fades in at 8.4s; hover inverts colors.
+**Renders:** A full-screen drag-and-drop interaction triggered from `HomeScreen.tsx` after clicking "Authorize All Selected Rituals" — **not** a passive animated cutscene. The player drags victim-type icons (Prisoners/Volunteers/Children/Virgins, in that order) onto a Chichen Itza temple graphic to confirm the sacrifice; `onComplete` fires once all victims are placed, at which point `HomeScreen` deducts the cost from spent resources. Has its own drop-margin tolerance (`DROP_MARGIN`) and short return/absorb animation timings (`RETURN_DURATION`, `ABSORB_DURATION`) for icons that miss the drop target.
 
 ---
 
@@ -456,6 +306,8 @@ SPACING = {
   xs: '4px', sm: '8px', md: '12px', lg: '16px', xl: '24px', xxl: '32px',
 }
 ```
+
+`tokens.ts` also exports a `RitualScreenMode = 'ritual' | 'expanded'` type and `LAYOUT`/`RESOURCE_TOTALS` constants. `RitualScreenMode` is now only passed as a hardcoded `ritualMode="expanded"` prop to `AiChat` (it only affects `AiChat`'s own bottom offset) — it is **not** a toggleable dual-layout system anymore; that was the archived `MiddleSection` design.
 
 **Wrathful color** (not in tokens, use directly): `#FF2435`
 
