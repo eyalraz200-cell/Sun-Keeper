@@ -107,7 +107,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.bgBase, borderBottom: '1px solid #333333', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
+    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.black, borderBottom: '1px solid #333333', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '96px' }}>
@@ -427,7 +427,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   )
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', backgroundColor: COLORS.bgBase }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', backgroundColor: COLORS.black }}>
       <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={resourceTotals} hoveredRitual={hoveredRitual} />
       <div
         ref={scrollContainerRef}
@@ -494,7 +494,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           right: aiPanelOpen ? '331px' : AI_TOGGLE_RESERVE,
           bottom: 0,
           height: '96px',
-          background: `linear-gradient(to bottom, transparent, ${COLORS.bgBase})`,
+          background: `linear-gradient(to bottom, transparent, ${COLORS.black})`,
           pointerEvents: 'none',
           transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}

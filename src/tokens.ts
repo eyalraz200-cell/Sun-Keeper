@@ -1,18 +1,21 @@
-// Small, curated set of reusable UI colors — every value here is one actually
-// reused across multiple components today. Reference these by name instead of
-// retyping a hex code; don't add a new entry for a one-off color used in a
-// single place.
+// Small, curated set of reusable UI colors, named by their actual grayscale
+// value (a rounded lightness percentage) rather than by what they're used
+// for — a color's role can change between contexts, but its value doesn't.
+// "black" and "white" are the two perceptual anchors used throughout the app
+// (neither is the literal #000000/#ffffff extreme — see gray0 below for true
+// black). Every value here is one actually reused across multiple components
+// today; don't add an entry for a one-off color used in a single place.
 export const COLORS = {
-  bgBase: '#181818',          // app background, default card background
-  bgPanelHover: '#2e2e2e',    // ritual panel fill when hovered/highlighted
-  border: '#333333',          // standard structural divider/border (nav strip, panel dividers, resource bar)
-  borderCard: '#262626',      // GodCard's own default (subtler) border
-  borderHighlight: '#4d4d4d', // card/panel border, and default icon/text tone, when hovered or selected
-  textDim: '#6C6C6C',         // default god name / muted label text
-  textHover: '#999999',       // ritual-panel content on hover (deliberately not white)
-  textBright: '#F0F0F0',      // name/body text when a card is hovered or selected
-  white: '#ffffff',
-  black: '#000000',
+  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
+  gray0: '#000000',   // true black — used for text/icons that need full contrast on a light surface
+  gray15: '#262626',  // GodCard's default border
+  gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
+  gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)
+  gray30: '#4d4d4d',  // card/panel border, and default icon/text tone, when hovered or selected
+  gray40: '#6C6C6C',  // default god name / muted label text
+  gray60: '#999999',  // ritual-panel content on hover (deliberately not full white)
+  gray95: '#F0F0F0',  // name/body text when a card is hovered or selected
+  white: '#ffffff',   // the app's "white" — full brightness, dominant text/highlight color
 } as const
 
 export const LAYOUT = {

@@ -87,7 +87,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         height: `${CARD_HEIGHT}px`,
         flexShrink: 0,
         position: 'relative',
-        backgroundColor: COLORS.bgBase,
+        backgroundColor: COLORS.black,
         border: `1px solid ${highlighted ? '#4d4d4d' : '#262626'}`,
         borderRadius: '10px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.7)',

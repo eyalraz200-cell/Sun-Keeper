@@ -41,7 +41,7 @@ export function DashboardScreen() {
     border: '1px solid #333333',
     borderRadius: '10px',
     padding: '24px',
-    backgroundColor: COLORS.bgBase,
+    backgroundColor: COLORS.black,
     display: 'flex',
     flexDirection: 'column',
   }
@@ -57,7 +57,7 @@ export function DashboardScreen() {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'row', backgroundColor: COLORS.bgBase, overflow: 'hidden', height: '100%' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'row', backgroundColor: COLORS.black, overflow: 'hidden', height: '100%' }}>
 
       {/* Left/center area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', gap: '16px', padding: '24px 24px' }}>
@@ -110,7 +110,7 @@ export function DashboardScreen() {
               <div
                 key={event.day}
                 style={{
-                  backgroundColor: COLORS.bgBase,
+                  backgroundColor: COLORS.black,
                   border: '1px solid #333333',
                   borderRadius: '10px',
                   padding: '12px 16px',
@@ -136,7 +136,7 @@ export function DashboardScreen() {
       </div>
 
       {/* Right panel */}
-      <div style={{ width: '331px', flexShrink: 0, borderLeft: '1px solid #333333', backgroundColor: COLORS.bgBase }} />
+      <div style={{ width: '331px', flexShrink: 0, borderLeft: '1px solid #333333', backgroundColor: COLORS.black }} />
     </div>
   )
 }

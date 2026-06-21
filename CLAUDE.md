@@ -286,22 +286,26 @@ interface RitualSacrificeOverlayProps {
 
 ## Design Tokens (src/tokens.ts)
 
-**Never hardcode a color value if one of these names already covers it.** This is the actual, current palette — every entry is a value already reused across multiple live components (verified by grepping the codebase, not aspirational). If you need a color and none of these fit, that's a real one-off — don't force it into this list, just don't invent a near-duplicate of an existing name either (e.g. don't add `#262525` when `borderCard: '#262626'` already exists).
+**Never hardcode a color value if one of these names already covers it.** This is the actual, current palette — every entry is a value already reused across multiple live components (verified by grepping the codebase, not aspirational).
+
+**Names are based on the color's actual grayscale value (a rounded lightness percentage), not on what it's currently used for** — a color's role can shift between contexts (a border today might become a hover-text color tomorrow) but its value doesn't, so naming by value keeps the name accurate forever. `black` and `white` are the two perceptual anchors (the app's dominant near-black background and its dominant full-bright text/highlight color) — neither is the literal `#000000`/`#ffffff` extreme. `gray0` is reserved for true, literal black.
 
 ```ts
 COLORS = {
-  bgBase: '#181818',          // app background, default card background
-  bgPanelHover: '#2e2e2e',    // ritual panel fill when hovered/highlighted
-  border: '#333333',          // standard structural divider/border (nav strip, panel dividers, resource bar)
-  borderCard: '#262626',      // GodCard's own default (subtler) border
-  borderHighlight: '#4d4d4d', // card/panel border, and default icon/text tone, when hovered or selected
-  textDim: '#6C6C6C',         // default god name / muted label text
-  textHover: '#999999',       // ritual-panel content on hover (deliberately not white)
-  textBright: '#F0F0F0',      // name/body text when a card is hovered or selected
-  white: '#ffffff',
-  black: '#000000',
+  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
+  gray0: '#000000',   // true black — text/icons needing full contrast on a light surface
+  gray15: '#262626',  // GodCard's default border
+  gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
+  gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)
+  gray30: '#4d4d4d',  // card/panel border, and default icon/text tone, when hovered or selected
+  gray40: '#6C6C6C',  // default god name / muted label text
+  gray60: '#999999',  // ritual-panel content on hover (deliberately not full white)
+  gray95: '#F0F0F0',  // name/body text when a card is hovered or selected
+  white: '#ffffff',   // the app's "white" — full brightness, dominant text/highlight color
 }
 ```
+
+If you need a color and none of these fit, that's a real one-off — don't force it into this list, and don't invent a near-duplicate of an existing value either (e.g. don't add a new `#262525` entry when `gray15: '#262626'` is already close enough).
 
 ```ts
 ANGER = {

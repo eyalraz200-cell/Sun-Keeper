@@ -72,7 +72,7 @@ export function CalendarScreen() {
     <div
       style={{
         flex: 1,
-        backgroundColor: COLORS.bgBase,
+        backgroundColor: COLORS.black,
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'flex-start',

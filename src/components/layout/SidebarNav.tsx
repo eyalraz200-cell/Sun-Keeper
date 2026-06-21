@@ -73,7 +73,7 @@ export function SidebarNav({ activeScreen = 'overview', onNavClick }: SidebarNav
         width: `${LAYOUT.navWidth}px`,
         height: '100vh',
         flexShrink: 0,
-        backgroundColor: COLORS.bgBase,
+        backgroundColor: COLORS.black,
         borderRight: `1px solid #333333`,
         display: 'flex',
         flexDirection: 'column',
