@@ -7,10 +7,11 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 1. **Check the Component API Reference below first** — if the component you're about to build already exists (`GodCard`, `RitualCard`, `GodSvg`, an icon, etc.), use/extend it instead of writing a new one from scratch.
 2. **Colors:** use a name from `COLORS`/`ANGER`/`EYE` in `tokens.ts` (see Design Tokens section). If you're about to type a literal hex code, stop and check whether one of those names already covers it — most of the time it does.
 3. **Eye/outcome circles specifically:** never hand-write the `{ color, weight }` anger lookup table — import `EYE` from `tokens.ts`. This exact table has been hand-copied into 3 different files before; don't make it 4.
-4. **God names:** `FONTS.cinzel`, always uppercase, weight 400 — never bold, never mixed-case.
-5. **Any visual/UI change tied to a Figma frame:** follow the mandatory 4-step workflow below (screenshot Figma first, screenshot current code, diff, implement) — don't skip straight to coding from memory of what the design "probably" looks like.
-6. **After this session's reorg:** components live under `src/components/{screens,gods,ritual,icons,layout}/` — check the right subfolder before assuming a flat `components/` layout (see App Architecture below).
-7. **If editing something in `_archived/`:** don't. It's excluded from the build and described as historical-only below — ask the user before reviving any of it.
+4. **"Brighter"/"darker"/"bigger"/"smaller"/"bolder" instructions: step along the scale, don't invent a new value.** When the user says "make it brighter" (or darker/bigger/smaller/bolder/lighter), move to the next (or previous) key in the relevant ordered scale in `tokens.ts` — `COLORS` for brightness, `FONT_SIZE` for size, `FONT_WEIGHT` for weight, `SPACING` for gaps/padding. "Much brighter"/"much bigger" = jump 2+ steps, still landing on a defined key. Never compute or guess an in-between value (e.g. don't go from `gray30` to some new `#3a3a3a` — go to `gray40`, the next real step). This is what keeps the whole app visually uniform instead of accumulating one-off values. See the Design Tokens section below for the exact scale order.
+5. **God names:** `FONTS.cinzel`, always uppercase, weight 400 — never bold, never mixed-case.
+6. **Any visual/UI change tied to a Figma frame:** follow the mandatory 4-step workflow below (screenshot Figma first, screenshot current code, diff, implement) — don't skip straight to coding from memory of what the design "probably" looks like.
+7. **After this session's reorg:** components live under `src/components/{screens,gods,ritual,icons,layout}/` — check the right subfolder before assuming a flat `components/` layout (see App Architecture below).
+8. **If editing something in `_archived/`:** don't. It's excluded from the build and described as historical-only below — ask the user before reviving any of it.
 
 ---
 
@@ -290,10 +291,12 @@ interface RitualSacrificeOverlayProps {
 
 **Names are based on the color's actual grayscale value (a rounded lightness percentage), not on what it's currently used for** — a color's role can shift between contexts (a border today might become a hover-text color tomorrow) but its value doesn't, so naming by value keeps the name accurate forever. `black` and `white` are the two perceptual anchors (the app's dominant near-black background and its dominant full-bright text/highlight color) — neither is the literal `#000000`/`#ffffff` extreme. `gray0` is reserved for true, literal black.
 
+**This is an ordered scale, darkest to brightest — `gray0 → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white`.** When the user says "make it brighter"/"darker" (or "much brighter" for 2+ steps), move along this list to the next/previous key. Never compute a new in-between hex.
+
 ```ts
 COLORS = {
-  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
   gray0: '#000000',   // true black — text/icons needing full contrast on a light surface
+  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
   gray15: '#262626',  // GodCard's default border
   gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
   gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)
@@ -336,6 +339,26 @@ SPACING = {
   xs: '4px', sm: '8px', md: '12px', lg: '16px', xl: '24px', xxl: '32px',
 }
 ```
+
+**Type scale — same step-along-the-scale rule applies to "bigger"/"smaller" and "bolder"/"lighter" requests:**
+
+```ts
+FONT_SIZE = {
+  xs: '10px', // fine print / small labels
+  sm: '12px', // secondary/dim text
+  md: '14px', // default body text
+  lg: '16px', // emphasized body text, buttons
+  xl: '20px', // headings, large stat numbers
+}
+
+FONT_WEIGHT = {
+  light: 300,   // body text (Spectral default)
+  regular: 400, // headings, god names
+  medium: 500,  // small emphasis labels
+}
+```
+
+`FONT_SIZE` order: `xs → sm → md → lg → xl`. `FONT_WEIGHT` order: `light → regular → medium`. **Never go above `regular` (400) for god names specifically** — see Typography Rules. `SPACING`'s order (`xs → sm → md → lg → xl → xxl`) is the same kind of scale for gaps/padding when asked to make something "tighter" or "more spaced out."
 
 `tokens.ts` also exports a `RitualScreenMode = 'ritual' | 'expanded'` type and `LAYOUT`/`RESOURCE_TOTALS` constants. `RitualScreenMode` is now only passed as a hardcoded `ritualMode="expanded"` prop to `AiChat` (it only affects `AiChat`'s own bottom offset) — it is **not** a toggleable dual-layout system anymore; that was the archived `MiddleSection` design.
 

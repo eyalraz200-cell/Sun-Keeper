@@ -5,9 +5,15 @@
 // (neither is the literal #000000/#ffffff extreme — see gray0 below for true
 // black). Every value here is one actually reused across multiple components
 // today; don't add an entry for a one-off color used in a single place.
+//
+// This is an ordered SCALE, darkest to brightest. When asked to make
+// something "brighter"/"darker" (one step, or "much brighter" for two+
+// steps), move along this list to the next/previous existing key — don't
+// invent a new in-between hex value:
+//   gray0 → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white
 export const COLORS = {
-  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
   gray0: '#000000',   // true black — used for text/icons that need full contrast on a light surface
+  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
   gray15: '#262626',  // GodCard's default border
   gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
   gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)
@@ -57,6 +63,26 @@ export const SPACING = {
   lg: '16px',
   xl: '24px',
   xxl: '32px',
+} as const
+
+// Type-size scale. Same rule as COLORS above: when asked to make text
+// "bigger"/"smaller", move to the next/previous key in this list — don't
+// pick an arbitrary in-between px value. xs → sm → md → lg → xl
+export const FONT_SIZE = {
+  xs: '10px', // fine print / small labels
+  sm: '12px', // secondary/dim text
+  md: '14px', // default body text
+  lg: '16px', // emphasized body text, buttons
+  xl: '20px', // headings, large stat numbers
+} as const
+
+// Weight scale. "Bolder"/"lighter" moves one step here. Never go above
+// `regular` (400) for god names specifically — see Typography Rules.
+// light → regular → medium
+export const FONT_WEIGHT = {
+  light: 300,
+  regular: 400,
+  medium: 500,
 } as const
 
 export const BORDER_RADIUS = '2px'
