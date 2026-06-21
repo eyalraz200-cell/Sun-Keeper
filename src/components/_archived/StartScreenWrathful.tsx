@@ -10,16 +10,16 @@ interface StartScreenWrathfulProps {
   godId: string
 }
 
-const PUNISHMENT_LINE: Record<string, string> = {
-  huitzilopochtli: 'Your Armies Fall. War Is No Longer Yours To Win',
-  tlaloc:          'The Rains Cease. Your Fields Wither And Crack',
-  tezcatlipoca:    'Shadows Consume Your Court. Counsel Turns To Lies',
-  quetzalcoatl:    'Wisdom Fades. Your Civilization Begins To Unravel',
-  mictlantecuhtli: 'The Dead Rise Restless. Plague Walks Among Your People',
-  ehecatl:         'Foul Winds Scatter Your Fleets. The Harvest Is Lost',
-  xiuhtecuhtli:    'The Sacred Fires Die. Cold Creeps Into Every Hearth',
-  chalchiuhtlicue: 'The Waters Rise Without Warning. Your Cities Drown',
-  tonatiuh:        'The Sun Dims. Crops Wither And Darkness Spreads',
+export const PUNISHMENT_DESCRIPTION: Record<string, string> = {
+  huitzilopochtli: 'No battle will be won until Huitzilopochtli is appeased.',
+  tlaloc:          'The rains will not return until Tlaloc is appeased.',
+  tezcatlipoca:    'No truth will be known until Tezcatlipoca is appeased.',
+  quetzalcoatl:    'Wisdom will not return until Quetzalcoatl is appeased.',
+  mictlantecuhtli: 'The dead will not rest until Mictlantecuhtli is appeased.',
+  ehecatl:         'The winds will not blow until Ehecatl is appeased.',
+  xiuhtecuhtli:    'No fire will burn until Xiuhtecuhtli is appeased.',
+  chalchiuhtlicue: 'The waters will not flow until Chalchiuhtlicue is appeased.',
+  tonatiuh:        'The sun will not rise until Tonatiuh is appeased.',
 }
 
 export function StartScreenWrathful({ dismissing, onClick, godId }: StartScreenWrathfulProps) {
@@ -85,17 +85,7 @@ export function StartScreenWrathful({ dismissing, onClick, godId }: StartScreenW
           svgRaw={svg}
           angerLevel="high"
           isHovered={true}
-          filledEyes={true}
-          eyeGlow={true}
-          eyeAnimation={{
-            fromColor: '#000000',
-            fromWeight: 6,
-            toColor: '#000000',
-            toWeight: 6,
-            delay: 0,
-            duration: 0,
-            id: 'wrath-main',
-          }}
+          hideEyes={true}
         />
       </div>
 
@@ -167,18 +157,7 @@ export function StartScreenWrathful({ dismissing, onClick, godId }: StartScreenW
             opacity: 0,
             animation: 'wrathFadeIn 1.8s ease 4.0s both',
           }}>
-            {PUNISHMENT_LINE[godId] ?? 'Divine Wrath Descends. Your People Suffer For Your Failure'}
-          </span>
-          <span style={{
-            fontFamily: FONTS.spectral,
-            fontSize: '28px',
-            fontWeight: 300,
-            color: '#ffffff',
-            letterSpacing: '0.5px',
-            opacity: 0,
-            animation: 'wrathFadeIn 1.8s ease 4.0s both',
-          }}>
-            Until <span style={{ fontFamily: FONTS.cinzel, fontWeight: 400, textTransform: 'uppercase' }}>{god.name}</span> Is Appeased.
+            {PUNISHMENT_DESCRIPTION[godId] ?? 'Divine wrath descends until the god is appeased.'}
           </span>
         </div>
       )}

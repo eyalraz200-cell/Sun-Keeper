@@ -40,3 +40,15 @@ export const SPACING = {
 export const BORDER_RADIUS = '2px'
 
 export const BORDER_WIDTH = '1px'
+
+export type RitualScreenMode = 'ritual' | 'expanded'
+
+// Global resource pool totals — shared across all gods/rituals, not per-god.
+export const RESOURCE_TOTALS = {
+  prisoners: 1840,
+  volunteers: 763,
+  children: 312,
+  virgins: 47,
+  temples: 25,
+  greatTemples: 3,
+} as const

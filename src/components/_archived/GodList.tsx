@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { ArrowCircleDown } from '@phosphor-icons/react'
 import type { God } from '../data/gods'
 import { GodCard } from './GodCard'
+import { CtaButton } from './CtaButton'
 import { COLORS, FONTS, LAYOUT } from '../tokens'
 
 interface GodListProps {
@@ -13,6 +14,9 @@ interface GodListProps {
   onToggleExpanded?: () => void
   onCloseExpanded?: () => void
   wrathfulGodId?: string | null
+  onAuthorizeAll?: () => void
+  topOffset?: number
+  selectedRitualIds?: Record<string, string>
 }
 
 export function ActiveRitualSummaryCard({ count, isHovered }: { count: number; isHovered: boolean }) {
@@ -45,11 +49,9 @@ const STICKY_TOP = 24
 const FADE_RANGE = 80
 const GRID_GAP = 8
 const GRID_PADDING = 12
-const GRID_COLS = 5
 const GRID_CARD_WIDTH = LAYOUT.sidebarWidth - 24
-const OVERLAY_WIDTH = GRID_PADDING * 2 + GRID_COLS * GRID_CARD_WIDTH + (GRID_COLS - 1) * GRID_GAP
 
-export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isExpanded = false, onToggleExpanded, onCloseExpanded, wrathfulGodId = null }: GodListProps) {
+export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isExpanded = false, onToggleExpanded, onCloseExpanded, wrathfulGodId = null, onAuthorizeAll, topOffset = 0, selectedRitualIds = {} }: GodListProps) {
   const activeGodIds = new Set(Object.keys(activeRituals))
   const activeRitualGods = gods.filter(g => activeGodIds.has(g.id))
 
@@ -65,6 +67,11 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
     .sort(wrathFirst)
 
   const allGodsSorted = [...gods].sort(wrathFirst)
+
+  const maxRowCount = Math.max(1, ...(['high', 'medium', 'low', 'none'] as const).map(
+    level => allGodsSorted.filter(g => g.angerLevel === level).length
+  ))
+  const OVERLAY_WIDTH = GRID_PADDING * 2 + maxRowCount * GRID_CARD_WIDTH + (maxRowCount - 1) * GRID_GAP
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const stickyRef = useRef<HTMLDivElement>(null)
@@ -136,30 +143,26 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
   }, [])
 
   return (
-    // Outer: holds its place in the flex layout at sidebarWidth, never moves
+    // Outer: flex item — animates its own width to push siblings
     <div
       style={{
-        width: `${LAYOUT.sidebarWidth}px`,
-        height: '100vh',
+        width: isExpanded ? `${OVERLAY_WIDTH}px` : `${LAYOUT.sidebarWidth}px`,
+        height: `calc(100vh - ${topOffset}px)`,
+        marginTop: `${topOffset}px`,
         flexShrink: 0,
         position: 'relative',
-        zIndex: showCollapsed ? 1 : 200,
+        zIndex: 1,
+        transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* Inner panel: expands in width, clips overflow, no flex-column so both views fill it absolutely */}
+      {/* Inner panel: fills the outer div, clips overflow */}
       <div
         style={{
           position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: isExpanded ? `${OVERLAY_WIDTH}px` : `${LAYOUT.sidebarWidth}px`,
+          inset: 0,
           backgroundColor: COLORS.bgBase,
           borderRight: '1px solid #333333',
           overflow: 'hidden',
-          transition: isExpanded
-            ? 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-            : 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {/* ── Collapsed view: scrollable list with sticky header inside ── */}
@@ -210,44 +213,56 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
           </div>
 
           {/* Cards */}
-          <div ref={cardsRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
-            {sortedGods.map((god) => {
-              const isSelected = selectedGodId === god.id
+          <div ref={cardsRef} style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px' }}>
+            {(['high', 'medium', 'low', 'none'] as const).map(level => {
+              const godsInLevel = sortedGods.filter(g => g.angerLevel === level)
+              if (godsInLevel.length === 0) return null
+              const levelLabel: Record<string, string> = { high: 'Furious', medium: 'Offended', low: 'Uneasy', none: 'At Peace' }
               return (
-                <div
-                  key={god.id}
-                  ref={isSelected ? stickyRef : undefined}
-                  style={{
-                    position: isSelected ? 'sticky' : undefined,
-                    top: isSelected ? STICKY_TOP : undefined,
-                    zIndex: isSelected ? 10 : undefined,
-                    backgroundColor: isSelected ? COLORS.bgBase : undefined,
-                    marginInline: isSelected ? '-12px' : undefined,
-                    paddingInline: isSelected ? '12px' : undefined,
-                    paddingBottom: isSelected && isStuck ? '16px' : undefined,
-                    marginBottom: isSelected && isStuck ? '-16px' : undefined,
-                    borderRadius: '10px',
-                    boxShadow: '0 0 24px rgba(0,0,0,0.9)',
-                  }}
-                >
-                  {isSelected && (
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.9)',
-                      borderBottom: '1px solid #333333',
-                      opacity: isStuck ? 1 : 0,
-                      transition: 'opacity 0.3s ease',
-                      pointerEvents: 'none',
-                    }} />
-                  )}
-                  <GodCard
-                    god={god}
-                    isSelected={isSelected}
-                    onClick={() => onSelect(god.id)}
-                    stuckProgress={isSelected ? 1 - headerOpacity : 0}
-                    wrathful={god.id === wrathfulGodId}
-                  />
+                <div key={level} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontFamily: FONTS.cinzel, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(255,255,255,0.25)', paddingLeft: '2px' }}>
+                    {levelLabel[level]}
+                  </span>
+                  {godsInLevel.map((god) => {
+                    const isSelected = selectedGodId === god.id
+                    return (
+                      <div
+                        key={god.id}
+                        ref={isSelected ? stickyRef : undefined}
+                        style={{
+                          position: isSelected ? 'sticky' : undefined,
+                          top: isSelected ? STICKY_TOP : undefined,
+                          zIndex: isSelected ? 10 : undefined,
+                          backgroundColor: isSelected ? COLORS.bgBase : undefined,
+                          marginInline: isSelected ? '-12px' : undefined,
+                          paddingInline: isSelected ? '12px' : undefined,
+                          paddingBottom: isSelected && isStuck ? '16px' : undefined,
+                          marginBottom: isSelected && isStuck ? '-16px' : undefined,
+                          borderRadius: '10px',
+                          boxShadow: '0 0 24px rgba(0,0,0,0.9)',
+                        }}
+                      >
+                        {isSelected && (
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            boxShadow: '0 12px 24px rgba(0,0,0,0.9)',
+                            borderBottom: '1px solid #333333',
+                            opacity: isStuck ? 1 : 0,
+                            transition: 'opacity 0.3s ease',
+                            pointerEvents: 'none',
+                          }} />
+                        )}
+                        <GodCard
+                          god={god}
+                          isSelected={isSelected}
+                          onClick={() => onSelect(god.id)}
+                          stuckProgress={isSelected ? 1 - headerOpacity : 0}
+                          wrathful={god.id === wrathfulGodId}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })}
@@ -294,25 +309,38 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
               Sorted by anger level
             </p>
           </div>
-          <div
-            style={{
-              padding: `${GRID_PADDING}px`,
-              display: 'grid',
-              gridTemplateColumns: `repeat(${GRID_COLS}, ${GRID_CARD_WIDTH}px)`,
-              gap: `${GRID_GAP}px`,
-              alignContent: 'flex-start',
-            }}
-          >
-            {allGodsSorted.map(god => (
-              <div key={god.id} style={{ boxShadow: '0 0 24px rgba(0,0,0,0.9)', borderRadius: '10px' }}>
-                <GodCard
-                  god={god}
-                  isSelected={selectedGodId === god.id}
-                  onClick={() => { onSelect(god.id); if (god.id !== selectedGodId) onCloseExpanded?.() }}
-                  wrathful={god.id === wrathfulGodId}
-                />
-              </div>
-            ))}
+          <div style={{ padding: `${GRID_PADDING}px`, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {(['high', 'medium', 'low', 'none'] as const).map(level => {
+              const godsInLevel = allGodsSorted.filter(g => g.angerLevel === level)
+              if (godsInLevel.length === 0) return null
+              const levelLabel: Record<string, string> = { high: 'Furious', medium: 'Offended', low: 'Uneasy', none: 'At Peace' }
+              return (
+                <div key={level} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontFamily: FONTS.cinzel, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(255,255,255,0.25)', paddingLeft: '2px' }}>
+                    {levelLabel[level]}
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: `${GRID_GAP}px` }}>
+                    {godsInLevel.map(god => {
+                      const isSelected = selectedGodId === god.id
+                      const activeRitualId = activeRituals[god.id] ?? null
+                      const displayRitualId = activeRitualId ?? (selectedRitualIds[god.id] ?? null)
+                      const displayRitual = displayRitualId ? god.rituals.find(r => r.id === displayRitualId) : null
+                      return (
+                        <div key={god.id} style={{ width: `${GRID_CARD_WIDTH}px`, flexShrink: 0, boxShadow: '0 0 24px rgba(0,0,0,0.9)', borderRadius: '10px' }}>
+                          <GodCard
+                            god={god}
+                            isSelected={isSelected}
+                            onClick={() => onSelect(god.id)}
+                            wrathful={god.id === wrathfulGodId}
+                            ritualName={displayRitual ? displayRitual.name : null}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -321,7 +349,7 @@ export function GodList({ gods, selectedGodId, onSelect, activeRituals = {}, isE
           <div
             onMouseEnter={() => setIsBottomHovered(true)}
             onMouseLeave={() => setIsBottomHovered(false)}
-            style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+            style={{ position: 'absolute', bottom: isExpanded ? 156 : 0, left: 0, right: 0 }}
           >
             <div
               style={{

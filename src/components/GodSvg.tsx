@@ -32,6 +32,7 @@ export interface GodSvgProps {
   filledEyes?: boolean
   eyeGlow?: boolean
   bodyColor?: string
+  hideEyes?: boolean
 }
 
 function parseCircles(eyesBlock: string) {
@@ -45,7 +46,7 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false }: GodSvgProps) {
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
@@ -69,7 +70,12 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     // Circle-based eyes: replace with inside-stroke technique
     const circles = parseCircles(eyesContent)
 
-    if (filledEyes) {
+    if (hideEyes) {
+      const eyeCircles = circles.map((c) =>
+        `<circle cx="${c.cx}" cy="${c.cy}" r="${(parseFloat(c.r) * 0.20).toFixed(1)}" fill="#ffffff"/>`
+      ).join('\n')
+      eyesGroup = `<g id="eyes">\n${eyeCircles}\n</g>`
+    } else if (filledEyes) {
       const eyeColor = eyeAnimation ? eyeAnimation.toColor : eye.color
       const defs = circles.map((c) => {
         const uid = c.cx.replace('.', '')

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { COLORS, LAYOUT } from '../tokens'
-import { Calendar, Sparkle, Clock } from '@phosphor-icons/react'
+import { SquaresFour } from '@phosphor-icons/react'
+import { PrisonerIcon } from './PrisonerIcon'
 import logoUrl from '../assets/logo.svg'
 
 function GearIcon({ size, color }: { size: number; color: string }) {
@@ -15,6 +16,24 @@ function ProfileIcon({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 512 512" fill={color} xmlns="http://www.w3.org/2000/svg">
       <path d="m470.995 49.377c-4.261-3.006-38.989-49.377-107.367-49.377h-215.256c-68.386 0-103.155 46.405-107.367 49.377-26.442 26.443-41.005 61.6-41.005 98.995v215.256c0 68.386 46.405 103.155 49.377 107.367 26.443 26.443 61.6 41.005 98.995 41.005h215.256c37.396 0 72.552-14.563 98.995-41.005 3.006-4.261 49.377-38.989 49.377-107.367v-215.256c0-37.395-14.562-72.552-41.005-98.995zm-107.367 422.623h-215.256c-25.534 0-49.607-9.505-68.178-26.842 86.395-120.716 265.365-120.507 351.611 0-18.57 17.337-42.643 26.842-68.177 26.842zm-205.628-255.333c0-54.038 43.963-98 98-98s98 43.962 98 98-43.963 98-98 98-98-43.963-98-98zm314 146.961c0 17.979-4.712 35.233-13.553 50.353-30.482-39.305-72.21-69.694-120.934-86.022 34.227-25.139 56.487-65.666 56.487-111.292 0-76.093-61.907-138-138-138s-138 61.907-138 138c0 45.626 22.26 86.154 56.487 111.292-48.688 16.317-90.428 46.687-120.934 86.022-8.841-15.12-13.553-32.374-13.553-50.353v-215.256c0-26.711 10.402-51.823 29.289-70.71 4.235-3.045 28.978-37.662 79.083-37.662h215.256c50.375 0 74.701 34.51 79.083 37.662 18.887 18.887 29.289 44 29.289 70.71z"/>
+    </svg>
+  )
+}
+
+function CalendarIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" fill={color} xmlns="http://www.w3.org/2000/svg">
+      <path d="m512 256c0-143.547-112.453-256-256-256-143.548 0-256 112.452-256 256s112.452 256 256 256 256-112.452 256-256zm-471.11 20h76.545c3.403 23.684 12.747 45.475 26.482 63.799l-54.806 54.804c-26.888-32.53-44.245-73.355-48.221-118.603zm48.221-158.604 54.806 54.804c-13.735 18.324-23.079 40.115-26.482 63.799h-76.545c3.976-45.247 21.333-86.072 48.221-118.603zm381.999 118.604h-76.545c-3.403-23.684-12.747-45.475-26.482-63.799l54.806-54.804c26.888 32.53 44.245 73.355 48.221 118.603zm-144.438 90.672c-.03.03-.054.063-.084.093-18.1 18.056-43.063 29.235-70.588 29.235s-52.488-11.179-70.588-29.235c-.03-.03-.054-.063-.084-.093s-.063-.054-.093-.084c-18.056-18.1-29.235-43.063-29.235-70.588s11.179-52.488 29.235-70.588c.03-.03.063-.054.093-.084s.054-.063.084-.093c18.1-18.056 43.063-29.235 70.588-29.235s52.488 11.179 70.588 29.235c.03.03.054.063.084.093s.063.054.093.084c18.056 18.1 29.235 43.063 29.235 70.588s-11.179 52.488-29.235 70.588c-.03.03-.063.055-.093.084zm13.127-182.755c-18.324-13.735-40.115-23.079-63.799-26.482v-76.545c45.248 3.976 86.074 21.333 118.604 48.222zm-103.799-26.482c-23.684 3.403-45.475 12.747-63.799 26.482l-54.805-54.805c32.53-26.889 73.356-44.246 118.604-48.222zm-63.799 250.648c18.324 13.735 40.115 23.079 63.799 26.482v76.545c-45.248-3.976-86.074-21.333-118.604-48.222zm103.799 26.482c23.684-3.403 45.475-12.747 63.799-26.482l54.805 54.805c-32.53 26.889-73.356 44.246-118.604 48.222zm92.083-54.766c13.735-18.324 23.079-40.115 26.482-63.799h76.545c-3.976 45.248-21.333 86.073-48.222 118.604z"/>
+    </svg>
+  )
+}
+
+function SkullIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" fill={color} xmlns="http://www.w3.org/2000/svg">
+      <path d="M276,246c0,38.598,31.402,70,70,70c38.598,0,70-31.402,70-70c0-38.598-31.402-70-70-70C307.402,176,276,207.402,276,246z M376,246c0,16.542-13.458,30-30,30s-30-13.458-30-30s13.458-30,30-30S376,229.458,376,246z"/>
+      <path d="M256,0C134.413,0,36,98.395,36,220v146c0,6.629,3.284,12.827,8.77,16.55l64.915,44.049V492c0,11.046,8.954,20,20,20h252.631c11.046,0,20-8.954,20-20v-65.401l64.915-44.049c5.485-3.722,8.77-9.921,8.77-16.55V220C476,98.412,377.604,0,256,0z M436,355.401l-64.915,44.049c-5.484,3.722-8.77,9.921-8.77,16.55v56H318v-36c0-11.046-8.954-20-20-20c-11.046,0-20,8.954-20,20v36h-44v-36c0-11.046-8.954-20-20-20s-20,8.954-20,20v36h-44.315v-56c0-6.629-3.285-12.827-8.77-16.55L76,355.401V220c0-99.252,80.748-180,180-180s180,80.748,180,180V355.401z"/>
+      <path d="M166,176c-38.598,0-70,31.402-70,70c0,38.598,31.402,70,70,70s70-31.402,70-70C236,207.402,204.598,176,166,176z M166,276c-16.542,0-30-13.458-30-30s13.458-30,30-30s30,13.458,30,30S182.542,276,166,276z"/>
     </svg>
   )
 }
@@ -43,16 +62,11 @@ function NavButton({ onClick, children, active = false }: { onClick?: () => void
 }
 
 interface SidebarNavProps {
+  activeScreen?: string
   onNavClick?: (section: string) => void
 }
 
-export function SidebarNav({ onNavClick }: SidebarNavProps) {
-  const navItems = [
-    { id: 'calendar', icon: Calendar },
-    { id: 'omens', icon: Sparkle },
-    { id: 'history', icon: Clock },
-  ]
-
+export function SidebarNav({ activeScreen = 'overview', onNavClick }: SidebarNavProps) {
   return (
     <div
       style={{
@@ -69,17 +83,21 @@ export function SidebarNav({ onNavClick }: SidebarNavProps) {
       }}
     >
       <img src={logoUrl} alt="Sun Keeper" style={{ width: '29px', height: '36px', marginBottom: '12px' }} />
-      <NavButton onClick={() => onNavClick?.('pantheon')} active>
+      <NavButton onClick={() => onNavClick?.('overview')} active={activeScreen === 'overview'}>
         {color => <PyramidIcon size={24} color={color} />}
       </NavButton>
-      {navItems.map((item) => {
-        const IconComponent = item.icon
-        return (
-          <NavButton key={item.id} onClick={() => onNavClick?.(item.id)}>
-            {color => <IconComponent size={24} color={color} weight="regular" />}
-          </NavButton>
-        )
-      })}
+      <NavButton onClick={() => onNavClick?.('dashboard')} active={activeScreen === 'dashboard'}>
+        {color => <SquaresFour size={24} color={color} weight="regular" />}
+      </NavButton>
+      <NavButton onClick={() => onNavClick?.('calendar')} active={activeScreen === 'calendar'}>
+        {color => <CalendarIcon size={24} color={color} />}
+      </NavButton>
+      <NavButton onClick={() => onNavClick?.('resources')} active={activeScreen === 'resources'}>
+        {color => <PrisonerIcon size={24} color={color} />}
+      </NavButton>
+      <NavButton onClick={() => onNavClick?.('index')} active={activeScreen === 'index'}>
+        {color => <SkullIcon size={24} color={color} />}
+      </NavButton>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingBottom: '24px' }}>
         <NavButton onClick={() => onNavClick?.('settings')}>

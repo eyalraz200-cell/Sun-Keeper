@@ -2,6 +2,36 @@
 
 This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKOsT`) in every conversation. Read this before making code changes.
 
+## Screens
+
+**@overview screen** (`activeScreen === 'overview'`):
+- The default screen on app load (pyramid icon in `SidebarNav`)
+- Renders `HomeScreen.tsx`
+- God cards are grouped into sections by `angerLevel` (`high` → `medium` → `low` → `none`), each with its own group title — no flat ungrouped grid
+- Group title = **18px** render-layer eye circle (see "Standard eye mode" rule under `RitualCard`/`GodSvg` below — `high: #FF2435/6px`, `medium: #EF7B2E/4px`, `low: #D7C94E/3px`, `none: #6C6C6C/2px`, NOT the data-layer ANGER palette) + sentence-case label in `FONTS.spectral` 14px weight 300 white (NOT uppercase): "Furious" / "Offended" / "Uneasy" / "At Peace"
+- Titles are hidden while a god is selected (detail panel open), same as the page-level "Gods" header
+
+---
+
+## Ritual Screen Modes
+
+The ritual screen (MiddleSection) has two named modes, controlled by `ritualMode: RitualScreenMode` (defined in `src/tokens.ts`):
+
+**@ritual mode** (`ritualMode === 'ritual'`):
+- 3 ritual cards side-by-side in a row
+- CTA "AUTHORIZE RITUAL" button visible below cards
+- God list sidebar in normal collapsed state
+
+**@expanded mode** (`ritualMode === 'expanded'`):
+- Ritual cards stacked vertically (compact layout)
+- No CTA button
+- God list sidebar expanded (full-grid overlay)
+- Main content column has `marginRight: 31px`
+
+State lives in `App.tsx` as `const [ritualMode, setRitualMode] = useState<RitualScreenMode>('expanded')`. Passed as `ritualMode` prop to `AppShell`, `MiddleSection`, and `AiChat`.
+
+---
+
 ## Layout Rules (Figma Frame: MacBook Pro 14' - 35)
 
 **Viewport:** 100vw × 100vh, background `#181818`
@@ -336,11 +366,13 @@ interface RitualCardProps {
 6. **Divider** — inset 13px, `marginTop: auto` (pins to bottom)
 7. **Resulting State** — centered outcome eye circle + label
 
-**Outcome eye:** `boxShadow: inset 0 0 0 {weight}px {color}`:
-- `#c8322e` → red/6 ("Furious")
-- `#d4662a` → orange/4 ("Offended")
-- `#d4a83c` → yellow/3 ("Uneasy")
-- default → white/2 ("Peaceful")
+**Outcome eye:** `boxShadow: inset 0 0 0 {weight}px {color}`, circle is **20px** in this component specifically. The ritual's `outcomeColor` data field (`#c8322e`/`#d4662a`/`#d4a83c`/other — the ANGER-token palette) is NOT the rendered color — it's looked up via `outcomeEye()` in `RitualCard.tsx` to the actual rendered color/weight, which is the same "Standard eye mode" table the real god SVG eyes use (see GodSvg section below):
+- `outcomeColor #c8322e` → renders `#FF2435` / weight 6 → label "Furious"
+- `outcomeColor #d4662a` → renders `#EF7B2E` / weight 4 → label "Offended"
+- `outcomeColor #d4a83c` → renders `#D7C94E` / weight 3 → label "Uneasy"
+- default → renders `#ffffff` / weight 2 → label "Peaceful"
+
+**Do not confuse the data-layer ANGER palette (`#c8322e`/`#d4662a`/`#c8a83c`, used for `god.angerColor`/`ritual.outcomeColor` data fields and small list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`) with the render-layer eye palette (`#FF2435`/`#EF7B2E`/`#D7C94E`/`#6C6C6C`, weights 6/4/3/2) used for actual circle/eye visuals.** Any new standalone anger/outcome circle (icon + label, not a small list dot) must use the render-layer palette, sized **18px** to match the real god SVG eye's hole-to-ring ratio exactly (`r="9"` circle, doubled-stroke-width + clipPath technique — see GodSvg section). This RitualCard instance uses 20px because it predates that rule; don't copy its size for new circles, only its color/weight lookup.
 
 **Participant display order:** Prisoners → Volunteers → Children → Virgins
 
@@ -393,7 +425,11 @@ ANGER = {
   medium: '#d4662a',
   low: '#c8a83c',
 }
+```
 
+**This `ANGER` palette is data-layer only** — it's `god.angerColor` / `ritual.outcomeColor`, and the small 16px list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`. It is NOT the color used to render any anger/outcome eye circle. The render-layer palette (what actually gets drawn for any eye/circle, used by `GodSvg`'s real god eyes, `RitualCard`'s outcome eye, and `HomeScreen.tsx`'s anger-group titles) is always: `high: #FF2435/weight 6`, `medium: #EF7B2E/weight 4`, `low: #D7C94E/weight 3`, `none: #6C6C6C/weight 2` — see "Standard eye mode" under GodSvg. Never substitute the data-layer hex into a rendered circle.
+
+```ts
 FONTS = {
   cinzel: "'Cinzel', serif",
   spectral: "'Spectral', Georgia, serif",
