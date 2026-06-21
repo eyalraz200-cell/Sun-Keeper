@@ -1,5 +1,5 @@
-import { useState, useRef, useLayoutEffect } from 'react'
-import { COLORS, FONTS, RESOURCE_TOTALS } from '../../tokens'
+import { useState, useRef, useLayoutEffect, useEffect } from 'react'
+import { COLORS, FONTS, FONT_SIZE, RESOURCE_TOTALS } from '../../tokens'
 import { GODS, type God, type Ritual, type AngerLevel } from '../../data/gods'
 import { GodSvg } from '../gods/GodSvg'
 import { GodCard, CARD_WIDTH, outcomeEye, getSvgRaw } from '../gods/GodCard'
@@ -10,6 +10,7 @@ import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { GridFour, ListBullets } from '@phosphor-icons/react'
 
 const ANGER_EYE: Record<AngerLevel, { color: string; weight: number }> = {
   high: { color: '#FF2435', weight: 6 },
@@ -107,7 +108,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.black, borderBottom: '1px solid #333333', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
+    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.black, borderBottom: '1px solid #333333', boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '96px' }}>
@@ -160,18 +161,18 @@ function ChooseRitualButton({ onChoose, isHovered }: { onChoose: () => void; isH
       <span style={{ display: 'flex', transform: 'translateY(-1px)' }}>
         <FireIcon size={16} color={isHovered ? '#000000' : '#ffffff'} />
       </span>
-      <span>Choose Ritual</span>
+      <span>Select Ritual</span>
     </div>
   )
 }
 
-function RitualCardWithChoose({ ritual, godName, onChoose, onHoverChange }: { ritual: Ritual; godName: string; onChoose: () => void; onHoverChange?: (isHovered: boolean) => void }) {
+function RitualCardWithChoose({ ritual, godName, isSelected, onChoose, onHoverChange }: { ritual: Ritual; godName: string; isSelected: boolean; onChoose: () => void; onHoverChange?: (isHovered: boolean) => void }) {
   const [isHovered, setIsHovered] = useState(false)
   return (
     <RitualCard
       ritual={ritual}
       godName={godName}
-      isSelected={false}
+      isSelected={isSelected}
       onClick={onChoose}
       onHoverChange={hovered => { setIsHovered(hovered); onHoverChange?.(hovered) }}
       footer={<ChooseRitualButton onChoose={onChoose} isHovered={isHovered} />}
@@ -183,7 +184,7 @@ const FLIP_DURATION = 900
 const DRAWER_CLOSE_DURATION = 260
 const SCROLL_TOP_GAP = 24
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null> }) {
+function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null }) {
   const baseEye = ANGER_EYE[god.angerLevel as AngerLevel]
   const [eyeAnim, setEyeAnim] = useState<{ from: typeof baseEye; to: typeof baseEye; key: number; delay: number } | null>(null)
   const currentEyeRef = useRef(baseEye)
@@ -291,6 +292,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, origin
               svgRaw={getSvgRaw(god.id)}
               angerLevel={god.angerLevel}
               bodyColor="#e0e0e0"
+              instanceId={`detail-${god.id}`}
               eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 0.5, id: `eye-${eyeAnim.key}` } : undefined}
             />
           </div>
@@ -316,6 +318,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, origin
                 <RitualCardWithChoose
                   ritual={ritual}
                   godName={god.name}
+                  isSelected={ritual.id === chosenRitualId}
                   onChoose={() => onChoose(ritual.id)}
                   onHoverChange={hovered => handleRitualHover(ritual, hovered)}
                 />
@@ -338,6 +341,293 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, origin
   )
 }
 
+const ESTIMATED_PANEL_HEIGHT = 650
+
+const NOOP = () => {}
+
+const FREE_CAROUSEL_GAP = 0
+const FREE_CAROUSEL_WINDOW_RADIUS = 2
+const FREE_SCROLL_SENSITIVITY = 300 // divides wheel deltaY into virtual-index units; tuned so a strong fling covers several gods, not just one
+const FREE_SETTLE_DELAY = 180
+const FREE_SNAP_DURATION = 380
+
+// Positions panels using measured per-panel heights and a continuous (fractional) `scrollPos`
+// virtual index: while wheeling, panels track the gesture 1:1 with transitions off; once wheel
+// input stops for FREE_SETTLE_DELAY, it snaps to the nearest whole index with a brief transition.
+// This is what gives the Figma-Slides-like "fly past several, then settle" feel.
+function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, originRect, originGodId, chosenRituals, onChooseRitual, onRitualHoverChange }: {
+  gods: God[]
+  scrollPos: number
+  onScrollPosChange: (pos: number) => void
+  onSettledIndexChange: (index: number) => void
+  originRect: DOMRect | null
+  originGodId: string | null
+  chosenRituals: Record<string, string>
+  onChooseRitual: (godId: string, ritualId: string) => void
+  onRitualHoverChange: (ritual: Ritual | null) => void
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const inertScrollRef = useRef<HTMLDivElement>(null)
+  const [panelHeights, setPanelHeights] = useState<Record<string, number>>({})
+  const roRef = useRef<ResizeObserver | null>(null)
+  const observedRef = useRef<Map<string, HTMLElement>>(new Map())
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isSnapping, setIsSnapping] = useState(false)
+
+  useLayoutEffect(() => {
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const target = entry.target as HTMLElement
+        const godId = target.dataset.godId
+        if (godId) {
+          const h = target.offsetHeight
+          setPanelHeights(prev => (prev[godId] === h ? prev : { ...prev, [godId]: h }))
+        }
+      }
+    })
+    roRef.current = ro
+    return () => ro.disconnect()
+  }, [])
+
+  const registerPanelEl = (godId: string, el: HTMLDivElement | null) => {
+    const ro = roRef.current
+    if (!ro) return
+    const prev = observedRef.current.get(godId)
+    if (prev && prev !== el) {
+      ro.unobserve(prev)
+      observedRef.current.delete(godId)
+    }
+    if (el) {
+      el.dataset.godId = godId
+      ro.observe(el)
+      observedRef.current.set(godId, el)
+    }
+  }
+
+  const heightOf = (index: number) => panelHeights[gods[index].id] ?? ESTIMATED_PANEL_HEIGHT
+
+  // Cumulative top-edge offset of a (possibly fractional) virtual index, measured from index 0 —
+  // used as a common ruler so any two positions (integer or fractional) can be placed relative to
+  // each other, which is what lets the carousel track a position strictly between two gods.
+  const cumulativeTop = (pos: number) => {
+    const clamped = Math.max(0, Math.min(gods.length - 1, pos))
+    const base = Math.floor(clamped)
+    const frac = clamped - base
+    let top = 0
+    for (let i = 0; i < base; i++) top += heightOf(i) + FREE_CAROUSEL_GAP
+    top += frac * (heightOf(base) + FREE_CAROUSEL_GAP)
+    return top
+  }
+
+  const roundedIndex = Math.max(0, Math.min(gods.length - 1, Math.round(scrollPos)))
+
+  useEffect(() => {
+    onSettledIndexChange(roundedIndex)
+  }, [roundedIndex])
+
+  const windowStart = Math.max(0, Math.floor(scrollPos) - FREE_CAROUSEL_WINDOW_RADIUS)
+  const windowEnd = Math.min(gods.length - 1, Math.ceil(scrollPos) + FREE_CAROUSEL_WINDOW_RADIUS)
+  const windowIndices: number[] = []
+  for (let i = windowStart; i <= windowEnd; i++) windowIndices.push(i)
+
+  const anchorTop = cumulativeTop(scrollPos)
+  // Anchored near the top of the carousel viewport (close to the resource bar) rather than
+  // vertically centered — HomeGodDetailPanel's own 24px top margin already provides the breathing
+  // room, so the active panel's top edge lands just below the header area.
+  const baseOffset = 0
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    setIsSnapping(false)
+    if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current)
+    const next = Math.max(0, Math.min(gods.length - 1, scrollPos + e.deltaY / FREE_SCROLL_SENSITIVITY))
+    onScrollPosChange(next)
+    settleTimeoutRef.current = setTimeout(() => {
+      setIsSnapping(true)
+      onScrollPosChange(Math.round(next))
+    }, FREE_SETTLE_DELAY)
+  }
+
+  return (
+    <div ref={viewportRef} onWheel={handleWheel} style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      {windowIndices.map(index => {
+        const god = gods[index]
+        const distance = Math.abs(index - scrollPos)
+        const isActive = index === roundedIndex
+        const opacity = distance <= 1 ? 1 - 0.75 * distance : Math.max(0, 0.25 - 0.25 * (distance - 1))
+        const top = baseOffset + (cumulativeTop(index) - anchorTop)
+        return (
+          <div
+            key={god.id}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${top}px)`,
+              opacity,
+              pointerEvents: isActive ? 'auto' : 'none',
+              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1), opacity ${FREE_SNAP_DURATION}ms ease` : 'none',
+            }}
+          >
+            <div ref={el => registerPanelEl(god.id, el)} style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+              <HomeGodDetailPanel
+                god={god}
+                onBack={NOOP}
+                onChoose={ritualId => onChooseRitual(god.id, ritualId)}
+                onRitualHoverChange={onRitualHoverChange}
+                originRect={god.id === originGodId ? originRect : null}
+                isClosing={false}
+                onCloseComplete={NOOP}
+                scrollContainerRef={inertScrollRef}
+                chosenRitualId={chosenRituals[god.id]}
+              />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Left rail: every god as a full GodCard (with its own ritual panel, used as-is), in a plain
+// natively-scrolling column — always visible, independent of which god is centered in the carousel.
+function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, cardRefs, originRect, originGodId, chosenRituals, onChooseRitual, onRitualHoverChange, header }: {
+  gods: God[]
+  scrollPos: number
+  onScrollPosChange: (pos: number) => void
+  settledIndex: number
+  onSettledIndexChange: (index: number) => void
+  onCardClick: (godId: string) => void
+  cardRefs: React.RefObject<Record<string, HTMLDivElement | null>>
+  originRect: DOMRect | null
+  originGodId: string | null
+  chosenRituals: Record<string, string>
+  onChooseRitual: (godId: string, ritualId: string) => void
+  onRitualHoverChange: (ritual: Ritual | null) => void
+  header: React.ReactNode
+}) {
+  return (
+    <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <div
+        style={{
+          width: '260px',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
+        {header}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            padding: '12px 24px 24px',
+          }}
+        >
+          {gods.map((god, index) => {
+            const isSelected = index === settledIndex
+            const hasChosenRitual = !!chosenRituals[god.id]
+            return (
+              <div
+                key={god.id}
+                ref={el => { cardRefs.current[god.id] = el }}
+                onClick={() => onCardClick(god.id)}
+                style={{
+                  position: 'relative',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
+                  transition: 'background-color 0.15s ease',
+                }}
+              >
+                <div
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    boxShadow: `inset 0 0 0 ${ANGER_EYE[god.angerLevel].weight}px ${ANGER_EYE[god.angerLevel].color}`,
+                    opacity: isSelected ? 1 : 0.08,
+                    flexShrink: 0,
+                    transition: 'opacity 0.15s ease',
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: FONTS.cinzel,
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    color: isSelected ? COLORS.white : COLORS.gray20,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    transition: 'color 0.15s ease',
+                  }}
+                >
+                  {god.name}
+                </span>
+                {hasChosenRitual && (
+                  <span style={{ display: 'flex', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                    <FireIcon size={16} color={isSelected ? COLORS.white : COLORS.gray20} />
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div style={{ flexShrink: 0, width: '1px', backgroundColor: COLORS.gray20 }} />
+      <GodFreeCarousel
+        gods={gods}
+        scrollPos={scrollPos}
+        onScrollPosChange={onScrollPosChange}
+        onSettledIndexChange={onSettledIndexChange}
+        originRect={originRect}
+        originGodId={originGodId}
+        chosenRituals={chosenRituals}
+        onChooseRitual={onChooseRitual}
+        onRitualHoverChange={onRitualHoverChange}
+      />
+    </div>
+  )
+}
+
+function ViewModeToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list'; onChange: (mode: 'grid' | 'list') => void }) {
+  const option = (mode: 'grid' | 'list', icon: (color: string) => React.ReactNode) => (
+    <button
+      key={mode}
+      aria-label={mode === 'grid' ? 'Grid view' : 'List view'}
+      onClick={() => onChange(mode)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '6px',
+        border: 'none',
+        borderRadius: '6px',
+        backgroundColor: viewMode === mode ? COLORS.gray20 : 'transparent',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease',
+      }}
+    >
+      {icon(viewMode === mode ? COLORS.white : COLORS.gray40)}
+    </button>
+  )
+  return (
+    <div style={{ flexShrink: 0, display: 'flex', gap: '4px', border: `1px solid ${COLORS.gray20}`, borderRadius: '8px', padding: '2px' }}>
+      {option('grid', c => <GridFour size={16} color={c} weight="regular" />)}
+      {option('list', c => <ListBullets size={16} color={c} weight="regular" />)}
+    </div>
+  )
+}
+
 interface HomeScreenProps {
   prisoners: number
   volunteers: number
@@ -350,17 +640,17 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, aiPanelOpen = false }: HomeScreenProps) {
-  const [selectedGodId, setSelectedGodId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [listScrollPos, setListScrollPos] = useState(0)
+  const [listSettledIndex, setListSettledIndex] = useState(0)
   const [chosenRituals, setChosenRituals] = useState<Record<string, string>>({})
   const [spentCost, setSpentCost] = useState<ResourceCost>(ZERO_COST)
   const [sacrificeCost, setSacrificeCost] = useState<ResourceCost | null>(null)
   const [hoveredRitual, setHoveredRitual] = useState<Ritual | null>(null)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
-  const [isClosing, setIsClosing] = useState(false)
+  const [originGodId, setOriginGodId] = useState<string | null>(null)
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const pendingChoiceRef = useRef<{ godId: string; ritualId: string } | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const selectedGod = DISPLAY_GODS.find(god => god.id === selectedGodId) ?? null
 
   // Resources go down the moment a ritual is assigned (reserved), and stay down once authorized.
   const reservedCost = sumRitualCost(chosenRituals)
@@ -371,42 +661,25 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   const availableTemples = temples - spentCost.temples - reservedCost.temples
   const availableGreatTemples = greatTemples - spentCost.greatTemples - reservedCost.greatTemples
 
-  const handleCardClick = (godId: string) => {
+  const handleSelectGod = (godId: string) => {
     const el = cardRefs.current[godId]
     setOriginRect(el ? el.getBoundingClientRect() : null)
-    setSelectedGodId(prev => (prev === godId ? null : godId))
+    setOriginGodId(godId)
+    setListScrollPos(DISPLAY_GODS.findIndex(g => g.id === godId))
+    setViewMode('list')
   }
 
   const handleChooseRitual = (godId: string, ritualId: string) => {
-    pendingChoiceRef.current = { godId, ritualId }
-    setIsClosing(true)
+    setChosenRituals(prev => ({ ...prev, [godId]: ritualId }))
   }
-
-  const handleCloseComplete = () => {
-    const pending = pendingChoiceRef.current
-    if (pending) {
-      setChosenRituals(prev => ({ ...prev, [pending.godId]: pending.ritualId }))
-      pendingChoiceRef.current = null
-    }
-    setSelectedGodId(null)
-    setIsClosing(false)
-  }
-
-  const ANGER_LEVEL_LABEL: Record<AngerLevel, string> = { high: 'Furious', medium: 'Offended', low: 'Uneasy', none: 'At Peace' }
-  const godGroups = (['high', 'medium', 'low', 'none'] as const)
-    .map(level => ({ level, gods: DISPLAY_GODS.filter(god => god.angerLevel === level) }))
-    .filter(group => group.gods.length > 0)
 
   const renderGrid = (gods: typeof DISPLAY_GODS) => (
     <div
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(auto-fill, ${CARD_WIDTH}px)`,
-        justifyContent: 'space-between',
         gap: '24px',
         padding: '24px',
-        opacity: selectedGod ? 0.25 : 1,
-        transition: 'opacity 0.2s ease',
       }}
     >
       {gods.map(god => {
@@ -417,7 +690,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             key={god.id}
             god={god}
             isSelected={false}
-            onClick={() => handleCardClick(god.id)}
+            onClick={() => handleSelectGod(god.id)}
             chosenRitual={chosenRitual}
             domRef={el => { cardRefs.current[god.id] = el }}
           />
@@ -427,7 +700,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   )
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', backgroundColor: COLORS.black }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, position: 'relative', backgroundColor: COLORS.black }}>
       <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={resourceTotals} hoveredRitual={hoveredRitual} />
       <div
         ref={scrollContainerRef}
@@ -436,56 +709,54 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
+          minWidth: 0,
           overflow: 'auto',
           marginRight: aiPanelOpen ? '331px' : AI_TOGGLE_RESERVE,
           transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        {!selectedGod && (
-          <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
-            <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
-            <div style={{ fontFamily: FONTS.spectral, fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>sorted by anger level</div>
-          </div>
-        )}
-
-        {godGroups.map(group => {
-          const indexInGroup = selectedGod && selectedGod.angerLevel === group.level
-            ? group.gods.findIndex(god => god.id === selectedGodId)
-            : -1
-          const beforeGods = indexInGroup === -1 ? group.gods : group.gods.slice(0, indexInGroup)
-          const afterGods = indexInGroup === -1 ? [] : group.gods.slice(indexInGroup + 1)
-
-          return (
-            <div key={group.level}>
-              {!selectedGod && (
-                <div style={{ flexShrink: 0, padding: '8px 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${ANGER_EYE[group.level].weight}px ${ANGER_EYE[group.level].color}`, flexShrink: 0 }} />
-                  <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', fontWeight: 300, color: '#ffffff' }}>
-                    {ANGER_LEVEL_LABEL[group.level]}
-                  </span>
+        {viewMode === 'grid' && (
+          <>
+            <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
+                <div style={{ transform: 'translateY(-2px)' }}>
+                  <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
-              )}
-
-              {beforeGods.length > 0 && renderGrid(beforeGods)}
-
-              {indexInGroup !== -1 && selectedGod && (
-                <HomeGodDetailPanel
-                  key={selectedGod.id}
-                  god={selectedGod}
-                  onBack={() => setSelectedGodId(null)}
-                  onChoose={ritualId => handleChooseRitual(selectedGod.id, ritualId)}
-                  onRitualHoverChange={setHoveredRitual}
-                  originRect={originRect}
-                  isClosing={isClosing}
-                  onCloseComplete={handleCloseComplete}
-                  scrollContainerRef={scrollContainerRef}
-                />
-              )}
-
-              {afterGods.length > 0 && renderGrid(afterGods)}
+              </div>
+              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Select rituals to appease the gods</div>
             </div>
-          )
-        })}
+
+            {renderGrid(DISPLAY_GODS)}
+          </>
+        )}
+        {viewMode === 'list' && (
+          <GodListLayout
+            gods={DISPLAY_GODS}
+            scrollPos={listScrollPos}
+            onScrollPosChange={setListScrollPos}
+            settledIndex={listSettledIndex}
+            onSettledIndexChange={setListSettledIndex}
+            onCardClick={handleSelectGod}
+            cardRefs={cardRefs}
+            originRect={originRect}
+            originGodId={originGodId}
+            chosenRituals={chosenRituals}
+            onChooseRitual={handleChooseRitual}
+            onRitualHoverChange={setHoveredRitual}
+            header={
+              <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
+                  <div style={{ transform: 'translateY(-2px)' }}>
+                    <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+                  </div>
+                </div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Select rituals to appease the gods</div>
+              </div>
+            }
+          />
+        )}
       </div>
       <div
         style={{
@@ -499,7 +770,6 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
-      {!selectedGod && (
       <div
         style={{
           position: 'absolute',
@@ -536,10 +806,10 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           </button>
         </div>
       </div>
-      )}
       {sacrificeCost && (
         <RitualSacrificeOverlay
           counts={sacrificeCost}
+          chosenRituals={chosenRituals}
           onComplete={() => {
             setSpentCost(prev => ({
               prisoners: prev.prisoners + sacrificeCost.prisoners,
