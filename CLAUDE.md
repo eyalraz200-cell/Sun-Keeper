@@ -2,6 +2,18 @@
 
 This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKOsT`) in every conversation. Read this before making code changes.
 
+## Before Writing or Touching Any Component (checklist)
+
+1. **Check the Component API Reference below first** — if the component you're about to build already exists (`GodCard`, `RitualCard`, `GodSvg`, an icon, etc.), use/extend it instead of writing a new one from scratch.
+2. **Colors:** use a name from `COLORS`/`ANGER`/`EYE` in `tokens.ts` (see Design Tokens section). If you're about to type a literal hex code, stop and check whether one of those names already covers it — most of the time it does.
+3. **Eye/outcome circles specifically:** never hand-write the `{ color, weight }` anger lookup table — import `EYE` from `tokens.ts`. This exact table has been hand-copied into 3 different files before; don't make it 4.
+4. **God names:** `FONTS.cinzel`, always uppercase, weight 400 — never bold, never mixed-case.
+5. **Any visual/UI change tied to a Figma frame:** follow the mandatory 4-step workflow below (screenshot Figma first, screenshot current code, diff, implement) — don't skip straight to coding from memory of what the design "probably" looks like.
+6. **After this session's reorg:** components live under `src/components/{screens,gods,ritual,icons,layout}/` — check the right subfolder before assuming a flat `components/` layout (see App Architecture below).
+7. **If editing something in `_archived/`:** don't. It's excluded from the build and described as historical-only below — ask the user before reviving any of it.
+
+---
+
 ## App Architecture (current, live)
 
 `App.tsx` renders `AppShell` + `AiChat` directly — there is **no startup/intro flow active**. `AppShell` (`src/components/layout/AppShell.tsx`) holds `activeScreen` state, renders `SidebarNav` (54px nav strip) plus whichever screen is active, full-bleed, with no secondary deity sidebar and no right panel.
@@ -274,27 +286,41 @@ interface RitualSacrificeOverlayProps {
 
 ## Design Tokens (src/tokens.ts)
 
-**Never hardcode values.** Always reference `tokens.ts`:
+**Never hardcode a color value if one of these names already covers it.** This is the actual, current palette — every entry is a value already reused across multiple live components (verified by grepping the codebase, not aspirational). If you need a color and none of these fit, that's a real one-off — don't force it into this list, just don't invent a near-duplicate of an existing name either (e.g. don't add `#262525` when `borderCard: '#262626'` already exists).
 
 ```ts
 COLORS = {
-  bgBase: '#181818',
-  bgCard: '#1e1e1e',
-  bgHover: '#242424',
-  textBase: '#f0ede8',
-  textSecondary: '#8a8580',
-  textMuted: '#5a5652',
-  border: '#2a2726',
+  bgBase: '#181818',          // app background, default card background
+  bgPanelHover: '#2e2e2e',    // ritual panel fill when hovered/highlighted
+  border: '#333333',          // standard structural divider/border (nav strip, panel dividers, resource bar)
+  borderCard: '#262626',      // GodCard's own default (subtler) border
+  borderHighlight: '#4d4d4d', // card/panel border, and default icon/text tone, when hovered or selected
+  textDim: '#6C6C6C',         // default god name / muted label text
+  textHover: '#999999',       // ritual-panel content on hover (deliberately not white)
+  textBright: '#F0F0F0',      // name/body text when a card is hovered or selected
+  white: '#ffffff',
+  black: '#000000',
 }
+```
 
+```ts
 ANGER = {
   high: '#c8322e',
   medium: '#d4662a',
   low: '#c8a83c',
 }
+
+EYE = {
+  high:   { color: '#FF2435', weight: 6 },
+  medium: { color: '#EF7B2E', weight: 4 },
+  low:    { color: '#D7C94E', weight: 3 },
+  none:   { color: '#6C6C6C', weight: 2 },
+}
 ```
 
-**This `ANGER` palette is data-layer only** — it's `god.angerColor` / `ritual.outcomeColor`, and the small 16px list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`. It is NOT the color used to render any anger/outcome eye circle. The render-layer palette (what actually gets drawn for any eye/circle, used by `GodSvg`'s real god eyes, `RitualCard`'s outcome eye, and `HomeScreen.tsx`'s anger-group titles) is always: `high: #FF2435/weight 6`, `medium: #EF7B2E/weight 4`, `low: #D7C94E/weight 3`, `none: #6C6C6C/weight 2` — see "Standard eye mode" under GodSvg. Never substitute the data-layer hex into a rendered circle.
+**`ANGER` is data-layer only** — `god.angerColor` / `ritual.outcomeColor`, and the small 16px list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`. It is NOT the color used to render any anger/outcome eye circle.
+
+**`EYE` is the render-layer palette** — the single source of truth for what color/weight an anger-level eye or outcome circle actually draws (`GodSvg`'s real god eyes, `RitualCard`'s/`GodCard`'s outcome eye, `HomeScreen.tsx`'s anger-group titles). `GodSvg.tsx`, `GodCard.tsx`, and `RitualCard.tsx` all import this one constant now — previously each file had its own hand-copied version of this exact lookup table, which is exactly the kind of repeated mistake this doc exists to prevent. **If you ever find yourself typing `{ color: '#FF2435', weight: 6 }` (or any of the other three rows) directly in a new file, stop — import `EYE` from `tokens.ts` instead.** Never substitute the data-layer `ANGER` hex into a rendered circle.
 
 ```ts
 FONTS = {
@@ -310,6 +336,8 @@ SPACING = {
 `tokens.ts` also exports a `RitualScreenMode = 'ritual' | 'expanded'` type and `LAYOUT`/`RESOURCE_TOTALS` constants. `RitualScreenMode` is now only passed as a hardcoded `ritualMode="expanded"` prop to `AiChat` (it only affects `AiChat`'s own bottom offset) — it is **not** a toggleable dual-layout system anymore; that was the archived `MiddleSection` design.
 
 **Wrathful color** (not in tokens, use directly): `#FF2435`
+
+**Note on existing code:** this palette was curated from real usage on 2026-06-21 — older code (most of `src/components/*`) still has hardcoded hex values that predate it and haven't been retrofitted. Don't treat their literal hex values as precedent for new code; use the names above instead.
 
 ---
 

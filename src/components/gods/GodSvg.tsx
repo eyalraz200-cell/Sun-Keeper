@@ -1,11 +1,7 @@
 import type { AngerLevel } from '../../data/gods'
+import { EYE } from '../../tokens'
 
-const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = {
-  high:   { color: '#FF2435', weight: 6 },
-  medium: { color: '#EF7B2E', weight: 4 },
-  low:    { color: '#D7C94E', weight: 3 },
-  none:   { color: '#6C6C6C', weight: 2 },
-}
+const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = EYE
 
 const SELECTED_EYE_OVERRIDES: Partial<Record<AngerLevel, string>> = {
   medium: '#FF7913',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Ritual } from '../../data/gods'
-import { FONTS } from '../../tokens'
+import { FONTS, COLORS, EYE } from '../../tokens'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
@@ -15,10 +15,10 @@ function outcomeLabel(color: string): string {
 }
 
 function outcomeEye(color: string): { color: string; weight: number } {
-  if (color === '#c8322e') return { color: '#FF2435', weight: 6 }
-  if (color === '#d4662a') return { color: '#EF7B2E', weight: 4 }
-  if (color === '#d4a83c') return { color: '#D7C94E', weight: 3 }
-  return { color: '#ffffff', weight: 2 }
+  if (color === '#c8322e') return EYE.high
+  if (color === '#d4662a') return EYE.medium
+  if (color === '#d4a83c') return EYE.low
+  return { color: COLORS.white, weight: 2 }
 }
 
 interface RitualCardProps {

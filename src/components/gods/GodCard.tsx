@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { God, Ritual } from '../../data/gods'
-import { COLORS, FONTS } from '../../tokens'
+import { COLORS, FONTS, EYE } from '../../tokens'
 import { GodSvg } from './GodSvg'
 import { FireIcon } from '../icons/FireIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
@@ -35,10 +35,10 @@ export function getSvgRaw(godId: string): string {
 }
 
 export function outcomeEye(color: string): { color: string; weight: number } {
-  if (color === '#c8322e') return { color: '#FF2435', weight: 6 }
-  if (color === '#d4662a') return { color: '#EF7B2E', weight: 4 }
-  if (color === '#d4a83c') return { color: '#D7C94E', weight: 3 }
-  return { color: '#ffffff', weight: 2 }
+  if (color === '#c8322e') return EYE.high
+  if (color === '#d4662a') return EYE.medium
+  if (color === '#d4a83c') return EYE.low
+  return { color: COLORS.white, weight: 2 }
 }
 
 function abbreviateDuration(duration: string): string {
