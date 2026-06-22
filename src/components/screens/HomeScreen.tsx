@@ -184,7 +184,7 @@ const FLIP_DURATION = 900
 const DRAWER_CLOSE_DURATION = 260
 const SCROLL_TOP_GAP = 24
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null }) {
+function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean }) {
   const baseEye = ANGER_EYE[god.angerLevel as AngerLevel]
   const [eyeAnim, setEyeAnim] = useState<{ from: typeof baseEye; to: typeof baseEye; key: number; delay: number } | null>(null)
   const currentEyeRef = useRef(baseEye)
@@ -269,7 +269,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, origin
   }
 
   return (
-    <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px', border: '1px solid #333333', borderRadius: '10px' }}>
+    <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px', border: `1px solid ${isActive ? COLORS.gray30 : COLORS.gray15}`, borderRadius: '10px', transition: 'border-color 0.15s ease' }}>
       <div style={{ display: 'flex', gap: '24px' }}>
         <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div
@@ -284,14 +284,14 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, origin
                 : { animation: `homeDetailHeaderEnter 280ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION - 80}ms both` }),
             }}
           >
-            <span style={{ fontFamily: FONTS.cinzel, fontSize: '24px', fontWeight: 400, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>{god.name}</span>
-            <p style={{ margin: '4px 0 0', fontFamily: FONTS.spectral, fontSize: '16px', color: '#909090' }}>{god.subtitle}</p>
+            <span style={{ fontFamily: FONTS.cinzel, fontSize: '24px', fontWeight: 400, color: isActive ? '#ffffff' : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
+            <p style={{ margin: '4px 0 0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease' }}>{god.subtitle}</p>
           </div>
           <div style={{ flexShrink: 0, width: '100%', height: '420px', borderRadius: '10px', overflow: 'hidden' }}>
             <GodSvg
               svgRaw={getSvgRaw(god.id)}
               angerLevel={god.angerLevel}
-              bodyColor="#e0e0e0"
+              bodyColor={isActive ? '#e0e0e0' : COLORS.gray15}
               instanceId={`detail-${god.id}`}
               eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 0.5, id: `eye-${eyeAnim.key}` } : undefined}
             />
@@ -452,9 +452,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
     <div ref={viewportRef} onWheel={handleWheel} style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       {windowIndices.map(index => {
         const god = gods[index]
-        const distance = Math.abs(index - scrollPos)
         const isActive = index === roundedIndex
-        const opacity = distance <= 1 ? 1 - 0.75 * distance : Math.max(0, 0.25 - 0.25 * (distance - 1))
         const top = baseOffset + (cumulativeTop(index) - anchorTop)
         return (
           <div
@@ -465,9 +463,8 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
               left: 0,
               width: '100%',
               transform: `translateY(${top}px)`,
-              opacity,
               pointerEvents: isActive ? 'auto' : 'none',
-              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1), opacity ${FREE_SNAP_DURATION}ms ease` : 'none',
+              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)` : 'none',
             }}
           >
             <div ref={el => registerPanelEl(god.id, el)} style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
@@ -481,6 +478,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
                 onCloseComplete={NOOP}
                 scrollContainerRef={inertScrollRef}
                 chosenRitualId={chosenRituals[god.id]}
+                isActive={isActive}
               />
             </div>
           </div>
@@ -555,7 +553,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
                     height: '18px',
                     borderRadius: '50%',
                     boxShadow: `inset 0 0 0 ${ANGER_EYE[god.angerLevel].weight}px ${ANGER_EYE[god.angerLevel].color}`,
-                    opacity: isSelected ? 1 : 0.08,
+                    opacity: isSelected ? 1 : 0.12,
                     flexShrink: 0,
                     transition: 'opacity 0.15s ease',
                   }}
@@ -565,17 +563,18 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
                     fontFamily: FONTS.cinzel,
                     fontSize: '13px',
                     fontWeight: 400,
-                    color: isSelected ? COLORS.white : COLORS.gray20,
+                    color: isSelected ? COLORS.white : COLORS.gray40,
+                    opacity: isSelected ? 1 : 0.4,
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
-                    transition: 'color 0.15s ease',
+                    transition: 'color 0.15s ease, opacity 0.15s ease',
                   }}
                 >
                   {god.name}
                 </span>
                 {hasChosenRitual && (
-                  <span style={{ display: 'flex', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-                    <FireIcon size={16} color={isSelected ? COLORS.white : COLORS.gray20} />
+                  <span style={{ display: 'flex', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', opacity: isSelected ? 1 : 0.4, transition: 'opacity 0.15s ease' }}>
+                    <FireIcon size={16} color={isSelected ? COLORS.white : COLORS.gray40} />
                   </span>
                 )}
               </div>
