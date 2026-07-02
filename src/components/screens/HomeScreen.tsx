@@ -81,7 +81,7 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showC
             ) : (
               <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}>{count}</span>
             )}
-            <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
+            <span style={{ color: valueColor, opacity: 0.25, transition: 'color 0.2s ease' }}> / {total}</span>
           </span>
         </div>
       </div>
@@ -110,7 +110,7 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
             ) : (
               <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}>{available}</span>
             )}
-            <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
+            <span style={{ color: valueColor, opacity: 0.25, transition: 'color 0.2s ease' }}> / {total}</span>
           </span>
         </div>
       </div>
@@ -332,7 +332,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     : { animation: `homeDetailDrawerReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION}ms both` }
 
   return (
-    <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px' }}>
+    <div ref={panelRef} style={{ flexShrink: 0, margin: '16px 24px 0', padding: '16px 24px 24px' }}>
       <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
         <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div
