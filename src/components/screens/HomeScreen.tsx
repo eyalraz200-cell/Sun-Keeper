@@ -146,8 +146,8 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingTop: '8px' }}>
-          <HomeSiteItem icon={c => <PyramidIcon size={27} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
-          <HomeSiteItem icon={c => <PyramidIcon size={27} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
+          <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
+          <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
     </div>
