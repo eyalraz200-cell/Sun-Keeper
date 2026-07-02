@@ -117,7 +117,7 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
 
 function HomeBarSectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: COLORS.gray60, opacity: 0.46, marginBottom: '12px' }}>{children}</span>
+    <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: COLORS.gray60, opacity: 0.46, marginBottom: '8px' }}>{children}</span>
   )
 }
 
