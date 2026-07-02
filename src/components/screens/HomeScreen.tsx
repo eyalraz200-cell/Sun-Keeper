@@ -1,5 +1,5 @@
-import { useState, useRef, useLayoutEffect, useEffect } from 'react'
-import { COLORS, FONTS, FONT_SIZE, RESOURCE_TOTALS } from '../../tokens'
+import { useState, useRef, useLayoutEffect, useEffect, Fragment } from 'react'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, RESOURCE_TOTALS } from '../../tokens'
 import { GODS, type God, type Ritual, type AngerLevel } from '../../data/gods'
 import { GodSvg } from '../gods/GodSvg'
 import { GodCard, CARD_WIDTH, outcomeEye, getSvgRaw } from '../gods/GodCard'
@@ -10,23 +10,29 @@ import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { PyramidIcon } from '../icons/PyramidIcon'
 import { GridFour, ListBullets } from '@phosphor-icons/react'
 
-const ANGER_EYE: Record<AngerLevel, { color: string; weight: number }> = {
-  high: { color: '#FF2435', weight: 6 },
-  medium: { color: '#EF7B2E', weight: 4 },
-  low: { color: '#D7C94E', weight: 3 },
-  none: { color: '#6C6C6C', weight: 2 },
-}
-
 const AI_TOGGLE_RESERVE = '96px' // keeps the floating AI toggle button (54px circle, 12px from right edge) off the card grid
-const ANGER_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2, none: 3 }
+
+// Gods are grouped into sections by anger tier, in this fixed order.
+const ANGER_TIERS: AngerLevel[] = ['high', 'medium', 'low', 'none']
+const TIER_LABELS: Record<AngerLevel, string> = {
+  high: 'Furious Gods',
+  medium: 'Angry Gods',
+  low: 'Uneasy Gods',
+  none: 'Peaceful Gods',
+}
 
 const DISPLAY_GOD_COUNT = 24
 const DISPLAY_GODS = Array.from({ length: DISPLAY_GOD_COUNT }, (_, i) => ({
   ...GODS[i % GODS.length],
   id: `${GODS[i % GODS.length].id}-dup-${i}`,
-})).sort((a, b) => ANGER_ORDER[a.angerLevel] - ANGER_ORDER[b.angerLevel])
+}))
+// One bucket per non-empty anger tier, in ANGER_TIERS order — feeds the grid's section headers.
+const DISPLAY_GOD_BUCKETS = ANGER_TIERS
+  .map(level => ({ level, gods: DISPLAY_GODS.filter(g => g.angerLevel === level) }))
+  .filter(bucket => bucket.gods.length > 0)
 
 type ResourceCost = { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }
 const ZERO_COST: ResourceCost = { prisoners: 0, volunteers: 0, children: 0, virgins: 0, temples: 0, greatTemples: 0 }
@@ -47,24 +53,30 @@ function sumRitualCost(chosenRituals: Record<string, string>): ResourceCost {
   return total
 }
 
+// Thin vertical rule between two resource/site items — align-self:stretch fills whichever
+// row it's placed in regardless of that row's own alignItems value.
+function ResourceDivider() {
+  return <div style={{ flexShrink: 0, width: '1px', alignSelf: 'stretch', backgroundColor: COLORS.gray20 }} />
+}
+
 function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showChange }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; showChange?: boolean }) {
   const affected = (cost ?? 0) > 0
-  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : '#acacac'
-  const valueColor = ritualActive ? (affected ? '#ffffff' : 'rgba(255,255,255,0.25)') : '#ffffff'
+  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
+  const valueColor = ritualActive ? (affected ? COLORS.gray95 : 'rgba(255,255,255,0.25)') : COLORS.gray95
   return (
-    <div style={{ flexShrink: 0, width: '170px', display: 'flex', alignItems: 'center', gap: '19px', transition: 'opacity 0.2s ease' }}>
+    <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px', transition: 'opacity 0.2s ease' }}>
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{icon(labelColor)}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: '16px', color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontFamily: FONTS.spectral, fontSize: '16px', whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
               <>
-                <span style={{ fontSize: '20px', color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{count}</span>
-                <span style={{ fontSize: '20px', color: valueColor, transition: 'color 0.2s ease' }}> ({count - cost})</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{count}</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}> ({count - cost})</span>
               </>
             ) : (
-              <span style={{ fontSize: '20px', color: valueColor, transition: 'color 0.2s ease' }}>{count}</span>
+              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}>{count}</span>
             )}
             <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
           </span>
@@ -74,25 +86,30 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showC
   )
 }
 
-function HomeSiteItem({ label, available, total, cost, ritualActive, showChange }: { label: string; available: number; total: number; cost?: number; ritualActive?: boolean; showChange?: boolean }) {
+function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showChange }: { icon: (color: string) => React.ReactNode; label: string; available: number; total: number; cost?: number; ritualActive?: boolean; showChange?: boolean }) {
   const affected = (cost ?? 0) > 0
-  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : '#acacac'
-  const valueColor = ritualActive ? (affected ? '#ffffff' : 'rgba(255,255,255,0.25)') : '#ffffff'
+  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
+  const valueColor = ritualActive ? (affected ? COLORS.gray95 : 'rgba(255,255,255,0.25)') : COLORS.gray95
   return (
-    <div style={{ flexShrink: 0, width: '180px', display: 'flex', flexDirection: 'column', gap: '2px', transition: 'opacity 0.2s ease' }}>
-      <span style={{ fontFamily: FONTS.spectral, fontSize: '16px', color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: '16px', whiteSpace: 'nowrap' }}>
-          {showChange && cost ? (
-            <>
-              <span style={{ fontSize: '20px', color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{available}</span>
-              <span style={{ fontSize: '20px', color: valueColor, transition: 'color 0.2s ease' }}> ({available - cost})</span>
-            </>
-          ) : (
-            <span style={{ fontSize: '20px', color: valueColor, transition: 'color 0.2s ease' }}>{available}</span>
-          )}
-          <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
-        </span>
+    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px', transition: 'opacity 0.2s ease' }}>
+      <div style={{ flexShrink: 0, width: '48px', height: '48px', borderRadius: '50%', border: `1px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon(labelColor)}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
+            {showChange && cost ? (
+              <>
+                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{available}</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}> ({available - cost})</span>
+              </>
+            ) : (
+              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}>{available}</span>
+            )}
+            <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -100,7 +117,7 @@ function HomeSiteItem({ label, available, total, cost, ritualActive, showChange 
 
 function HomeBarSectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontFamily: FONTS.spectral, fontSize: '10px', fontWeight: 400, color: 'rgba(255,255,255,0.18)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>{children}</span>
+    <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: COLORS.gray60, opacity: 0.46, marginBottom: '12px' }}>{children}</span>
   )
 }
 
@@ -108,22 +125,26 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.black, borderBottom: '1px solid #333333', boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
+    <div style={{ flexShrink: 0, height: '104px', backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '0 48px 0 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '96px' }}>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '12px 24px' }}>
           <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} total={resourceTotals.prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} showChange={showChange} />
-          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} showChange={showChange} />
-          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} showChange={showChange} />
+          <ResourceDivider />
           <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} total={resourceTotals.volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} showChange={showChange} />
+          <ResourceDivider />
+          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} showChange={showChange} />
+          <ResourceDivider />
+          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
-      <div style={{ flexShrink: 0, width: '1px', height: '80px', backgroundColor: '#333333', margin: '0 16px 0 120px' }} />
+      <div style={{ flexShrink: 0, width: '1px', height: '80px', backgroundColor: COLORS.gray20, margin: '0 16px 0 120px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '96px' }}>
-          <HomeSiteItem label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
-          <HomeSiteItem label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <HomeSiteItem icon={c => <PyramidIcon size={34} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
+          <ResourceDivider />
+          <HomeSiteItem icon={c => <PyramidIcon size={34} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
     </div>
@@ -185,7 +206,10 @@ const DRAWER_CLOSE_DURATION = 260
 const SCROLL_TOP_GAP = 24
 
 function HomeGodDetailPanel({ god, onBack, onChoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean }) {
-  const baseEye = ANGER_EYE[god.angerLevel as AngerLevel]
+  // Widened to match outcomeEye()'s return type — EYE itself is `as const` (a literal-typed
+  // union per level), which would otherwise stop `to`/`from` below from ever holding an
+  // outcomeEye() result once a ritual is hovered.
+  const baseEye: { color: string; weight: number } = EYE[god.angerLevel as AngerLevel]
   const [eyeAnim, setEyeAnim] = useState<{ from: typeof baseEye; to: typeof baseEye; key: number; delay: number } | null>(null)
   const currentEyeRef = useRef(baseEye)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -552,7 +576,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
                     width: '18px',
                     height: '18px',
                     borderRadius: '50%',
-                    boxShadow: `inset 0 0 0 ${ANGER_EYE[god.angerLevel].weight}px ${ANGER_EYE[god.angerLevel].color}`,
+                    boxShadow: `inset 0 0 0 ${EYE[god.angerLevel].weight}px ${EYE[god.angerLevel].color}`,
                     opacity: isSelected ? 1 : 0.12,
                     flexShrink: 0,
                     transition: 'opacity 0.15s ease',
@@ -623,6 +647,18 @@ function ViewModeToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list'; onC
     <div style={{ flexShrink: 0, display: 'flex', gap: '4px', border: `1px solid ${COLORS.gray20}`, borderRadius: '8px', padding: '2px' }}>
       {option('grid', c => <GridFour size={16} color={c} weight="regular" />)}
       {option('list', c => <ListBullets size={16} color={c} weight="regular" />)}
+    </div>
+  )
+}
+
+// Section header above each non-empty anger tier's card grid — an 18px EYE-weight ring
+// (never a smaller size, never solid-fill; matches the anger-label circle used everywhere else)
+// plus the tier's label.
+function AngerTierHeader({ level }: { level: AngerLevel }) {
+  return (
+    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '24px 24px 0' }}>
+      <div style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${EYE[level].weight}px ${EYE[level].color}` }} />
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{TIER_LABELS[level]}</span>
     </div>
   )
 }
@@ -718,15 +754,20 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           <>
             <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.white }}>Choose rituals to appease the gods</div>
                 <div style={{ transform: 'translateY(-2px)' }}>
                   <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
               </div>
-              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Select rituals to appease the gods</div>
+              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Avoid punishment by performing appeasement rituals for the angry gods</div>
             </div>
 
-            {renderGrid(DISPLAY_GODS)}
+            {DISPLAY_GOD_BUCKETS.map(({ level, gods }) => (
+              <Fragment key={level}>
+                <AngerTierHeader level={level} />
+                {renderGrid(gods)}
+              </Fragment>
+            ))}
           </>
         )}
         {viewMode === 'list' && (

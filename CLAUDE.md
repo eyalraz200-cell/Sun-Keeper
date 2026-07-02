@@ -42,9 +42,10 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 - The default screen on app load (pyramid icon in `SidebarNav`)
 - Renders `HomeScreen.tsx`
 - God cards are grouped into sections by `angerLevel` (`high` → `medium` → `low` → `none`), each with its own group title — no flat ungrouped grid
-- Group title = **18px** render-layer eye circle (see "Standard eye mode" rule under `RitualCard`/`GodSvg` below — `high: #FF2435/6px`, `medium: #EF7B2E/4px`, `low: #D7C94E/3px`, `none: #6C6C6C/2px`, NOT the data-layer ANGER palette) + sentence-case label in `FONTS.spectral` 14px weight 300 white (NOT uppercase): "Furious" / "Offended" / "Uneasy" / "At Peace"
-- Titles are hidden while a god is selected (detail panel open), same as the page-level "Gods" header
-- A resource bar (`HomeResourceBar`, defined locally inside `HomeScreen.tsx` — there is no separate `ResourceBar.tsx` component anymore) shows available Prisoners/Children/Virgins/Volunteers and Temple counts at the top of the screen
+- Group title = **18px** render-layer eye circle (see "Standard eye mode" rule under `RitualCard`/`GodSvg` below — `high: #FF2435/6px`, `medium: #EF7B2E/4px`, `low: #D7C94E/3px`, `none: #6C6C6C/2px`, NOT the data-layer ANGER palette) + sentence-case label in `FONTS.spectral` 14px weight 300 white (NOT uppercase): "Furious Gods" / "Angry Gods" / "Uneasy Gods" / "Peaceful Gods" (`TIER_LABELS` in `HomeScreen.tsx`). Re-confirmed against a fresh Figma pull on 2026-07-02 — if you see the older wording ("Furious" / "Offended" / "Uneasy" / "At Peace", no "Gods" suffix) anywhere, that's stale, this is the current version.
+- Titles are hidden while a god is selected (detail panel open), same as the page-level heading (see below)
+- The page-level heading reads "Choose rituals to appease the gods" (`FONTS.spectral`, sentence case, `FONT_SIZE.xl`/20px — NOT the old Cinzel-uppercase "Gods" label) with a subtitle "Avoid punishment by performing appeasement rituals for the angry gods" underneath; grid-mode only, the list-mode header (passed as `GodListLayout`'s `header` prop) hasn't been updated to match and still reads the old copy
+- A resource bar (`HomeResourceBar`, defined locally inside `HomeScreen.tsx` — there is no separate `ResourceBar.tsx` component anymore) shows available Prisoners/Volunteers/Children/Virgins and Temple/Grand Temple counts at the top of the screen. Prisoners/Volunteers/Children/Virgins share one rounded (`10px`) `COLORS.gray15` pill container with `1px COLORS.gray20` dividers between each; Temple/Grand Temple sit bare (no shared pill) with a `PyramidIcon` in a 48px ringed circle each, also divider-separated. Both share a `HomeBarSectionTitle` label ("Available Resources" / "Available Ritual Sites") above them.
 
 **Expanded card view (detail panel):** clicking a god card (`HomeGodCard`) on the overview screen sets `selectedGodId` and swaps the grid for `HomeGodDetailPanel`:
 - Larger god SVG (320px × 488px) on the left
@@ -139,6 +140,8 @@ interface GodCardProps {
 | Default              | `1px solid #262626` | `#6c6c6c`  | *(unset — `GodSvg` computes its own default)* |
 | Highlighted (hover/selected) | `1px solid #4d4d4d` | `#F0F0F0`  | `#e0e0e0` |
 
+**Chosen-ritual border (orthogonal to the table above — independent of `highlighted`):** once `chosenRitual` is set, the outer card border becomes a `linear-gradient(to right, EYE[god.angerLevel].color, outcomeEye(chosenRitual.outcomeColor).color)` instead of a flat color — visualizing the ritual's appeasement effect (current anger → resulting outcome) directly on the card. Implemented via the standard two-layer `background-image`/`background-clip: padding-box, border-box` trick (a plain CSS `border` can't render a gradient). This is why the ritual panel no longer needs its own outcome circle (see Ritual Panel below) — the gradient border carries the same before/after information, plus the starting state the circle never showed.
+
 Background is always `COLORS.bgBase`, regardless of state. There is currently no wrathful/Huitzilopochtli-specific styling wired into `GodCard` — that lived in the now-archived `StartScreenWrathful` flow.
 
 **SVG area:** `125px × 194px` (`FACE_LEFT`/`FACE_WIDTH` constants), positioned at `top: 38px`.
@@ -147,12 +150,13 @@ Background is always `COLORS.bgBase`, regardless of state. There is currently no
 - Positioned `left: INNER_CARD_LEFT`, `right: RITUAL_PANEL_RIGHT_GAP (12px)`, `top/bottom: 14px` inside the outer god card
 - Own border + `borderRadius: 10px`, matching the outer card's border color/highlight state
 - Two states:
-  - **No ritual selected**: fire icon + "No Ritual" / "Selected" text, centered — `#4d4d4d` default, `#999999` on hover/selected (never white)
-  - **Ritual chosen**: participant icons/counts, sacred site, duration, divider, outcome circle
+  - **No ritual selected**: fire icon + single-line "No ritual chosen" text (wraps to 2 lines), centered — `#4d4d4d` default, `#999999` on hover/selected (never white)
+  - **Ritual chosen**: fire icon, then each participant type rendered as its own pill (`RitualParticipantPill` — `borderRadius: 8px`, full panel width, `backgroundColor: COLORS.gray20` + white icon/text when that type is used by the ritual, `COLORS.gray15` + `COLORS.gray18` icon/text "ghost" look when it isn't — same information the old whole-row `opacity: 0.12` dimming conveyed, via color-scale tokens instead of an opacity value), then a divider, then a `PyramidIcon` + duration only (no sacred-site name/abbreviation text anymore — the icon carries that meaning). **No outcome circle** — that information now lives on the outer card's gradient border instead (see the state matrix above).
 - `INNER_CARD_LEFT` is derived from `FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP` — the gap between the god's face and the ritual panel always matches the card's left padding.
 - **Sizing rule:** both the gap from the face (left edge) AND the gap from the card's right edge (`RITUAL_PANEL_RIGHT_GAP`) are fixed and must never be touched to resize the panel. `RITUAL_PANEL_WIDTH` is the only thing that changes — `CARD_WIDTH` is *derived* from `INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP`, so the outer `GodCard` itself grows/shrinks to fit, instead of either gap ever changing.
 - **Hover transition:** the panel's border-color and background-color change **instantly** on hover (no `transition` property) — border goes `#333333` → `#808080`, fill goes `transparent` → `#2e2e2e`. This matches the god's face (`GodSvg`), which also snaps instantly because it's raw SVG markup with the color baked into each `fill="..."` attribute, not a CSS-transitionable property. The outer `GodCard` border also brightens instantly: `#262626` → `#4d4d4d`.
-- **Content color on hover:** the fire icon and "No Ritual Selected" text brighten from `#4d4d4d` to `#999999` on hover/selected — deliberately NOT white, unlike the border/fill above.
+- **Content color on hover:** the fire icon and "No ritual chosen" text brighten from `#4d4d4d` to `#999999` on hover/selected — deliberately NOT white, unlike the border/fill above.
+- **`RITUAL_PANEL_WIDTH` is currently `112`** (→ `CARD_WIDTH = 293`, matching the Figma frame this card was last audited against) — still the only one of the panel's dimensions that should ever change; see the Sizing rule above.
 
 ---
 

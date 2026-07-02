@@ -7,6 +7,7 @@ import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { PyramidIcon } from '../icons/PyramidIcon'
 import tlalocRaw from '../../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../../assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from '../../assets/Gods/huitzilopochtli.svg?raw'
@@ -46,20 +47,13 @@ function abbreviateDuration(duration: string): string {
   return `${num}d`
 }
 
-function abbreviateSiteName(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-}
-
 export const CARD_HEIGHT = 248
 
 const FACE_LEFT = 22
 const FACE_WIDTH = 125
 const FACE_TO_CARD_GAP = 22 // matches the padding between the card's left edge and the face
 const INNER_CARD_LEFT = FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP
-const RITUAL_PANEL_WIDTH = 90
+const RITUAL_PANEL_WIDTH = 112
 const RITUAL_PANEL_RIGHT_GAP = 12 // matches the padding between the card's right edge and the panel
 // The card's total width derives from both fixed gaps — widening the panel grows the card,
 // it never eats into either the face-gap or the right-edge-gap.
@@ -73,9 +67,29 @@ interface GodCardProps {
   domRef?: (el: HTMLDivElement | null) => void
 }
 
+// Each participant type gets its own pill: filled gray20 when the ritual actually uses it,
+// near-invisible gray18-on-gray15 "ghost" when it doesn't — same information as the old
+// whole-row opacity dimming, but via existing color-scale tokens instead of an opacity value.
+function RitualParticipantPill({ Icon, active, value }: { Icon: React.ComponentType<{ size?: number; color?: string }>; active: boolean; value: number }) {
+  const color = active ? COLORS.white : COLORS.gray18
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', boxSizing: 'border-box', padding: '4px 6px', borderRadius: '8px', backgroundColor: active ? COLORS.gray20 : COLORS.gray15 }}>
+      <Icon size={16} color={color} />
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color }}>{active ? value : '-'}</span>
+    </div>
+  )
+}
+
 export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const highlighted = isSelected || isHovered
+  // Once a ritual is chosen, the outer border becomes a gradient from the god's current
+  // anger-eye color to the chosen ritual's outcome-eye color — visualizing the appeasement
+  // effect (before -> after) directly on the card, which is why the separate outcome circle
+  // that used to live inside the ritual panel is no longer needed.
+  const borderGradient = chosenRitual
+    ? `linear-gradient(to right, ${EYE[god.angerLevel].color}, ${outcomeEye(chosenRitual.outcomeColor).color})`
+    : null
   return (
     <div
       ref={domRef}
@@ -87,11 +101,20 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         height: `${CARD_HEIGHT}px`,
         flexShrink: 0,
         position: 'relative',
-        backgroundColor: COLORS.black,
-        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
         borderRadius: '10px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
         cursor: onClick ? 'pointer' : undefined,
+        ...(borderGradient
+          ? {
+              border: '1px solid transparent',
+              backgroundImage: `linear-gradient(${COLORS.black}, ${COLORS.black}), ${borderGradient}`,
+              backgroundOrigin: 'border-box',
+              backgroundClip: 'padding-box, border-box',
+            }
+          : {
+              backgroundColor: COLORS.black,
+              border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
+            }),
       }}
     >
       <div
@@ -122,7 +145,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           right: `${RITUAL_PANEL_RIGHT_GAP}px`,
           top: '14px',
           bottom: '14px',
-          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? COLORS.gray40 : COLORS.gray20}`,
+          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? COLORS.gray40 : chosenRitual ? COLORS.gray30 : COLORS.gray20}`,
           borderRadius: '10px',
           backgroundColor: highlighted ? COLORS.gray18 : 'transparent',
           display: 'flex',
@@ -138,34 +161,21 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
             <div style={{ marginBottom: '8px' }}>
               <FireIcon size={20} color={COLORS.gray60} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: 'auto', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: 'auto', marginBottom: '8px' }}>
               {([
                 { key: 'prisoners', Icon: PrisonerIcon },
                 { key: 'volunteers', Icon: VolunteerIcon },
                 { key: 'children', Icon: ChildrenIcon },
                 { key: 'virgins', Icon: VirginIcon },
-              ] as const).map(({ key, Icon }) => {
-                const active = chosenRitual.participants[key] > 0
-                return (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: active ? 1 : 0.12 }}>
-                    <Icon size={16} color={COLORS.white} />
-                    <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>{active ? chosenRitual.participants[key] : '—'}</span>
-                  </div>
-                )
-              })}
-              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white, textAlign: 'center' }}>
-                {abbreviateSiteName(chosenRitual.sacredSite.name)} / {abbreviateDuration(chosenRitual.duration)}
-              </span>
+              ] as const).map(({ key, Icon }) => (
+                <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} />
+              ))}
             </div>
             <div style={{ width: '60%', height: '1px', backgroundColor: COLORS.gray20, marginBottom: '8px' }} />
-            <div
-              style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                boxShadow: `inset 0 0 0 ${outcomeEye(chosenRitual.outcomeColor).weight}px ${outcomeEye(chosenRitual.outcomeColor).color}`,
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <PyramidIcon size={16} color={COLORS.gray60} />
+              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>/{abbreviateDuration(chosenRitual.duration)}</span>
+            </div>
           </>
         ) : (
           <div
@@ -182,8 +192,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
             <div style={{ marginBottom: '8px' }}>
               <FireIcon size={20} color={highlighted ? COLORS.gray60 : COLORS.gray30} />
             </div>
-            <span>No Ritual</span>
-            <span>Selected</span>
+            <span>No ritual chosen</span>
           </div>
         )}
       </div>
