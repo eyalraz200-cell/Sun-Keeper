@@ -70,7 +70,7 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showC
     <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px', transition: 'opacity 0.2s ease' }}>
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{icon(labelColor)}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
@@ -99,7 +99,7 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
         {icon(labelColor)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.regular, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
@@ -128,7 +128,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 48px 28px 24px' }}>
+    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 48px 16px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px' }}>
@@ -141,7 +141,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
           <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
-      <div style={{ flexShrink: 0, width: '80px' }} />
+      <div style={{ flexShrink: 0, width: '40px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingTop: '8px' }}>
@@ -927,42 +927,6 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: aiPanelOpen ? '331px' : AI_TOGGLE_RESERVE,
-          bottom: '56px',
-          display: 'flex',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-          transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        <div style={{ pointerEvents: 'auto' }}>
-          <button
-            onClick={() => setSacrificeCost(reservedCost)}
-            disabled={Object.keys(chosenRituals).length === 0}
-            style={{
-              padding: '0 56px',
-              height: '44px',
-              border: Object.keys(chosenRituals).length > 0 ? '1px solid #ffffff' : 'none',
-              borderRadius: '8px',
-              backgroundColor: Object.keys(chosenRituals).length > 0 ? '#ffffff' : '#2a2a2a',
-              color: Object.keys(chosenRituals).length > 0 ? '#000000' : '#6c6c6c',
-              boxShadow: Object.keys(chosenRituals).length > 0 ? '0 0 32px 10px rgba(0,0,0,1)' : 'none',
-              fontFamily: FONTS.spectral,
-              fontWeight: 400,
-              fontSize: '16px',
-              textTransform: 'uppercase',
-              cursor: Object.keys(chosenRituals).length === 0 ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
-            }}
-          >
-            Authorize All Selected Rituals ({Object.keys(chosenRituals).length})
-          </button>
-        </div>
-      </div>
       {sacrificeCost && (
         <RitualSacrificeOverlay
           counts={sacrificeCost}

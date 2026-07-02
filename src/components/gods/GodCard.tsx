@@ -43,6 +43,11 @@ export function outcomeEye(color: string): { color: string; weight: number } {
   return { color: COLORS.white, weight: 2 }
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
 function abbreviateDuration(duration: string): string {
   const num = duration.match(/\d+/)?.[0] ?? duration
   return `${num}d`
@@ -71,12 +76,11 @@ interface GodCardProps {
 export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const highlighted = isSelected || isHovered
-  // Once a ritual is chosen, the outer border becomes a gradient from the god's current
-  // anger-eye color to the chosen ritual's outcome-eye color — visualizing the appeasement
-  // effect (before -> after) directly on the card, which is why the separate outcome circle
-  // that used to live inside the ritual panel is no longer needed.
+  // Once a ritual is chosen, the outer border tints toward the chosen ritual's outcome
+  // color at the top, fading down into the plain gray border — a low-opacity hint of the
+  // ritual's effect rather than a full before/after gradient.
   const borderGradient = chosenRitual
-    ? `linear-gradient(to right, ${EYE[god.angerLevel].color}, ${outcomeEye(chosenRitual.outcomeColor).color})`
+    ? `linear-gradient(to bottom, ${hexToRgba(outcomeEye(chosenRitual.outcomeColor).color, 0.5)}, ${COLORS.gray30})`
     : null
   return (
     <div

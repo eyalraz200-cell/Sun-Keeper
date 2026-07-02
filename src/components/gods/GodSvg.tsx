@@ -142,12 +142,18 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
         : ''
       const glowAnimName = `eyeGlowPulse-${idSalt || 'g'}`
       const glowDefs = glow
-        ? `<filter id="eyeGlowBlur-${idSalt}" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4"/></filter><style>@keyframes ${glowAnimName} { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }</style>`
+        ? `<filter id="eyeGlowBlur-${idSalt}" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2"/></filter><style>@keyframes ${glowAnimName} { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.4; } }</style>` +
+          circles.map((c) => {
+            const uid = idSalt + c.cx.replace('.', '')
+            // Masks out the eye's own circle so the blurred glow is only visible outside it, not bleeding into the pupil.
+            return `<mask id="eyeGlowMask-${uid}"><rect x="-1000" y="-1000" width="3000" height="3000" fill="white"/><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="black"/></mask>`
+          }).join('\n')
         : ''
       const glowCircles = glow
         ? circles.map((c) => {
             const r = parseFloat(c.r)
-            return `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 1.4).toFixed(1)}" fill="${eye.color}" filter="url(#eyeGlowBlur-${idSalt})" style="animation: ${glowAnimName} 1.6s ease-in-out infinite;"/>`
+            const uid = idSalt + c.cx.replace('.', '')
+            return `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 1.6).toFixed(1)}" fill="${eye.color}" filter="url(#eyeGlowBlur-${idSalt})" mask="url(#eyeGlowMask-${uid})" style="animation: ${glowAnimName} 1.6s ease-in-out infinite;"/>`
           }).join('\n')
         : ''
       eyesGroup = `<defs>\n${defs}\n${glowDefs}\n</defs>${glowCircles ? `\n${glowCircles}` : ''}${ringCircles ? `\n${ringCircles}` : ''}\n<g id="eyes">\n${styledCircles}\n</g>`
