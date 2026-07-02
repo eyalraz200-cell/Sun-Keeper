@@ -10,10 +10,11 @@
 // something "brighter"/"darker" (one step, or "much brighter" for two+
 // steps), move along this list to the next/previous existing key — don't
 // invent a new in-between hex value:
-//   gray0 → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white
+//   gray0 → cardBg → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white
 export const COLORS = {
   gray0: '#000000',   // true black — used for text/icons that need full contrast on a light surface
-  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
+  cardBg: '#151515',  // GodCard background — slightly darker than the app background
+  black: '#1A1A1A',   // the app's "black" — viewport/page background
   gray15: '#262626',  // GodCard's default border
   gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
   gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)

@@ -47,11 +47,13 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 - The page-level heading reads "Choose rituals to appease the gods" (`FONTS.spectral`, sentence case, `FONT_SIZE.xl`/20px — NOT the old Cinzel-uppercase "Gods" label) with a subtitle "Avoid punishment by performing appeasement rituals for the angry gods" underneath; grid-mode only, the list-mode header (passed as `GodListLayout`'s `header` prop) hasn't been updated to match and still reads the old copy
 - A resource bar (`HomeResourceBar`, defined locally inside `HomeScreen.tsx` — there is no separate `ResourceBar.tsx` component anymore) shows available Prisoners/Volunteers/Children/Virgins and Temple/Grand Temple counts at the top of the screen. Prisoners/Volunteers/Children/Virgins share one rounded (`10px`) `COLORS.gray15` pill container with `1px COLORS.gray20` dividers between each; Temple/Grand Temple sit bare (no shared pill) with a `PyramidIcon` in a 48px ringed circle each, also divider-separated. Both share a `HomeBarSectionTitle` label ("Available Resources" / "Available Ritual Sites") above them.
 
-**Expanded card view (detail panel):** clicking a god card (`HomeGodCard`) on the overview screen sets `selectedGodId` and swaps the grid for `HomeGodDetailPanel`:
-- Larger god SVG (320px × 488px) on the left
-- The god's 3 ritual cards on the right (`RitualCardWithChoose`)
-- Clicking the god name/back area (`onBack`) returns to the grid
-- `HomeGodCard` and `HomeGodDetailPanel` are defined locally in `HomeScreen.tsx` — they are separate from the shared `GodCard.tsx` component used in the main grid.
+**God detail panel (`HomeGodDetailPanel`, defined locally in `HomeScreen.tsx`):** clicking any god card (grid or list-rail) switches `viewMode` to `'list'` and opens this panel inside `GodListLayout`'s `GodFreeCarousel` — there is no separate `HomeGodCard`/simple-swap flow anymore, and no shared `GodCard.tsx` usage here (that component is grid-view only). Re-audited against a fresh Figma pull (node `240:3580`) on 2026-07-02, replacing an older click-to-select design:
+- **Layout:** one combined card (`COLORS.cardBg` background, `10px` radius) holds a 320px-wide left half (god name/subtitle + a `300px`-tall `GodSvg`) and a `245px`-wide right half — the **drop-zone**, a permanent dashed-border empty slot with the docked `RitualCard` (if any) layered on top of it. Below this combined card, a row holds every ritual *not* currently docked (up to 3, shrinking as one gets chosen).
+- **Interaction is drag-and-drop, not click-to-select:** dragging a candidate card from the row into the drop-zone docks it (`onChoose`) and removes it from the row; dragging the docked card back out of the drop-zone un-docks it (`onUnchoose`, a new callback threaded `HomeScreen → GodListLayout → GodFreeCarousel → HomeGodDetailPanel` alongside the existing `onChoose` path) and returns it to the row. Hand-rolled pointer-event drag (no library — see `RitualSacrificeOverlay` below, the pattern this reuses): `onPointerDown`/`setPointerCapture` on the card, a `position:fixed` ghost tracking the pointer via `transform`, a `DOCK_MARGIN` (48px) forgiving hit-test against the drop-zone's `getBoundingClientRect()`, and a phase state machine (`dragging`/`returning`/`docking`/`undocking`) with `setTimeout`s matched to the CSS transition durations.
+- **The drag ghost is portaled to `document.body`** (`createPortal`), not rendered inline — `panelRef` (the FLIP animation's transform target) gets a non-`'none'` `transform` set directly on its DOM node once the entrance animation settles, and any transformed ancestor creates a new CSS containing block for `position:fixed` descendants. A ghost left nested inside `panelRef` tracks relative to the panel's box instead of the viewport — easy to miss since it fails silently (wrong position, no error) rather than throwing.
+- Every row/docked `RitualCard` here is called with `outcomeBorder` (border always = that ritual's own outcome-eye color, not the click-selection white/dim styling) and `isSelected={false}` (selection has no meaning under drag — a ritual is either present in the row or docked, never "selected").
+- `ChooseRitualButton`/`RitualCardWithChoose` (the old "Select Ritual" footer button + click wrapper) are gone, replaced by the drag wrapper described above.
+- Clicking the god name/back area (`onBack`) is currently a no-op in list view (`NOOP`) — this predates the redesign; the reverse-FLIP close path (`isClosing`) exists in the component but has no live caller that ever sets it `true`.
 
 **Ritual sacrifice flow:** clicking "Authorize All Selected Rituals" on the overview screen sets `sacrificeCost` and renders `RitualSacrificeOverlay` (see Component API Reference below) — a drag-and-drop interaction, not a passive animated cutscene.
 
@@ -61,7 +63,7 @@ The other screens (`DashboardScreen`, `CalendarScreen`, `ResourceScreen`, `Panth
 
 ## Layout Rules (Figma Frame: MacBook Pro 14' - 35)
 
-**Viewport:** 100vw × 100vh, background `#181818`
+**Viewport:** 100vw × 100vh, background `#1A1A1A`
 
 **Structure: Outer flex ROW (100vw × 100vh)**
 - **Left nav strip (`SidebarNav`):** 54px wide, full 100vh height, border-right `#333333`
@@ -69,7 +71,7 @@ The other screens (`DashboardScreen`, `CalendarScreen`, `ResourceScreen`, `Panth
 
 **Key constraints:**
 - `SidebarNav` extends full viewport height (100vh) to bottom edge
-- Background is always `#181818` (never lighter/darker)
+- Background is always `#1A1A1A` (never lighter/darker)
 
 ---
 
@@ -253,7 +255,7 @@ interface RitualCardProps {
 }
 ```
 
-**Renders:** 250px-wide card, `minHeight: 465px`, `backgroundColor: #181818`. Sections top to bottom:
+**Renders:** 250px-wide card, `minHeight: 465px`, `backgroundColor: #1A1A1A`. Sections top to bottom:
 1. **Name** — centered, Spectral 16px light
 2. **Description** — centered, Spectral 12px, `rgba(255,255,255,0.64)`
 3. **Divider** — inset 13px each side
@@ -295,12 +297,13 @@ interface RitualSacrificeOverlayProps {
 
 **Names are based on the color's actual grayscale value (a rounded lightness percentage), not on what it's currently used for** — a color's role can shift between contexts (a border today might become a hover-text color tomorrow) but its value doesn't, so naming by value keeps the name accurate forever. `black` and `white` are the two perceptual anchors (the app's dominant near-black background and its dominant full-bright text/highlight color) — neither is the literal `#000000`/`#ffffff` extreme. `gray0` is reserved for true, literal black.
 
-**This is an ordered scale, darkest to brightest — `gray0 → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white`.** When the user says "make it brighter"/"darker" (or "much brighter" for 2+ steps), move along this list to the next/previous key. Never compute a new in-between hex.
+**This is an ordered scale, darkest to brightest — `gray0 → cardBg → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray95 → white`.** When the user says "make it brighter"/"darker" (or "much brighter" for 2+ steps), move along this list to the next/previous key. Never compute a new in-between hex.
 
 ```ts
 COLORS = {
   gray0: '#000000',   // true black — text/icons needing full contrast on a light surface
-  black: '#181818',   // the app's "black" — background, default card bg (~9% lightness)
+  cardBg: '#151515',  // GodCard background — slightly darker than the app background
+  black: '#1A1A1A',   // the app's "black" — viewport/page background
   gray15: '#262626',  // GodCard's default border
   gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
   gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)

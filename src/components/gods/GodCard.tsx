@@ -8,6 +8,7 @@ import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { RitualParticipantPill } from '../ritual/RitualParticipantPill'
 import tlalocRaw from '../../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../../assets/Gods/Quetzalcoatl.svg?raw'
 import huitzilopochtliRaw from '../../assets/Gods/huitzilopochtli.svg?raw'
@@ -67,19 +68,6 @@ interface GodCardProps {
   domRef?: (el: HTMLDivElement | null) => void
 }
 
-// Each participant type gets its own pill: filled gray20 when the ritual actually uses it,
-// near-invisible gray18-on-gray15 "ghost" when it doesn't — same information as the old
-// whole-row opacity dimming, but via existing color-scale tokens instead of an opacity value.
-function RitualParticipantPill({ Icon, active, value }: { Icon: React.ComponentType<{ size?: number; color?: string }>; active: boolean; value: number }) {
-  const color = active ? COLORS.white : COLORS.gray18
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', boxSizing: 'border-box', padding: '4px 6px', borderRadius: '8px', backgroundColor: active ? COLORS.gray20 : COLORS.gray15 }}>
-      <Icon size={16} color={color} />
-      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color }}>{active ? value : '-'}</span>
-    </div>
-  )
-}
-
 export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const highlighted = isSelected || isHovered
@@ -102,17 +90,17 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         flexShrink: 0,
         position: 'relative',
         borderRadius: '10px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
         cursor: onClick ? 'pointer' : undefined,
         ...(borderGradient
           ? {
               border: '1px solid transparent',
-              backgroundImage: `linear-gradient(${COLORS.black}, ${COLORS.black}), ${borderGradient}`,
+              backgroundImage: `linear-gradient(${COLORS.cardBg}, ${COLORS.cardBg}), ${borderGradient}`,
               backgroundOrigin: 'border-box',
               backgroundClip: 'padding-box, border-box',
             }
           : {
-              backgroundColor: COLORS.black,
+              backgroundColor: COLORS.cardBg,
               border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
             }),
       }}

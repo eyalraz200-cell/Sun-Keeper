@@ -5,6 +5,8 @@ import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
+import { PyramidIcon } from '../icons/PyramidIcon'
+import { RitualParticipantPill } from './RitualParticipantPill'
 
 function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
@@ -27,7 +29,7 @@ interface RitualCardProps {
   onClick: () => void
   isActive?: boolean
   onHoverChange?: (isHovered: boolean) => void
-  godName: string
+  godName?: string
   wrathful?: boolean
   overrideOutcome?: string
   overrideParticipants?: Ritual['participants']
@@ -35,9 +37,13 @@ interface RitualCardProps {
   overrideDuration?: string
   isCompact?: boolean
   footer?: React.ReactNode
+  // When true, the border is always the ritual's own outcome-eye color, regardless of
+  // selected/active/hover/wrathful — used where the card is a drag source rather than a
+  // click-to-select target, so "selected" no longer means anything for its border.
+  outcomeBorder?: boolean
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
@@ -48,11 +54,13 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? '2px solid #ffffff' : '2px solid rgba(255,255,255,0.18)'
 
-  const borderStyle = wrathful
+  const eye = outcomeEye(outcomeColor)
+
+  const borderStyle = outcomeBorder
+    ? `2px solid ${eye.color}`
+    : wrathful
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? `2px solid ${COLORS.gray95}` : '2px solid rgba(255,255,255,0.18)'
-
-  const eye = outcomeEye(outcomeColor)
 
   if (isCompact) {
     const participantItems = [
@@ -195,27 +203,23 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
       {/* Price section */}
       <div style={{ padding: '12px 24px 0' }}>
         <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '12px' }}>Cost</span>
-        {([
-          { key: 'prisoners', label: 'Prisoners',  icon: <PrisonerIcon size={13} color="rgba(255,255,255,0.65)" /> },
-          { key: 'volunteers',label: 'Volunteers', icon: <VolunteerIcon size={13} color="rgba(255,255,255,0.65)" /> },
-          { key: 'children',  label: 'Children',  icon: <ChildrenIcon size={13} color="rgba(255,255,255,0.65)" /> },
-          { key: 'virgins',   label: 'Virgins',   icon: <VirginIcon size={13} color="rgba(255,255,255,0.65)" /> },
-        ] as const).map(({ key, label, icon }, i, arr) => {
-          const active = participants[key] > 0
-          return (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: i < arr.length - 1 ? '8px' : 0, opacity: active ? 1 : 0.12 }}>
-            {icon}
-            <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
-            <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{active ? participants[key] : '—'}</span>
-          </div>
-          )
-        })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {([
+            { key: 'prisoners', Icon: PrisonerIcon },
+            { key: 'volunteers', Icon: VolunteerIcon },
+            { key: 'children', Icon: ChildrenIcon },
+            { key: 'virgins', Icon: VirginIcon },
+          ] as const).map(({ key, Icon }) => (
+            <RitualParticipantPill key={key} Icon={Icon} active={participants[key] > 0} value={participants[key]} variant="card" />
+          ))}
+        </div>
       </div>
 
-      {/* Sacrificial Site section */}
+      {/* Ritual Site section */}
       <div style={{ padding: '24px 24px 0' }}>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '12px' }}>Ritual Site</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>Site</span>
+          <PyramidIcon size={26} color={COLORS.white} />
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
         </div>
       </div>
