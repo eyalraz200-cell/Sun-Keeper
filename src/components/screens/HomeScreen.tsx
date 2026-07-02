@@ -58,7 +58,7 @@ function sumRitualCost(chosenRituals: Record<string, string>): ResourceCost {
 // `fullBleed` pulls it past the parent's vertical padding so it reaches the container's
 // full edge-to-edge height, using the page background color to read as a cut-through.
 function ResourceDivider({ fullBleed }: { fullBleed?: boolean } = {}) {
-  return <div style={{ flexShrink: 0, width: '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
+  return <div style={{ flexShrink: 0, width: fullBleed ? '2px' : '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
 }
 
 function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showChange }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; showChange?: boolean }) {
