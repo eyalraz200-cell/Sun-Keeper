@@ -501,6 +501,6 @@ interface Ritual {
 The user has explicitly authorized autonomous git commits and pushes for this project, so Claude does **not** need to ask before each one:
 
 - **Commit** after every logical change (a feature, fix, refactor, or other discrete piece of work) — small, frequent commits with descriptive messages, not one giant batch at the end.
-- **Push** to the remote automatically right after each commit — no need to check in first.
+- **Push in batches, not after every commit.** Don't push automatically after each individual commit, especially during rapid iteration (e.g. a string of small visual tweaks based on live feedback) — that creates push noise. Push at natural stopping points: a feature/fix is done and verified, the user asks, or a meaningful chunk of related commits has accumulated.
 - Still never use destructive operations (`--force` push, `reset --hard`, rewriting published history, skipping hooks) without explicit confirmation — this blanket authorization covers normal commit + push only.
 - If a change is exploratory/experimental and the user signals they might want to discard it, hold off on committing until that's resolved.

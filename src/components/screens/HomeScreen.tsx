@@ -128,7 +128,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', padding: '28px 48px 28px 24px' }}>
+    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 48px 28px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px' }}>
@@ -141,7 +141,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
           <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
-      <div style={{ flexShrink: 0, width: '137px' }} />
+      <div style={{ flexShrink: 0, width: '80px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingTop: '8px' }}>

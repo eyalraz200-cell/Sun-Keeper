@@ -124,7 +124,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         {god.name}
       </div>
       <div style={{ position: 'absolute', left: `${FACE_LEFT}px`, top: '38px', width: `${FACE_WIDTH}px`, height: '194px' }}>
-        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : undefined} instanceId={`grid-${god.id}`} />
+        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : undefined} glow={god.angerLevel === 'high'} instanceId={`grid-${god.id}`} />
       </div>
       <div
         style={{
