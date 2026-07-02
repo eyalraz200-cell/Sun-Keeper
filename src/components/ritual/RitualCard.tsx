@@ -9,6 +9,11 @@ import { PyramidIcon } from '../icons/PyramidIcon'
 import { RingedIcon } from '../icons/RingedIcon'
 import { RitualParticipantPill } from './RitualParticipantPill'
 
+function hexToRgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
 function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
   if (color === '#d4662a') return 'Offended'
@@ -62,10 +67,12 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? `2px solid ${COLORS.gray95}` : '2px solid rgba(255,255,255,0.18)'
 
-  // Figma fades the outcome-color border from full color at the top edge down to
-  // gray at the bottom — same endpoint GodCard.tsx's chosen-ritual gradient border
-  // uses, not transparent.
-  const borderGradient = outcomeBorder ? `linear-gradient(to bottom, ${eye.color}, ${COLORS.gray30})` : null
+  // Figma fades the outcome-color border from a low-opacity tint at the top edge
+  // down to gray at the bottom — same opacity/endpoint convention GodCard.tsx's
+  // chosen-ritual gradient border uses, not a full-opacity color.
+  const borderGradient = outcomeBorder
+    ? `linear-gradient(to bottom, ${hexToRgba(eye.color, eye.color === COLORS.white ? 0.8 : 0.5)}, ${COLORS.gray30})`
+    : null
 
   if (isCompact) {
     const participantItems = [
