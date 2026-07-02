@@ -16,7 +16,7 @@ interface RitualParticipantPillProps {
 export function RitualParticipantPill({ Icon, active, value, variant = 'panel', label }: RitualParticipantPillProps) {
   const isCard = variant === 'card'
   const inactiveBg = isCard ? COLORS.black : COLORS.gray15
-  const contentColor = active ? COLORS.gray95 : isCard ? COLORS.gray40 : COLORS.gray18
+  const contentColor = active ? COLORS.gray80 : isCard ? COLORS.gray40 : COLORS.gray18
   const contentOpacity = active ? 1 : isCard ? 0.32 : 1
   const labelColor = active ? COLORS.gray60 : contentColor
   return (
