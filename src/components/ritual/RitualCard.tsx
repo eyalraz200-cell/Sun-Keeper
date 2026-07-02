@@ -56,12 +56,15 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     : isSelected || isActive || isHovered ? '2px solid #ffffff' : '2px solid rgba(255,255,255,0.18)'
 
   const eye = outcomeEye(outcomeColor)
+  const cardBg = isSelected || isActive || isHovered ? COLORS.gray15 : COLORS.black
 
-  const borderStyle = outcomeBorder
-    ? `1px solid ${eye.color}`
-    : wrathful
+  const borderStyle = wrathful
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? `2px solid ${COLORS.gray95}` : '2px solid rgba(255,255,255,0.18)'
+
+  // Figma fades the outcome-color border from full color at the top edge to
+  // transparent at the bottom, not a flat single-color stroke.
+  const borderGradient = outcomeBorder ? `linear-gradient(to bottom, ${eye.color}, transparent)` : null
 
   if (isCompact) {
     const participantItems = [
@@ -183,8 +186,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         width: '100%',
         height: 'auto',
         padding: '19px 20px',
-        backgroundColor: isSelected || isActive || isHovered ? COLORS.gray15 : COLORS.black,
-        border: borderStyle,
+        border: borderGradient ? '1px solid transparent' : borderStyle,
         borderRadius: '14px',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
@@ -194,6 +196,13 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         gap: '12px',
         opacity: 1,
         textAlign: 'left',
+        ...(borderGradient
+          ? {
+              backgroundImage: `linear-gradient(${cardBg}, ${cardBg}), ${borderGradient}`,
+              backgroundOrigin: 'border-box',
+              backgroundClip: 'padding-box, border-box',
+            }
+          : { backgroundColor: cardBg }),
       }}
     >
       <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.lg, color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
