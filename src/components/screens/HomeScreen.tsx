@@ -55,8 +55,10 @@ function sumRitualCost(chosenRituals: Record<string, string>): ResourceCost {
 
 // Thin vertical rule between two resource/site items — align-self:stretch fills whichever
 // row it's placed in regardless of that row's own alignItems value.
-function ResourceDivider() {
-  return <div style={{ flexShrink: 0, width: '1px', alignSelf: 'stretch', backgroundColor: COLORS.gray20 }} />
+// `fullBleed` pulls it past the parent's vertical padding so it reaches the container's
+// full edge-to-edge height, using the page background color to read as a cut-through.
+function ResourceDivider({ fullBleed }: { fullBleed?: boolean } = {}) {
+  return <div style={{ flexShrink: 0, width: '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
 }
 
 function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showChange }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; showChange?: boolean }) {
@@ -130,11 +132,11 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px' }}>
           <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} total={resourceTotals.prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} showChange={showChange} />
-          <ResourceDivider />
+          <ResourceDivider fullBleed />
           <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} total={resourceTotals.volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} showChange={showChange} />
-          <ResourceDivider />
+          <ResourceDivider fullBleed />
           <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} showChange={showChange} />
-          <ResourceDivider />
+          <ResourceDivider fullBleed />
           <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
