@@ -144,7 +144,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
       <div style={{ flexShrink: 0, width: '137px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '8px' }}>
           <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
           <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
         </div>
@@ -324,17 +324,17 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
   const dragGhostRitual = dragRitualId ? god.rituals.find(r => r.id === dragRitualId) ?? null : null
   const zoneHighlighted = dragPhase === 'dragging' && isOverDropZone
 
-  // Wipes in after the FLIP move+grow lands, same choreography applied to both the drop-zone's
-  // content and the candidate row below — the combined card's own border/bg stays static (see
-  // JSX below) since wiping the whole card would cut through its border mid-animation.
+  // Wipes in after the FLIP move+grow lands, same choreography applied to both the drop-zone
+  // (dashed border included) and the candidate row below — the face card is a separate box
+  // that isn't part of this wipe, so its own border stays static throughout.
   const drawerRevealStyle: React.CSSProperties = drawerClosing
     ? { opacity: 0, clipPath: 'inset(0 100% 0 0)', transition: `opacity ${DRAWER_CLOSE_DURATION}ms ease-in, clip-path ${DRAWER_CLOSE_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)` }
     : { animation: `homeDetailDrawerReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION}ms both` }
 
   return (
     <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px', border: `1px solid ${isActive ? COLORS.gray30 : COLORS.gray15}`, borderRadius: '10px', transition: 'border-color 0.15s ease' }}>
-      <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
-        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
           <div
             onClick={onBack}
             style={{
@@ -870,7 +870,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           <>
             <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray95 }}>Choose rituals to appease the gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
                 <div style={{ transform: 'translateY(-2px)' }}>
                   <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
