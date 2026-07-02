@@ -915,18 +915,6 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           />
         )}
       </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: aiPanelOpen ? '331px' : AI_TOGGLE_RESERVE,
-          bottom: 0,
-          height: '96px',
-          background: `linear-gradient(to bottom, transparent, ${COLORS.black})`,
-          pointerEvents: 'none',
-          transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      />
       {sacrificeCost && (
         <RitualSacrificeOverlay
           counts={sacrificeCost}
