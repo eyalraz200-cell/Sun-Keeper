@@ -96,7 +96,7 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
         {icon(labelColor)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.regular, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
