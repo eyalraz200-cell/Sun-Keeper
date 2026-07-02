@@ -62,9 +62,10 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? `2px solid ${COLORS.gray95}` : '2px solid rgba(255,255,255,0.18)'
 
-  // Figma fades the outcome-color border from full color at the top edge to
-  // transparent at the bottom, not a flat single-color stroke.
-  const borderGradient = outcomeBorder ? `linear-gradient(to bottom, ${eye.color}, transparent)` : null
+  // Figma fades the outcome-color border from full color at the top edge down to
+  // gray at the bottom — same endpoint GodCard.tsx's chosen-ritual gradient border
+  // uses, not transparent.
+  const borderGradient = outcomeBorder ? `linear-gradient(to bottom, ${eye.color}, ${COLORS.gray30})` : null
 
   if (isCompact) {
     const participantItems = [
