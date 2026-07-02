@@ -193,7 +193,6 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         gap: '8px',
         opacity: 1,
         textAlign: 'left',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
       }}
     >
       <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.lg, color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
