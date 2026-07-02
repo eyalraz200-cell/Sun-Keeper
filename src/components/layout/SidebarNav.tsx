@@ -48,7 +48,7 @@ function PyramidIcon({ size, color }: { size: number; color: string }) {
 
 function NavButton({ onClick, children, active = false }: { onClick?: () => void; children: (color: string) => React.ReactNode; active?: boolean }) {
   const [hovered, setHovered] = useState(false)
-  const color = active ? '#ffffff' : hovered ? '#a8a4a0' : '#6a6762'
+  const color = active ? COLORS.white : hovered ? COLORS.gray60 : COLORS.gray40
   return (
     <button
       onClick={onClick}
@@ -74,7 +74,7 @@ export function SidebarNav({ activeScreen = 'overview', onNavClick }: SidebarNav
         height: '100vh',
         flexShrink: 0,
         backgroundColor: COLORS.black,
-        borderRight: `1px solid #333333`,
+        borderRight: `1px solid ${COLORS.gray20}`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

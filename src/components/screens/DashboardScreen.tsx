@@ -1,4 +1,4 @@
-import { COLORS, FONTS } from '../../tokens'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT } from '../../tokens'
 import { GODS } from '../../data/gods'
 import { GodCard } from '../gods/GodCard'
 
@@ -20,7 +20,7 @@ function AngerCircle({ angerColor }: { angerColor: string }) {
     '#c8a83c': 3,
   }
   const weight = weightMap[angerColor] ?? 2
-  const color = weight === 2 ? '#ffffff' : angerColor
+  const color = weight === 2 ? COLORS.white : angerColor
   return (
     <div style={{
       width: 16,
@@ -38,7 +38,7 @@ export function DashboardScreen() {
     .slice(0, 4)
 
   const CARD: React.CSSProperties = {
-    border: '1px solid #333333',
+    border: `1px solid ${COLORS.gray20}`,
     borderRadius: '10px',
     padding: '24px',
     backgroundColor: COLORS.black,
@@ -49,8 +49,8 @@ export function DashboardScreen() {
   const SECTION_LABEL: React.CSSProperties = {
     margin: '0 0 16px',
     fontFamily: FONTS.spectral,
-    fontSize: '11px',
-    fontWeight: 300,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.light,
     color: 'rgba(255,255,255,0.35)',
     letterSpacing: '2px',
     textTransform: 'uppercase',
@@ -111,7 +111,7 @@ export function DashboardScreen() {
                 key={event.day}
                 style={{
                   backgroundColor: COLORS.black,
-                  border: '1px solid #333333',
+                  border: `1px solid ${COLORS.gray20}`,
                   borderRadius: '10px',
                   padding: '12px 16px',
                   display: 'flex',
@@ -119,16 +119,16 @@ export function DashboardScreen() {
                   gap: '10px',
                 }}
               >
-                <span style={{ fontFamily: FONTS.cinzel, fontSize: '11px', color: 'rgba(255,255,255,0.35)', minWidth: '52px' }}>
+                <span style={{ fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, color: 'rgba(255,255,255,0.35)', minWidth: '52px' }}>
                   {event.duration > 1 ? `${event.day}–${event.day + event.duration - 1}` : `Day ${event.day}`}
                 </span>
-                <div style={{ width: '1px', height: '16px', backgroundColor: '#333333' }} />
-                <span style={{ fontFamily: FONTS.spectral, fontSize: '12px', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>{event.label}</span>
+                <div style={{ width: '1px', height: '16px', backgroundColor: COLORS.gray20 }} />
+                <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.45)' }}>{event.label}</span>
                 {(() => {
                   const god = GODS.find(g => g.id === event.godId)
                   return god ? <AngerCircle angerColor={god.angerColor} /> : null
                 })()}
-                <span style={{ fontFamily: FONTS.cinzel, fontSize: '11px', textTransform: 'uppercase', color: '#ffffff' }}>{event.god}</span>
+                <span style={{ fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, textTransform: 'uppercase', color: COLORS.white }}>{event.god}</span>
               </div>
             ))}
           </div>
@@ -136,7 +136,7 @@ export function DashboardScreen() {
       </div>
 
       {/* Right panel */}
-      <div style={{ width: '331px', flexShrink: 0, borderLeft: '1px solid #333333', backgroundColor: COLORS.black }} />
+      <div style={{ width: '331px', flexShrink: 0, borderLeft: `1px solid ${COLORS.gray20}`, backgroundColor: COLORS.black }} />
     </div>
   )
 }

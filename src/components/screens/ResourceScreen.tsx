@@ -1,4 +1,4 @@
-import { FONTS } from '../../tokens'
+import { FONTS, COLORS, FONT_SIZE, FONT_WEIGHT } from '../../tokens'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
@@ -28,8 +28,8 @@ const CARD_STYLE: React.CSSProperties = {
 
 const LABEL_STYLE: React.CSSProperties = {
   fontFamily: FONTS.spectral,
-  fontSize: '16px',
-  fontWeight: 400,
+  fontSize: FONT_SIZE.lg,
+  fontWeight: FONT_WEIGHT.regular,
   color: 'rgba(255,255,255,0.5)',
   letterSpacing: '1px',
   lineHeight: '18px',
@@ -37,9 +37,9 @@ const LABEL_STYLE: React.CSSProperties = {
 
 const VALUE_STYLE: React.CSSProperties = {
   fontFamily: FONTS.spectral,
-  fontSize: '16px',
-  fontWeight: 400,
-  color: '#ffffff',
+  fontSize: FONT_SIZE.lg,
+  fontWeight: FONT_WEIGHT.regular,
+  color: COLORS.white,
   letterSpacing: '1px',
   lineHeight: '18px',
 }
@@ -76,7 +76,7 @@ function VictimCard({
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', paddingBottom: '16px' }}>
         {icon}
-        <span style={{ ...VALUE_STYLE, fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
+        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
       </div>
       <div style={DIVIDER_STYLE} />
 
@@ -96,8 +96,8 @@ function VictimCard({
       {/* Events */}
       {events.map(event => (
         <div key={event.name} style={{ ...ROW_STYLE, paddingTop: '6px', paddingBottom: '6px' }}>
-          <span style={{ ...LABEL_STYLE, fontSize: '13px', color: 'rgba(255,255,255,0.3)', paddingLeft: '12px' }}>{event.name}</span>
-          <span style={{ ...VALUE_STYLE, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{event.count}</span>
+          <span style={{ ...LABEL_STYLE, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.3)', paddingLeft: '12px' }}>{event.name}</span>
+          <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.5)' }}>{event.count}</span>
         </div>
       ))}
 
@@ -105,8 +105,8 @@ function VictimCard({
       <div style={{ marginTop: 'auto', paddingTop: '24px', display: 'flex', justifyContent: 'center' }}>
         <button style={{
           fontFamily: FONTS.spectral,
-          fontSize: '13px',
-          fontWeight: 400,
+          fontSize: FONT_SIZE.sm,
+          fontWeight: FONT_WEIGHT.regular,
           letterSpacing: '1px',
           padding: '8px 28px',
           backgroundColor: 'transparent',
@@ -136,7 +136,7 @@ function TempleCard({
     <div style={{ ...CARD_STYLE, width: undefined, flex: 1 }}>
       {/* Header */}
       <div style={{ paddingBottom: '16px' }}>
-        <span style={{ ...VALUE_STYLE, fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
+        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
       </div>
       <div style={DIVIDER_STYLE} />
 
@@ -151,12 +151,12 @@ function TempleCard({
       {ceremonies.length > 0 && (
         <>
           <div style={{ paddingTop: '12px', paddingBottom: '8px' }}>
-            <span style={{ ...LABEL_STYLE, fontSize: '13px' }}>Occupied — ceremonies in progress</span>
+            <span style={{ ...LABEL_STYLE, fontSize: FONT_SIZE.sm }}>Occupied — ceremonies in progress</span>
           </div>
           {ceremonies.map((c, i) => (
             <div key={i} style={{ ...ROW_STYLE, paddingTop: '6px', paddingBottom: '6px' }}>
-              <span style={{ ...LABEL_STYLE, fontSize: '13px', paddingLeft: '12px' }}>{c.daysLeft} day{c.daysLeft !== 1 ? 's' : ''} left</span>
-              <span style={{ ...VALUE_STYLE, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>+{c.count}</span>
+              <span style={{ ...LABEL_STYLE, fontSize: FONT_SIZE.sm, paddingLeft: '12px' }}>{c.daysLeft} day{c.daysLeft !== 1 ? 's' : ''} left</span>
+              <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.6)' }}>+{c.count}</span>
             </div>
           ))}
         </>
@@ -209,7 +209,7 @@ export function ResourceScreen({
   return (
     <div style={{
       flex: 1,
-      backgroundColor: '#181818',
+      backgroundColor: COLORS.black,
       display: 'flex',
       flexDirection: 'column',
       padding: '40px 32px',
@@ -219,8 +219,8 @@ export function ResourceScreen({
       {/* Section label */}
       <div style={{
         fontFamily: "'Cinzel', serif",
-        fontSize: '10px',
-        fontWeight: 500,
+        fontSize: FONT_SIZE.xs,
+        fontWeight: FONT_WEIGHT.medium,
         letterSpacing: '3px',
         textTransform: 'uppercase',
         color: 'rgba(255,255,255,0.3)',
@@ -238,8 +238,8 @@ export function ResourceScreen({
       {/* Section label */}
       <div style={{
         fontFamily: "'Cinzel', serif",
-        fontSize: '10px',
-        fontWeight: 500,
+        fontSize: FONT_SIZE.xs,
+        fontWeight: FONT_WEIGHT.medium,
         letterSpacing: '3px',
         textTransform: 'uppercase',
         color: 'rgba(255,255,255,0.3)',

@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import { ArrowLeft } from '@phosphor-icons/react'
-import { FONTS } from '../../tokens'
+import { FONTS, COLORS, FONT_SIZE, FONT_WEIGHT } from '../../tokens'
 import { GodSvg } from '../gods/GodSvg'
 import { GOD_SVG_MAP } from '../gods/GodCard'
 import { GODS } from '../../data/gods'
@@ -19,9 +19,9 @@ const NAME_H = 38
 const CARD_PADDING_BOTTOM = 16
 
 const EDGE_STYLE = {
-  family: { stroke: '#ffffff', strokeWidth: 1, strokeDasharray: undefined, opacity: 0.2 },
-  spouse: { stroke: '#ffffff', strokeWidth: 1, strokeDasharray: '6 4', opacity: 0.2 },
-  rival:  { stroke: '#ffffff', strokeWidth: 1, strokeDasharray: '2 5', opacity: 0.2 },
+  family: { stroke: COLORS.white, strokeWidth: 1, strokeDasharray: undefined, opacity: 0.2 },
+  spouse: { stroke: COLORS.white, strokeWidth: 1, strokeDasharray: '6 4', opacity: 0.2 },
+  rival:  { stroke: COLORS.white, strokeWidth: 1, strokeDasharray: '2 5', opacity: 0.2 },
 }
 
 // ── Detail view ──────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      backgroundColor: '#181818',
+      backgroundColor: COLORS.black,
       display: 'flex',
       zIndex: 10,
     }}>
@@ -74,7 +74,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
           background: 'none', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8,
           color: 'rgba(255,255,255,0.5)',
-          fontFamily: FONTS.spectral, fontSize: 14, letterSpacing: '1px',
+          fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, letterSpacing: '1px',
         }}
       >
         <ArrowLeft size={18} />
@@ -102,8 +102,8 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
       }}>
         {/* God name */}
         <div style={{
-          fontFamily: FONTS.cinzel, fontSize: 39, fontWeight: 400,
-          textTransform: 'uppercase', letterSpacing: '3.3px', color: '#ffffff',
+          fontFamily: FONTS.cinzel, fontSize: 39, fontWeight: FONT_WEIGHT.regular,
+          textTransform: 'uppercase', letterSpacing: '3.3px', color: COLORS.white,
           lineHeight: 1.2,
         }}>
           {node.name}
@@ -111,21 +111,21 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
 
         {/* Description label */}
         <div style={{
-          fontFamily: FONTS.spectral, fontSize: 16,
-          color: '#ffffff', letterSpacing: '3.3px',
+          fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg,
+          color: COLORS.white, letterSpacing: '3.3px',
         }}>
           description
         </div>
 
         {/* Box 1 — Sacrifice preferences */}
         <div style={{
-          border: '1px solid #ffffff',
+          border: `1px solid ${COLORS.white}`,
           minHeight: 97,
           padding: '20px 24px',
           display: 'flex', alignItems: 'center',
         }}>
           <span style={{
-            fontFamily: FONTS.spectral, fontSize: 14, fontWeight: 300,
+            fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light,
             color: 'rgba(255,255,255,0.6)',
           }}>
             {sacrificeTypes.length > 0 ? sacrificeTypes.join(' · ') : '—'}
@@ -134,19 +134,19 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
 
         {/* Box 2 — God info */}
         <div style={{
-          border: '1px solid #ffffff',
+          border: `1px solid ${COLORS.white}`,
           minHeight: 272,
           padding: '28px 32px',
           display: 'flex', flexDirection: 'column', gap: 16,
         }}>
           <span style={{
-            fontFamily: FONTS.spectral, fontSize: 15, fontWeight: 300,
+            fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light,
             color: 'rgba(255,255,255,0.7)',
           }}>
             {god?.subtitle ?? '—'}
           </span>
           <span style={{
-            fontFamily: FONTS.cinzel, fontSize: 10, letterSpacing: '3px',
+            fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
             textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
             marginTop: 'auto',
           }}>
@@ -158,8 +158,8 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
         {connections.length > 0 && (
           <>
             <div style={{
-              fontFamily: FONTS.spectral, fontSize: 16,
-              color: '#ffffff', letterSpacing: '3.3px',
+              fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg,
+              color: COLORS.white, letterSpacing: '3.3px',
             }}>
               related gods
             </div>
@@ -174,7 +174,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
                   <div key={relNode.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                     <div style={{
                       width: cw, height: ch,
-                      backgroundColor: '#181818',
+                      backgroundColor: COLORS.black,
                       border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 10,
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -189,9 +189,9 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
                         flexShrink: 0, boxSizing: 'border-box',
                       }}>
                         <span style={{
-                          fontFamily: FONTS.cinzel, fontSize: 12, fontWeight: 500,
+                          fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium,
                           textTransform: 'uppercase', letterSpacing: '1px',
-                          color: '#6C6C6C', whiteSpace: 'nowrap',
+                          color: COLORS.gray40, whiteSpace: 'nowrap',
                           overflow: 'hidden', textOverflow: 'ellipsis',
                         }}>
                           {relNode.name}
@@ -206,7 +206,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
                       </div>
                     </div>
                     <span style={{
-                      fontFamily: FONTS.cinzel, fontSize: 9, letterSpacing: '3px',
+                      fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
                       textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)',
                     }}>
                       {type}
@@ -233,8 +233,8 @@ function PantheonNode({ node, onSelect }: { node: PantheonNode; onSelect: (id: s
   const angerLevel = 'none' as const
   const pos = NODE_POSITIONS[node.id] ?? { x: 0, y: 0 }
 
-  const borderColor = hovered ? '#ffffff' : 'rgba(255,255,255,0.08)'
-  const nameColor = hovered ? '#F0F0F0' : '#6C6C6C'
+  const borderColor = hovered ? COLORS.white : 'rgba(255,255,255,0.08)'
+  const nameColor = hovered ? COLORS.gray95 : COLORS.gray40
 
   return (
     <div
@@ -245,7 +245,7 @@ function PantheonNode({ node, onSelect }: { node: PantheonNode; onSelect: (id: s
         width: cardW,
         height: cardH,
         cursor: 'pointer',
-        backgroundColor: '#181818',
+        backgroundColor: COLORS.black,
         zIndex: 1,
         border: `1px solid ${borderColor}`,
         borderRadius: 10,
@@ -272,8 +272,8 @@ function PantheonNode({ node, onSelect }: { node: PantheonNode; onSelect: (id: s
       }}>
         <span style={{
           fontFamily: FONTS.cinzel,
-          fontSize: 12,
-          fontWeight: 500,
+          fontSize: FONT_SIZE.sm,
+          fontWeight: FONT_WEIGHT.medium,
           textTransform: 'uppercase',
           letterSpacing: '1px',
           color: nameColor,
@@ -330,7 +330,7 @@ export function PantheonScreen() {
       ref={containerRef}
       style={{
         position: 'relative', width: '100%', height: '100%',
-        overflow: 'hidden', backgroundColor: '#181818',
+        overflow: 'hidden', backgroundColor: COLORS.black,
         cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
       }}

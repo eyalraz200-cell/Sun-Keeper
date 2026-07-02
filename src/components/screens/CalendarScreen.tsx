@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { COLORS, FONTS } from '../../tokens'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE } from '../../tokens'
 import { GODS } from '../../data/gods'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
@@ -23,16 +23,16 @@ function outcomeLabel(color: string): string {
 }
 
 function outcomeEye(color: string): { color: string; weight: number } {
-  if (color === '#c8322e') return { color: '#FF2435', weight: 6 }
-  if (color === '#d4662a') return { color: '#EF7B2E', weight: 4 }
-  if (color === '#d4a83c') return { color: '#D7C94E', weight: 3 }
-  return { color: '#ffffff', weight: 2 }
+  if (color === '#c8322e') return EYE.high
+  if (color === '#d4662a') return EYE.medium
+  if (color === '#d4a83c') return EYE.low
+  return { color: COLORS.white, weight: 2 }
 }
 
 function AngerCircle({ angerColor }: { angerColor: string }) {
   const weightMap: Record<string, number> = { '#c8322e': 6, '#d4662a': 4, '#c8a83c': 3 }
   const weight = weightMap[angerColor] ?? 2
-  const color = weight === 2 ? '#ffffff' : angerColor
+  const color = weight === 2 ? COLORS.white : angerColor
   return (
     <div style={{ width: 20, height: 20, borderRadius: '50%', boxShadow: `inset 0 0 0 ${weight}px ${color}`, flexShrink: 0 }} />
   )
@@ -95,15 +95,15 @@ export function CalendarScreen() {
           const ty = 400 + 350 * Math.sin(midAngle)
           return (
             <g key={i}>
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffffff" strokeWidth={1} />
-              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontSize={12} fontFamily="'Cinzel', serif">
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.white} strokeWidth={1} />
+              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill={COLORS.white} fontSize={FONT_SIZE.sm} fontFamily="'Cinzel', serif">
                 {i + 1}
               </text>
             </g>
           )
         })}
-        <circle cx={400} cy={400} r={400} fill="none" stroke="#ffffff" strokeWidth={1} />
-        <circle cx={400} cy={400} r={300} fill="none" stroke="#ffffff" strokeWidth={1} />
+        <circle cx={400} cy={400} r={400} fill="none" stroke={COLORS.white} strokeWidth={1} />
+        <circle cx={400} cy={400} r={300} fill="none" stroke={COLORS.white} strokeWidth={1} />
       </svg>
 
       {/* Event list */}
@@ -130,7 +130,7 @@ export function CalendarScreen() {
               onMouseLeave={() => setHoveredDay(null)}
               style={{
                 width: '280px',
-                backgroundColor: '#181818',
+                backgroundColor: COLORS.black,
                 border: isHovered ? '2px solid rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.08)',
                 borderRadius: '14px',
                 display: 'flex',
@@ -140,13 +140,13 @@ export function CalendarScreen() {
               }}
             >
               <div style={{ padding: '20px 24px 16px' }}>
-                <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '13px', color: 'rgba(255,255,255,0.82)', display: 'block', marginBottom: '6px' }}>
+                <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.82)', display: 'block', marginBottom: '6px' }}>
                   {event.duration > 1 ? `Day ${event.day} – ${event.day + event.duration - 1}` : `Day ${event.day}`}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>{event.label}</span>
+                  <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.45)' }}>{event.label}</span>
                   {god && <AngerCircle angerColor={god.angerColor} />}
-                  <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: '11px', color: '#ffffff' }}>{event.god}</span>
+                  <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: FONT_SIZE.xs, color: COLORS.white }}>{event.god}</span>
                 </div>
               </div>
               <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '0 13px 0' }} />
@@ -161,7 +161,7 @@ export function CalendarScreen() {
           alignSelf: 'center',
           width: '280px',
           flexShrink: 0,
-          backgroundColor: '#181818',
+          backgroundColor: COLORS.black,
           border: '2px solid rgba(255,255,255,0.08)',
           borderRadius: '14px',
           overflow: 'hidden',
@@ -177,7 +177,7 @@ export function CalendarScreen() {
               transition: 'opacity 0.2s ease',
             }}
           >
-            <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '8px' }}>
+            <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.xs, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '8px' }}>
               {hoveredEvent
                 ? hoveredEvent.duration > 1
                   ? `Day ${hoveredEvent.day} – ${hoveredEvent.day + hoveredEvent.duration - 1}`
@@ -186,13 +186,13 @@ export function CalendarScreen() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {hoveredGod && <AngerCircle angerColor={hoveredGod.angerColor} />}
-              <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: '13px', fontWeight: 400, color: '#ffffff' }}>
+              <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.regular, color: COLORS.white }}>
                 {hoveredEvent?.god ?? ''}
               </span>
             </div>
           </div>
           {!hoveredEvent && (
-            <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '12px', color: 'rgba(255,255,255,0.2)', position: 'absolute' }}>
+            <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.2)', position: 'absolute' }}>
               Hover an event
             </span>
           )}
@@ -208,7 +208,7 @@ export function CalendarScreen() {
             transition: 'opacity 0.2s ease',
           }}
         >
-          <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '10px' }}>
+          <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.xs, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '10px' }}>
             Cost
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -217,8 +217,8 @@ export function CalendarScreen() {
               return (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: count > 0 ? 1 : 0.12 }}>
                   {icon}
-                  <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: 300, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
-                  <span style={{ fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: 300, color: '#ffffff' }}>
+                  <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
+                  <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>
                     {count > 0 ? count : '—'}
                   </span>
                 </div>
@@ -237,19 +237,19 @@ export function CalendarScreen() {
             transition: 'opacity 0.2s ease',
           }}
         >
-          <span style={{ fontFamily: FONTS.spectral, fontWeight: 300, fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '10px' }}>
+          <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.xs, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '10px' }}>
             Best Resulting State
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {bestEye && (
               <div style={{ width: 20, height: 20, borderRadius: '50%', boxShadow: `inset 0 0 0 ${bestEye.weight}px ${bestEye.color}`, flexShrink: 0 }} />
             )}
-            <span style={{ fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: 300, color: '#ffffff' }}>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>
               {bestRitual ? outcomeLabel(bestRitual.outcomeColor) : ''}
             </span>
           </div>
           {bestRitual && (
-            <span style={{ fontFamily: FONTS.spectral, fontSize: '11px', fontWeight: 300, color: 'rgba(255,255,255,0.35)', display: 'block', marginTop: '4px' }}>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.35)', display: 'block', marginTop: '4px' }}>
               via {bestRitual.name}
             </span>
           )}
