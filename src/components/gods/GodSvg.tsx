@@ -29,6 +29,9 @@ export interface GodSvgProps {
   eyeGlow?: boolean
   bodyColor?: string
   hideEyes?: boolean
+  // Pulsing glow behind the eye circles, colored to the eye's own stroke color.
+  // Currently only used for high-anger ("Furious") gods in the overview grid.
+  glow?: boolean
   // Salts every generated clipPath id. Multiple GodSvg instances for the same god (duplicated
   // mock data, or the same god mounted in both the grid and an expanded panel at once) render
   // identical source markup, so without a per-instance salt their clipPath ids collide across
@@ -50,7 +53,7 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false, instanceId = '' }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false, glow = false, instanceId = '' }: GodSvgProps) {
   const idSalt = instanceId ? `${instanceId.replace(/[^a-zA-Z0-9-]/g, '')}-` : ''
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
@@ -137,7 +140,17 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
             }).join('\n')
           }).join('\n')
         : ''
-      eyesGroup = `<defs>\n${defs}\n</defs>${ringCircles ? `\n${ringCircles}` : ''}\n<g id="eyes">\n${styledCircles}\n</g>`
+      const glowAnimName = `eyeGlowPulse-${idSalt || 'g'}`
+      const glowDefs = glow
+        ? `<filter id="eyeGlowBlur-${idSalt}" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4"/></filter><style>@keyframes ${glowAnimName} { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }</style>`
+        : ''
+      const glowCircles = glow
+        ? circles.map((c) => {
+            const r = parseFloat(c.r)
+            return `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 1.4).toFixed(1)}" fill="${eye.color}" filter="url(#eyeGlowBlur-${idSalt})" style="animation: ${glowAnimName} 1.6s ease-in-out infinite;"/>`
+          }).join('\n')
+        : ''
+      eyesGroup = `<defs>\n${defs}\n${glowDefs}\n</defs>${glowCircles ? `\n${glowCircles}` : ''}${ringCircles ? `\n${ringCircles}` : ''}\n<g id="eyes">\n${styledCircles}\n</g>`
     }
 
     } // end !filledEyes

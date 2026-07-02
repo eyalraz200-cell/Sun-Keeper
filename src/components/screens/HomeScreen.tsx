@@ -95,7 +95,7 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
   const valueColor = ritualActive ? (affected ? COLORS.gray95 : 'rgba(255,255,255,0.25)') : COLORS.gray95
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px', transition: 'opacity 0.2s ease' }}>
-      <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', border: `1px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', border: `1.5px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon(labelColor)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -144,7 +144,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
       <div style={{ flexShrink: 0, width: '137px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingTop: '8px' }}>
           <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
           <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
         </div>
@@ -332,7 +332,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     : { animation: `homeDetailDrawerReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION}ms both` }
 
   return (
-    <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px', border: `1px solid ${isActive ? COLORS.gray30 : COLORS.gray15}`, borderRadius: '10px', transition: 'border-color 0.15s ease' }}>
+    <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px' }}>
       <div style={{ display: 'flex', gap: '24px' }}>
         <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
           <div
@@ -766,7 +766,7 @@ function AngerTierHeader({ level }: { level: AngerLevel }) {
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '24px 24px 0' }}>
       <div style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${EYE[level].weight}px ${EYE[level].color}` }} />
-      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{TIER_LABELS[level]}</span>
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>{TIER_LABELS[level]}</span>
     </div>
   )
 }
