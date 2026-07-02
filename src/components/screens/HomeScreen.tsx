@@ -145,7 +145,6 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <HomeSiteItem icon={c => <PyramidIcon size={34} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
-          <ResourceDivider />
           <HomeSiteItem icon={c => <PyramidIcon size={34} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} showChange={showChange} />
         </div>
       </div>
