@@ -333,8 +333,8 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
 
   return (
     <div ref={panelRef} style={{ flexShrink: 0, margin: '24px 24px 0', padding: '24px' }}>
-      <div style={{ display: 'flex', gap: '24px' }}>
-        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
+      <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
+        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div
             onClick={onBack}
             style={{
@@ -347,7 +347,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 : { animation: `homeDetailHeaderEnter 280ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION - 80}ms both` }),
             }}
           >
-            <span style={{ fontFamily: FONTS.cinzel, fontSize: '24px', fontWeight: 400, color: isActive ? '#ffffff' : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
+            <span style={{ fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xl, fontWeight: 400, color: isActive ? '#ffffff' : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             <p style={{ margin: '4px 0 0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease' }}>{god.subtitle}</p>
           </div>
           <div style={{ flexShrink: 0, width: '100%', height: `${FACE_HEIGHT}px`, borderRadius: '10px', overflow: 'hidden' }}>

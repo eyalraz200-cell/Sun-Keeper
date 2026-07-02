@@ -57,7 +57,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
   const eye = outcomeEye(outcomeColor)
 
   const borderStyle = outcomeBorder
-    ? `2px solid ${eye.color}`
+    ? `1px solid ${eye.color}`
     : wrathful
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? `2px solid ${COLORS.gray95}` : '2px solid rgba(255,255,255,0.18)'
@@ -171,6 +171,8 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     )
   }
 
+  const sectionLabelStyle: React.CSSProperties = { fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }
+
   return (
     <button
       onClick={onClick}
@@ -179,7 +181,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
       style={{
         width: '100%',
         height: 'auto',
-        padding: '0',
+        padding: '16px 20px',
         backgroundColor: isSelected || isActive || isHovered ? COLORS.gray15 : COLORS.black,
         border: borderStyle,
         borderRadius: '14px',
@@ -187,62 +189,50 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         transition: 'all 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0',
+        alignItems: 'stretch',
+        gap: '8px',
         opacity: 1,
         textAlign: 'left',
         boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
       }}
     >
-      {/* Title */}
-      <div style={{ padding: '20px 24px 8px' }}>
-        <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.lg, color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
-          {ritual.name}
-        </h3>
-      </div>
+      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.lg, color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
+        {ritual.name}
+      </h3>
 
-      {/* Price section */}
-      <div style={{ padding: '12px 24px 0' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '12px' }}>Cost</span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {([
-            { key: 'prisoners', Icon: PrisonerIcon },
-            { key: 'volunteers', Icon: VolunteerIcon },
-            { key: 'children', Icon: ChildrenIcon },
-            { key: 'virgins', Icon: VirginIcon },
-          ] as const).map(({ key, Icon }) => (
-            <RitualParticipantPill key={key} Icon={Icon} active={participants[key] > 0} value={participants[key]} variant="card" />
-          ))}
-        </div>
-      </div>
+      <span style={sectionLabelStyle}>Cost</span>
+      {([
+        { key: 'prisoners', label: 'Prisoners', Icon: PrisonerIcon },
+        { key: 'volunteers', label: 'Volunteers', Icon: VolunteerIcon },
+        { key: 'children', label: 'Children', Icon: ChildrenIcon },
+        { key: 'virgins', label: 'Virgins', Icon: VirginIcon },
+      ] as const).map(({ key, label, Icon }) => (
+        <RitualParticipantPill key={key} Icon={Icon} label={label} active={participants[key] > 0} value={participants[key]} variant="card" />
+      ))}
 
-      {/* Ritual Site section */}
-      <div style={{ padding: '24px 24px 0' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '12px' }}>Ritual Site</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <PyramidIcon size={26} color={COLORS.white} />
-          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
-        </div>
+      <span style={sectionLabelStyle}>Ritual Site</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <PyramidIcon size={26} color={COLORS.white} />
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
       </div>
 
       {footer && (
-        <div onClick={e => e.stopPropagation()} style={{ padding: '24px 24px 0' }}>
+        <div onClick={e => e.stopPropagation()}>
           {footer}
         </div>
       )}
 
-      {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '20px 13px' }} />
+      <div style={{ height: '1px', flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
-      {/* Outcome section */}
-      <div style={{ padding: '0 24px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ flex: 1, fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>Effect</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ flex: 1, ...sectionLabelStyle }}>Effect</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{
             width: '20px',
             height: '20px',
             borderRadius: '50%',
             backgroundColor: 'transparent',
-            boxShadow: `inset 0 0 0 ${outcomeEye(outcomeColor).weight}px ${outcomeEye(outcomeColor).color}`,
+            boxShadow: `inset 0 0 0 ${eye.weight}px ${eye.color}`,
             flexShrink: 0,
           }} />
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>
@@ -250,7 +240,6 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
           </span>
         </div>
       </div>
-
     </button>
   )
 }

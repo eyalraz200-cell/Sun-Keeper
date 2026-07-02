@@ -245,6 +245,7 @@ interface RitualCardProps {
   onClick: () => void
   isActive?: boolean
   onHoverChange?: (isHovered: boolean) => void
+  godName?: string
   wrathful?: boolean
   overrideOutcome?: string
   overrideParticipants?: Ritual['participants']
@@ -252,17 +253,23 @@ interface RitualCardProps {
   overrideDuration?: string
   isCompact?: boolean
   footer?: React.ReactNode
+  // When true, border is always the ritual's own outcome-eye color, ignoring
+  // selected/active/hover/wrathful — used at drag-source call sites (the
+  // HomeGodDetailPanel row/drop-zone), where "selected" has no meaning.
+  outcomeBorder?: boolean
 }
 ```
 
-**Renders:** 250px-wide card, `minHeight: 465px`, `backgroundColor: #1A1A1A`. Sections top to bottom:
-1. **Name** — centered, Spectral 16px light
-2. **Description** — centered, Spectral 12px, `rgba(255,255,255,0.64)`
-3. **Divider** — inset 13px each side
-4. **Blood Price** — label + participant rows (Prisoners, Volunteers, Children, Virgins — all 4 always shown; unused at low opacity with `—`)
-5. **Sacred Site** — label + site name/count + Duration
-6. **Divider** — inset 13px, `marginTop: auto` (pins to bottom)
-7. **Resulting State** — centered outcome eye circle + label
+**Renders (default, non-`isCompact` branch)** — width is controlled by the parent (`HomeGodDetailPanel` uses `RITUAL_CARD_WIDTH = 245px`), `height: auto`, `borderRadius: 14px`, `padding: 16px 20px`, a single flex column with `gap: 8px` (re-audited against Figma node `240:4013` on 2026-07-02 — this flat single-gap list, not per-section padding, is what keeps the card short enough to fit 3-in-a-row without the panel overflowing 100vh). Children in order:
+1. **Title** — `ritual.name`, Spectral 16px light
+2. **"Cost" label** — 10px uppercase, 30% opacity
+3. **Four `RitualParticipantPill` rows** (`variant="card"`) — Prisoners → Volunteers → Children → Virgins, each with its own `label` prop now (icon + type name on the left, value right-aligned; unused types show `—` at 32% opacity). Every pill lives directly in the card's flex column, not in its own nested sub-list.
+4. **"Ritual Site" label** + a row with `PyramidIcon` (26px) + `"{site.name} / {duration}"`
+5. Optional `footer`
+6. **Divider** — full-width 1px line, no extra margin (just another flex-column child)
+7. **Effect row** — "Effect" label (flex:1) + outcome eye circle (20px, `outcomeEye()` lookup) + outcome label ("Furious"/"Offended"/"Uneasy"/"Peaceful")
+
+**Border:** `outcomeBorder` → `1px solid {eye.color}` (matches Figma's per-card colored border — each of the 3 example cards in node `240:4013` has a different solid border color equal to its own outcome-eye color). Otherwise the pre-existing selected/hover/wrathful white-border logic.
 
 **Outcome eye:** `boxShadow: inset 0 0 0 {weight}px {color}`, circle is **20px** in this component specifically. The ritual's `outcomeColor` data field (`#c8322e`/`#d4662a`/`#d4a83c`/other — the ANGER-token palette) is NOT the rendered color — it's looked up via `outcomeEye()` in `RitualCard.tsx` to the actual rendered color/weight, which is the same "Standard eye mode" table the real god SVG eyes use (see GodSvg section above):
 - `outcomeColor #c8322e` → renders `#FF2435` / weight 6 → label "Furious"
@@ -273,6 +280,8 @@ interface RitualCardProps {
 **Do not confuse the data-layer ANGER palette (`#c8322e`/`#d4662a`/`#c8a83c`, used for `god.angerColor`/`ritual.outcomeColor` data fields and small list dots in `CalendarScreen.tsx`/`DashboardScreen.tsx`) with the render-layer eye palette (`#FF2435`/`#EF7B2E`/`#D7C94E`/`#6C6C6C`, weights 6/4/3/2) used for actual circle/eye visuals.** Any new standalone anger/outcome circle (icon + label, not a small list dot) must use the render-layer palette, sized **18px** to match the real god SVG eye's hole-to-ring ratio exactly (`r="9"` circle, doubled-stroke-width + clipPath technique — see GodSvg section). This RitualCard instance uses 20px because it predates that rule; don't copy its size for new circles, only its color/weight lookup. Note: `outcomeEye()` is also re-exported from `GodCard.tsx` for use in `HomeScreen.tsx` — there are two independent local implementations, kept in sync by convention rather than a shared import.
 
 **Participant display order:** Prisoners → Volunteers → Children → Virgins
+
+**`isCompact` branch is a separate, unrelated render path** — "the ritual panel," a different fixed-height (200px) horizontal-row card used elsewhere. Don't conflate the two or edit both for a change meant for only one — see [[feedback_ritual_card_vs_panel]].
 
 ---
 

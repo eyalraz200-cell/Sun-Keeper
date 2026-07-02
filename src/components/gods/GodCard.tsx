@@ -59,7 +59,7 @@ const FACE_LEFT = 22
 const FACE_WIDTH = 125
 const FACE_TO_CARD_GAP = 22 // matches the padding between the card's left edge and the face
 const INNER_CARD_LEFT = FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP
-const RITUAL_PANEL_WIDTH = 112
+const RITUAL_PANEL_WIDTH = 89
 const RITUAL_PANEL_RIGHT_GAP = 12 // matches the padding between the card's right edge and the panel
 // The card's total width derives from both fixed gaps — widening the panel grows the card,
 // it never eats into either the face-gap or the right-edge-gap.
@@ -79,8 +79,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
   // Once a ritual is chosen, the outer border tints toward the chosen ritual's outcome
   // color at the top, fading down into the plain gray border — a low-opacity hint of the
   // ritual's effect rather than a full before/after gradient.
-  const borderGradient = chosenRitual
-    ? `linear-gradient(to bottom, ${hexToRgba(outcomeEye(chosenRitual.outcomeColor).color, 0.5)}, ${COLORS.gray30})`
+  const outcome = chosenRitual ? outcomeEye(chosenRitual.outcomeColor) : null
+  // Peaceful (white) outcomes need a stronger opacity than colored ones to read at all against the gray border.
+  const borderGradient = outcome
+    ? `linear-gradient(to bottom, ${hexToRgba(outcome.color, outcome.color === COLORS.white ? 0.8 : 0.5)}, ${COLORS.gray30})`
     : null
   return (
     <div
@@ -93,7 +95,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         height: `${CARD_HEIGHT}px`,
         flexShrink: 0,
         position: 'relative',
-        borderRadius: '10px',
+        borderRadius: '4px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
         cursor: onClick ? 'pointer' : undefined,
         ...(borderGradient
@@ -128,7 +130,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         {god.name}
       </div>
       <div style={{ position: 'absolute', left: `${FACE_LEFT}px`, top: '38px', width: `${FACE_WIDTH}px`, height: '194px' }}>
-        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : undefined} glow={god.angerLevel === 'high'} instanceId={`grid-${god.id}`} />
+        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : chosenRitual ? COLORS.gray60 : undefined} glow={god.angerLevel === 'high' && !chosenRitual} instanceId={`grid-${god.id}`} />
       </div>
       <div
         style={{
@@ -138,7 +140,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           top: '14px',
           bottom: '14px',
           border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? COLORS.gray40 : chosenRitual ? COLORS.gray30 : COLORS.gray20}`,
-          borderRadius: '10px',
+          borderRadius: '4px',
           backgroundColor: highlighted ? COLORS.gray18 : 'transparent',
           display: 'flex',
           flexDirection: 'column',
@@ -146,6 +148,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           justifyContent: chosenRitual ? 'flex-start' : 'center',
           paddingTop: chosenRitual ? '12px' : undefined,
           paddingBottom: chosenRitual ? '8px' : undefined,
+          paddingLeft: chosenRitual ? '11px' : undefined,
+          paddingRight: chosenRitual ? '11px' : undefined,
+          boxSizing: 'border-box',
         }}
       >
         {chosenRitual ? (
@@ -153,20 +158,24 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
             <div style={{ marginBottom: '8px' }}>
               <FireIcon size={20} color={COLORS.gray60} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: 'auto', marginBottom: '8px' }}>
-              {([
-                { key: 'prisoners', Icon: PrisonerIcon },
-                { key: 'volunteers', Icon: VolunteerIcon },
-                { key: 'children', Icon: ChildrenIcon },
-                { key: 'virgins', Icon: VirginIcon },
-              ] as const).map(({ key, Icon }) => (
-                <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} />
-              ))}
-            </div>
-            <div style={{ width: '60%', height: '1px', backgroundColor: COLORS.gray20, marginBottom: '8px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <PyramidIcon size={16} color={COLORS.gray60} />
-              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>/{abbreviateDuration(chosenRitual.duration)}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                {([
+                  { key: 'prisoners', Icon: PrisonerIcon },
+                  { key: 'volunteers', Icon: VolunteerIcon },
+                  { key: 'children', Icon: ChildrenIcon },
+                  { key: 'virgins', Icon: VirginIcon },
+                ] as const).map(({ key, Icon }) => (
+                  <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} />
+                ))}
+              </div>
+              <div style={{ width: '100%', height: '1px', backgroundColor: COLORS.gray20 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px' }}>
+                <div style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <PyramidIcon size={14} color={COLORS.gray60} />
+                </div>
+                <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>/{abbreviateDuration(chosenRitual.duration)}</span>
+              </div>
             </div>
           </>
         ) : (
