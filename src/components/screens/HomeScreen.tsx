@@ -72,11 +72,11 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, showC
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
               <>
-                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{count}</span>
-                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}> ({count - cost})</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', opacity: 0.7, transition: 'color 0.2s ease' }}>{count}</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}> ({count - cost})</span>
               </>
             ) : (
-              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}>{count}</span>
+              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}>{count}</span>
             )}
             <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
           </span>
@@ -101,11 +101,11 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
             {showChange && cost ? (
               <>
-                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', transition: 'color 0.2s ease' }}>{available}</span>
-                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}> ({available - cost})</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: 'rgba(255,255,255,0.35)', opacity: 0.7, transition: 'color 0.2s ease' }}>{available}</span>
+                <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}> ({available - cost})</span>
               </>
             ) : (
-              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, transition: 'color 0.2s ease' }}>{available}</span>
+              <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: 0.7, transition: 'color 0.2s ease' }}>{available}</span>
             )}
             <span style={{ color: valueColor, opacity: 0.4, transition: 'color 0.2s ease' }}> / {total}</span>
           </span>
