@@ -213,7 +213,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
           : { backgroundColor: cardBg }),
       }}
     >
-      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.lg, color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
+      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: '18px', color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
         {ritual.name}
       </h3>
 
