@@ -334,7 +334,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
 
   return (
     <div ref={panelRef} style={{ flexShrink: 0, margin: '0 24px 0', padding: '19px 24px 24px' }}>
-      <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '20px' }}>
+      <div style={{ display: 'flex', width: 'fit-content', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '20px' }}>
         <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div
             onClick={onBack}
