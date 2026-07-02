@@ -229,8 +229,8 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
 
       <span style={sectionLabelStyle}>Ritual Site</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <RingedIcon size={26}>
-          <PyramidIcon size={14} color={COLORS.white} />
+        <RingedIcon size={26} borderColor={COLORS.gray95}>
+          <PyramidIcon size={14} color={COLORS.gray95} />
         </RingedIcon>
         <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
       </div>
