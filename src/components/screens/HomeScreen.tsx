@@ -128,7 +128,7 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const ritualActive = !!hoveredRitual
   const showChange = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 48px 16px 24px' }}>
+    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 48px 12px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px' }}>
@@ -332,9 +332,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     : { animation: `homeDetailDrawerReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION}ms both` }
 
   return (
-    <div ref={panelRef} style={{ flexShrink: 0, margin: '16px 24px 0', padding: '16px 24px 24px' }}>
-      <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '24px' }}>
-        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div ref={panelRef} style={{ flexShrink: 0, margin: '0 24px 0', padding: '19px 24px 24px' }}>
+      <div style={{ display: 'flex', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '20px' }}>
+        <div style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div
             onClick={onBack}
             style={{
@@ -399,7 +399,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
       </div>
       {/* Candidate row — every ritual not currently docked. Drag one into the drop-zone above to
           choose it (it leaves this row); drag the docked card back out to return it here. */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px', ...drawerRevealStyle }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '20px', ...drawerRevealStyle }}>
         {remainingRituals.map(ritual => (
           <div
             key={ritual.id}
@@ -868,13 +868,22 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
       >
         {viewMode === 'grid' && (
           <>
-            <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
-                <div style={{ transform: 'translateY(-2px)' }}>
-                  <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-                </div>
+            <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '22px',
+                  // Reaches past this column's own right edge (reserved clear of the floating AI
+                  // button by AI_TOGGLE_RESERVE / 331px-when-open) so it lands exactly 24px from
+                  // the true viewport edge — the same offset the AI button itself uses.
+                  right: `${24 - (aiPanelOpen ? 331 : parseInt(AI_TOGGLE_RESERVE))}px`,
+                  transform: 'translateY(-2px)',
+                  transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
+                <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
               </div>
+              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
               <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Avoid punishment by performing appeasement rituals for the angry gods</div>
             </div>
 

@@ -181,7 +181,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
       style={{
         width: '100%',
         height: 'auto',
-        padding: '16px 20px',
+        padding: '19px 20px',
         backgroundColor: isSelected || isActive || isHovered ? COLORS.gray15 : COLORS.black,
         border: borderStyle,
         borderRadius: '14px',
@@ -190,7 +190,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
-        gap: '8px',
+        gap: '12px',
         opacity: 1,
         textAlign: 'left',
       }}
