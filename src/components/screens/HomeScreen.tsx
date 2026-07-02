@@ -12,6 +12,7 @@ import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { RingedIcon } from '../icons/RingedIcon'
 import { GridFour, ListBullets } from '@phosphor-icons/react'
 
 const AI_TOGGLE_RESERVE = '96px' // keeps the floating AI toggle button (54px circle, 12px from right edge) off the card grid
@@ -95,9 +96,9 @@ function HomeSiteItem({ icon, label, available, total, cost, ritualActive, showC
   const valueColor = ritualActive ? (affected ? COLORS.gray95 : 'rgba(255,255,255,0.25)') : COLORS.gray95
   return (
     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px', transition: 'opacity 0.2s ease' }}>
-      <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', border: `1.5px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <RingedIcon size={44}>
         {icon(labelColor)}
-      </div>
+      </RingedIcon>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -871,14 +872,14 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
               <div
                 style={{
-                  position: 'absolute',
-                  top: '22px',
-                  // Reaches past this column's own right edge (reserved clear of the floating AI
-                  // button by AI_TOGGLE_RESERVE / 331px-when-open) so it lands exactly 24px from
-                  // the true viewport edge — the same offset the AI button itself uses.
-                  right: `${24 - (aiPanelOpen ? 331 : parseInt(AI_TOGGLE_RESERVE))}px`,
-                  transform: 'translateY(-2px)',
-                  transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  // Fixed (not absolute) so it escapes this column's overflow:auto scroll clipping
+                  // and aligns with the true viewport edge, matching the floating AI button's own
+                  // fixed right:24px offset — an absolute negative-right offset here gets clipped
+                  // by the scrollable ancestor instead of reaching the actual screen edge.
+                  position: 'fixed',
+                  top: '163px',
+                  right: '24px',
+                  zIndex: 10,
                 }}
               >
                 <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />

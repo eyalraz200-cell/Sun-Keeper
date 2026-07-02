@@ -6,6 +6,7 @@ import { VirginIcon } from '../icons/VirginIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { RingedIcon } from '../icons/RingedIcon'
 import { RitualParticipantPill } from './RitualParticipantPill'
 
 function outcomeLabel(color: string): string {
@@ -211,7 +212,9 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
 
       <span style={sectionLabelStyle}>Ritual Site</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <PyramidIcon size={26} color={COLORS.white} />
+        <RingedIcon size={26}>
+          <PyramidIcon size={16} color={COLORS.white} />
+        </RingedIcon>
         <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
       </div>
 
