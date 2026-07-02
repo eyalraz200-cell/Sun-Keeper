@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { God, Ritual } from '../../data/gods'
-import { COLORS, FONTS, EYE } from '../../tokens'
+import { COLORS, FONTS, EYE, FONT_SIZE, FONT_WEIGHT } from '../../tokens'
 import { GodSvg } from './GodSvg'
 import { FireIcon } from '../icons/FireIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
@@ -88,7 +88,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         flexShrink: 0,
         position: 'relative',
         backgroundColor: COLORS.black,
-        border: `1px solid ${highlighted ? '#4d4d4d' : '#262626'}`,
+        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
         borderRadius: '10px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
         cursor: onClick ? 'pointer' : undefined,
@@ -102,9 +102,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           width: `${INNER_CARD_LEFT - 12}px`,
           textAlign: 'center',
           fontFamily: FONTS.cinzel,
-          fontSize: '12px',
-          fontWeight: 400,
-          color: highlighted ? '#F0F0F0' : '#6c6c6c',
+          fontSize: FONT_SIZE.sm,
+          fontWeight: FONT_WEIGHT.regular,
+          color: highlighted ? COLORS.gray95 : COLORS.gray40,
           textTransform: 'uppercase',
           letterSpacing: '1px',
           transition: 'color 0.15s ease-out',
@@ -113,7 +113,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         {god.name}
       </div>
       <div style={{ position: 'absolute', left: `${FACE_LEFT}px`, top: '38px', width: `${FACE_WIDTH}px`, height: '194px' }}>
-        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? '#e0e0e0' : undefined} />
+        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : undefined} instanceId={`grid-${god.id}`} />
       </div>
       <div
         style={{
@@ -122,9 +122,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           right: `${RITUAL_PANEL_RIGHT_GAP}px`,
           top: '14px',
           bottom: '14px',
-          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? '#808080' : '#333333'}`,
+          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? COLORS.gray40 : COLORS.gray20}`,
           borderRadius: '10px',
-          backgroundColor: highlighted ? '#2e2e2e' : 'transparent',
+          backgroundColor: highlighted ? COLORS.gray18 : 'transparent',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -136,7 +136,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         {chosenRitual ? (
           <>
             <div style={{ marginBottom: '8px' }}>
-              <FireIcon size={20} color="#b3b3b3" />
+              <FireIcon size={20} color={COLORS.gray60} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: 'auto', marginBottom: '8px' }}>
               {([
@@ -148,16 +148,16 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
                 const active = chosenRitual.participants[key] > 0
                 return (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: active ? 1 : 0.12 }}>
-                    <Icon size={16} color="#ffffff" />
-                    <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: '#ffffff' }}>{active ? chosenRitual.participants[key] : '—'}</span>
+                    <Icon size={16} color={COLORS.white} />
+                    <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>{active ? chosenRitual.participants[key] : '—'}</span>
                   </div>
                 )
               })}
-              <span style={{ fontFamily: FONTS.spectral, fontSize: '14px', color: '#ffffff', textAlign: 'center' }}>
+              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white, textAlign: 'center' }}>
                 {abbreviateSiteName(chosenRitual.sacredSite.name)} / {abbreviateDuration(chosenRitual.duration)}
               </span>
             </div>
-            <div style={{ width: '60%', height: '1px', backgroundColor: '#333333', marginBottom: '8px' }} />
+            <div style={{ width: '60%', height: '1px', backgroundColor: COLORS.gray20, marginBottom: '8px' }} />
             <div
               style={{
                 width: '20px',
@@ -175,12 +175,12 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
               alignItems: 'center',
               textAlign: 'center',
               fontFamily: FONTS.spectral,
-              fontSize: '13px',
-              color: highlighted ? '#999999' : '#4d4d4d',
+              fontSize: FONT_SIZE.sm,
+              color: highlighted ? COLORS.gray60 : COLORS.gray30,
             }}
           >
             <div style={{ marginBottom: '8px' }}>
-              <FireIcon size={20} color={highlighted ? '#999999' : '#4d4d4d'} />
+              <FireIcon size={20} color={highlighted ? COLORS.gray60 : COLORS.gray30} />
             </div>
             <span>No Ritual</span>
             <span>Selected</span>

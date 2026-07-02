@@ -1,12 +1,12 @@
 import type { AngerLevel } from '../../data/gods'
-import { EYE } from '../../tokens'
+import { EYE, COLORS } from '../../tokens'
 
 const EYE_STYLES: Record<AngerLevel, { color: string; weight: number }> = EYE
 
 const SELECTED_EYE_OVERRIDES: Partial<Record<AngerLevel, string>> = {
   medium: '#FF7913',
   low:    '#E7C104',
-  none:   '#000000',
+  none:   COLORS.gray0,
 }
 
 export interface EyeAnimation {
@@ -29,6 +29,14 @@ export interface GodSvgProps {
   eyeGlow?: boolean
   bodyColor?: string
   hideEyes?: boolean
+  // Salts every generated clipPath id. Multiple GodSvg instances for the same god (duplicated
+  // mock data, or the same god mounted in both the grid and an expanded panel at once) render
+  // identical source markup, so without a per-instance salt their clipPath ids collide across
+  // the document. Chromium then sometimes resolves a clip-path url() to a duplicate id sitting
+  // inside a visibility:hidden subtree elsewhere on the page, which silently fails to clip
+  // anything (the eye ring renders as a full unclipped circle). Pass something unique per
+  // mounted instance, e.g. the god's id, to keep every instance's ids collision-free.
+  instanceId?: string
 }
 
 function parseCircles(eyesBlock: string) {
@@ -42,20 +50,21 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false }: GodSvgProps) {
+export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false, instanceId = '' }: GodSvgProps) {
+  const idSalt = instanceId ? `${instanceId.replace(/[^a-zA-Z0-9-]/g, '')}-` : ''
   const baseEye = EYE_STYLES[angerLevel]
   const eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
     : isHovered && angerLevel === 'none'
-    ? { color: '#F0F0F0', weight: 2 }
+    ? { color: COLORS.gray95, weight: 2 }
     : baseEye
 
   const bodySvg = svgRaw
-    .replace(/fill="black"/g, 'fill="#6C6C6C"')
-    .replace(/fill="white"/g, 'fill="#6C6C6C"')
-    .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, 'fill="#6C6C6C"')
-  const bodyColor = bodyColorOverride ?? (isSelected ? '#000000' : isHovered ? '#F0F0F0' : '#6C6C6C')
-  const coloredBody = bodySvg.replace(/fill="#6C6C6C"/g, `fill="${bodyColor}"`)
+    .replace(/fill="black"/g, `fill="${COLORS.gray40}"`)
+    .replace(/fill="white"/g, `fill="${COLORS.gray40}"`)
+    .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, `fill="${COLORS.gray40}"`)
+  const bodyColor = bodyColorOverride ?? (isSelected ? COLORS.gray0 : isHovered ? COLORS.gray95 : COLORS.gray40)
+  const coloredBody = bodySvg.replace(new RegExp(`fill="${COLORS.gray40}"`, 'g'), `fill="${bodyColor}"`)
 
   const eyesMatch = coloredBody.match(/<g id="eyes">([\s\S]*?)<\/g>/)
   const eyesContent = eyesMatch?.[1] ?? ''
@@ -68,25 +77,25 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
 
     if (hideEyes) {
       const eyeCircles = circles.map((c) =>
-        `<circle cx="${c.cx}" cy="${c.cy}" r="${(parseFloat(c.r) * 0.20).toFixed(1)}" fill="#ffffff"/>`
+        `<circle cx="${c.cx}" cy="${c.cy}" r="${(parseFloat(c.r) * 0.20).toFixed(1)}" fill="${COLORS.white}"/>`
       ).join('\n')
       eyesGroup = `<g id="eyes">\n${eyeCircles}\n</g>`
     } else if (filledEyes) {
       const eyeColor = eyeAnimation ? eyeAnimation.toColor : eye.color
       const defs = circles.map((c) => {
-        const uid = c.cx.replace('.', '')
+        const uid = idSalt + c.cx.replace('.', '')
         return `<clipPath id="eg-${uid}"><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}"/></clipPath>`
       }).join('\n')
       const eyeCircles = circles.map((c) => {
         const r = parseFloat(c.r)
-        const uid = c.cx.replace('.', '')
+        const uid = idSalt + c.cx.replace('.', '')
         const rings = eyeGlow ? [
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.88).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.35"/>`,
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.74).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.25"/>`,
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.60).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.17"/>`,
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.46).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.11"/>`,
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.32).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.07"/>`,
-          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.18).toFixed(1)}" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0.04"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.88).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.35"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.74).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.25"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.60).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.17"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.46).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.11"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.32).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.07"/>`,
+          `<circle cx="${c.cx}" cy="${c.cy}" r="${(r * 0.18).toFixed(1)}" fill="none" stroke="${COLORS.white}" stroke-width="1.3" opacity="0.04"/>`,
         ].join('\n') : ''
         return [
           `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${eyeColor}"/>`,
@@ -98,7 +107,7 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     } else {
 
     const defs = circles.map((c) => {
-      const uid = c.cx.replace('.', '')
+      const uid = idSalt + c.cx.replace('.', '')
       return `<clipPath id="ec-${uid}"><circle cx="${c.cx}" cy="${c.cy}" r="${c.r}"/></clipPath>`
     }).join('\n')
 
@@ -107,14 +116,14 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
       const animName = `eyeShift-${id}`
       const animStyle = `<style>@keyframes ${animName} { 0% { stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; } 100% { stroke: ${toColor}; stroke-width: ${toWeight * 2}; } }</style>`
       const animCircles = circles.map((c) => {
-        const uid = c.cx.replace('.', '')
+        const uid = idSalt + c.cx.replace('.', '')
         return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="none" clip-path="url(#ec-${uid})" style="stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; animation: ${animName} ${duration}s ease ${delay}s forwards;"/>`
       }).join('\n')
       eyesGroup = `<defs>\n${defs}\n</defs>\n${animStyle}\n<g id="eyes">\n${animCircles}\n</g>`
     } else {
       const styledCircles = circles.map((c) => {
-        const uid = c.cx.replace('.', '')
-        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${isSelected ? '#ffffff' : 'none'}" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
+        const uid = idSalt + c.cx.replace('.', '')
+        return `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="${isSelected ? COLORS.white : 'none'}" stroke="${eye.color}" stroke-width="${eye.weight * 2}" clip-path="url(#ec-${uid})"/>`
       }).join('\n')
       const ringCircles = isSelected
         ? circles.map((c) => {
