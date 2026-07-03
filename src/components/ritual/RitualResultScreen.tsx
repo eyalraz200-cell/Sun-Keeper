@@ -77,14 +77,14 @@ function ParticipantRow({ icon, active, revealed, finalCount }: ParticipantRowPr
   const used = finalCount > 0
   const color = used ? RESULT_FG : 'rgba(0,0,0,0.32)'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      {icon(color, 14)}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {icon(color, 16)}
       {revealed && (
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
-          style={{ fontFamily: FONTS.spectral, fontSize: '14px', letterSpacing: '0.84px', color, whiteSpace: 'nowrap' }}
+          style={{ fontFamily: FONTS.spectral, fontSize: '16px', letterSpacing: '0.96px', color, whiteSpace: 'nowrap' }}
         >
           {used ? displayCount : '—'}
         </motion.span>
@@ -137,11 +137,11 @@ function RitualResultCard({ god, ritual, scale, stepIndex, textRevealed }: Ritua
       </div>
       <div
         style={{
-          marginTop: '20px',
+          marginTop: '24px',
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          columnGap: '19px',
-          rowGap: '11px',
+          columnGap: '22px',
+          rowGap: '13px',
         }}
       >
         {PARTICIPANT_ORDER.map((key, i) => (
