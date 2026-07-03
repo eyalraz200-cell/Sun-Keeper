@@ -375,7 +375,12 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               backgroundColor: COLORS.black,
               border: `1.75px dashed ${zoneHighlighted ? COLORS.white : 'rgba(255,255,255,0.18)'}`,
               borderRadius: '10px',
-              transition: 'border-color 0.15s ease',
+              // Hidden once a ritual is docked — it's redundant against the card's own border at
+              // matching size, and would otherwise peek through as a faint outline. Still shown
+              // while dragging the docked card back out (dimming it reveals this base as feedback
+              // that it's coming loose), and fades in the same way if the drag misses its target.
+              opacity: !chosenRitual || (dragOrigin === 'dropzone' && dragRitualId === chosenRitual.id && dragPhase !== 'idle') ? 1 : 0,
+              transition: 'border-color 0.15s ease, opacity 0.15s ease',
             }}
           />
           {chosenRitual && (
