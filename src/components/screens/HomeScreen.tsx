@@ -165,10 +165,9 @@ const DOCK_MARGIN = 48
 const RETURN_DURATION = 320
 const DOCK_DURATION = 260
 const RITUAL_CARD_WIDTH = 245
-const RITUAL_CARD_HEIGHT = 391 // measured natural height of a rendered RitualCard (fixed 4-pill layout, doesn't vary by ritual)
-const DROP_ZONE_PADDING = 16 // margin between the drop-zone's dashed edge and the ritual card it frames
-const DROP_ZONE_WIDTH = RITUAL_CARD_WIDTH + DROP_ZONE_PADDING * 2
-const DROP_ZONE_HEIGHT = RITUAL_CARD_HEIGHT + DROP_ZONE_PADDING * 2
+const RITUAL_CARD_HEIGHT = 391 // measured natural height of a rendered RitualCard (fixed 4-pill layout, doesn't vary by ritual) — drop-zone matches this exactly, same as the dragged card
+const DROP_ZONE_WIDTH = RITUAL_CARD_WIDTH
+const DROP_ZONE_HEIGHT = RITUAL_CARD_HEIGHT
 const FACE_HEIGHT = 300
 
 function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean }) {
