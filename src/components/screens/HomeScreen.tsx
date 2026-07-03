@@ -922,13 +922,13 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             onUnchooseRitual={handleUnchooseRitual}
             onRitualHoverChange={setHoveredRitual}
             header={
-              <div style={{ flexShrink: 0, padding: '24px 24px 0', textAlign: 'left' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
-                  <div style={{ transform: 'translateY(-2px)' }}>
-                    <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-                  </div>
+              <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
+                {/* Fixed (not absolute), matching the grid view's toggle — escapes this 260px-wide
+                    list rail to sit at the true viewport edge instead of the rail's own right edge. */}
+                <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
+                  <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
+                <div style={{ fontFamily: FONTS.cinzel, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
                 <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Select rituals to appease the gods</div>
               </div>
             }
