@@ -66,7 +66,7 @@ function ResourceDivider({ fullBleed }: { fullBleed?: boolean } = {}) {
   return <div style={{ flexShrink: 0, width: fullBleed ? '2px' : '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
 }
 
-const RESOURCE_COUNT_ANIM_DURATION = 500
+const RESOURCE_COUNT_ANIM_DURATION = 1000
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
 // docking/undocking a ritual reads as spending/refunding resources rather than a hard cut.
@@ -101,7 +101,7 @@ function useAnimatedNumber(value: number, duration = RESOURCE_COUNT_ANIM_DURATIO
   return display
 }
 
-function HomeResourceItem({ icon, label, count, total, cost, ritualActive, isFirst, isLast }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; isFirst?: boolean; isLast?: boolean }) {
+function HomeResourceItem({ icon, label, count, total, cost, ritualActive, isFirst, isLast, onHoverChange }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; isFirst?: boolean; isLast?: boolean; onHoverChange?: (isHovered: boolean) => void }) {
   const displayCount = useAnimatedNumber(count)
   const affected = (cost ?? 0) > 0
   const dimmed = ritualActive && !affected
@@ -113,7 +113,11 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, isFir
   // separate rounded chip floating mid-pill instead of a flush segment of one shared shape.
   const fillRadius = `${isFirst ? '8px' : '0'} ${isLast ? '8px' : '0'} ${isLast ? '8px' : '0'} ${isFirst ? '8px' : '0'}`
   return (
-    <div style={{ position: 'relative', flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px' }}>
+    <div
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
+      style={{ position: 'relative', flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px' }}
+    >
       {/* Bleeds the full 24px gap on each side to reach the divider itself (the divider is its own
           flex child with a 24px gap on both sides, not a shared 12px split) and to the pill's own
           top/bottom edge — so the fill reads as its full segment between dividers, not a box
@@ -166,20 +170,20 @@ function HomeBarSectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, hoveredRitual }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: typeof RESOURCE_TOTALS; hoveredRitual?: Ritual | null }) {
+function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, hoveredRitual, onResourceHover }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: typeof RESOURCE_TOTALS; hoveredRitual?: Ritual | null; onResourceHover?: (type: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null) => void }) {
   const ritualActive = !!hoveredRitual
   return (
-    <div style={{ flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 48px 12px 24px' }}>
+    <div style={{ position: 'relative', zIndex: 1, flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 48px 12px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <HomeBarSectionTitle>Available Resources</HomeBarSectionTitle>
+        <HomeBarSectionTitle>Available Tributes</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px', overflow: 'hidden' }}>
-          <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} total={resourceTotals.prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} isFirst />
+          <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} total={resourceTotals.prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} isFirst onHoverChange={hovered => onResourceHover?.(hovered ? 'prisoners' : null)} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} total={resourceTotals.volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} />
+          <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} total={resourceTotals.volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'volunteers' : null)} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} />
+          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'children' : null)} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} isLast />
+          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} isLast onHoverChange={hovered => onResourceHover?.(hovered ? 'virgins' : null)} />
         </div>
       </div>
       <div style={{ flexShrink: 0, width: '40px' }} />
@@ -225,7 +229,7 @@ function HomeActionBar({ chosenCount, cost, onPerform, aiPanelOpen }: { chosenCo
     // panel is actually open (331px-wide full-height right panel). The closed toggle button now
     // sits above this bar instead of beside it (see AiChat's `raised` prop), so it no longer
     // needs a horizontal reserve here.
-    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '24px', backgroundColor: COLORS.black, borderTop: '1px solid rgba(255,255,255,0.17)', padding: `${SPACING.sm} ${SPACING.xl}`, marginRight: aiPanelOpen ? '331px' : 0, transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '24px', backgroundColor: COLORS.black, borderTop: '1px solid rgba(255,255,255,0.17)', padding: `${SPACING.md} ${SPACING.xl}`, marginRight: aiPanelOpen ? '331px' : 0, transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <span style={{ flexShrink: 0, fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.medium, color: hasChosen ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.35)', letterSpacing: '1px', whiteSpace: 'nowrap', transition: 'color 0.15s ease' }}>
         {chosenCount} {chosenCount === 1 ? 'Ritual' : 'Rituals'} Chosen
       </span>
@@ -275,7 +279,7 @@ const DROP_ZONE_WIDTH = RITUAL_CARD_WIDTH
 const DROP_ZONE_HEIGHT = RITUAL_CARD_HEIGHT
 const FACE_HEIGHT = 300
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean }) {
+function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true, highlightParticipantType }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null }) {
   // Widened to match outcomeEye()'s return type — EYE itself is `as const` (a literal-typed
   // union per level), which would otherwise stop `to`/`from` below from ever holding an
   // outcomeEye() result once a ritual is docked.
@@ -289,6 +293,14 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     chosenRitual ? { from: initialEye, to: initialEye, key: 0, delay: 0 } : null
   )
   const currentEyeRef = useRef(initialEye)
+  // Same "animate the fresh markup, don't rely on a CSS transition" approach as eyeAnim above,
+  // applied to the face's body fill — brightens when a ritual gets docked, dims back down when
+  // it's pulled back out.
+  const BODY_COLOR_DOCKED = COLORS.gray80
+  const BODY_COLOR_UNDOCKED = COLORS.gray60
+  const initialBodyColor = chosenRitual ? BODY_COLOR_DOCKED : BODY_COLOR_UNDOCKED
+  const [bodyColorAnim, setBodyColorAnim] = useState<{ from: string; to: string; key: number } | null>(null)
+  const currentBodyColorRef = useRef(initialBodyColor)
   const panelRef = useRef<HTMLDivElement>(null)
   // Hovering the face/name area (outside the ritual card) previews the same brighter look
   // GodCard uses for its own highlighted state, and clicking it returns to the overview grid.
@@ -325,6 +337,14 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     return x >= r.left - DOCK_MARGIN && x <= r.right + DOCK_MARGIN && y >= r.top - DOCK_MARGIN && y <= r.bottom + DOCK_MARGIN
   }
 
+  // Only pointerdown is a per-card React handler (it has to start on the specific card the user
+  // pressed). Move/up/cancel are handled globally on window (see the effect below) rather than
+  // via setPointerCapture + per-element handlers — capture routed through a <button> (RitualCard's
+  // root element) turned out to be unreliable: the browser would occasionally release capture or
+  // swallow the terminating pointerup mid-drag (button focus/active-state handling stepping on
+  // it), leaving dragPhase stuck at 'dragging' forever with the card visually glued to the cursor
+  // and never dropping. A window-level listener doesn't depend on capture surviving the whole
+  // gesture — it fires on whatever the browser reports the release against, always.
   const handleDragPointerDown = (ritualId: string, origin: 'row' | 'dropzone') => (e: React.PointerEvent) => {
     if (dragPhase !== 'idle') return
     const el = origin === 'row' ? rowSlotRefs.current[ritualId] : dropZoneRef.current
@@ -335,70 +355,79 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     setDragOrigin(origin)
     setDragPos({ x: rect.left, y: rect.top })
     setDragPhase('dragging')
-    e.currentTarget.setPointerCapture(e.pointerId)
-    // Pointer capture keeps routing events to the dragged card, so its own onMouseLeave may or
-    // may not fire once the cursor visually moves off it — drive the resource-bar preview
-    // explicitly from the drag lifecycle instead of relying on hover events during a drag.
+    // Drives the resource-bar preview explicitly from the drag lifecycle instead of relying on
+    // this card's own onMouseLeave, which may not fire reliably once the cursor moves off it.
     onRitualHoverChange(god.rituals.find(r => r.id === ritualId) ?? null)
   }
 
-  const handleDragPointerMove = (e: React.PointerEvent) => {
-    if (dragPhase !== 'dragging' || !dragStartRef.current) return
-    setDragPos({ x: e.clientX - dragStartRef.current.pointerDx, y: e.clientY - dragStartRef.current.pointerDy })
-    setIsOverDropZone(isPointOverDropZone(e.clientX, e.clientY))
-  }
-
-  const handleDragPointerUp = (e: React.PointerEvent) => {
-    if (dragPhase !== 'dragging' || !dragRitualId || !dragOrigin) return
-    const overZone = isPointOverDropZone(e.clientX, e.clientY)
-    setIsOverDropZone(false)
-
-    const settle = () => {
-      setDragPhase('idle')
-      setDragRitualId(null)
-      setDragOrigin(null)
-      setDragPos(null)
-      // Preview highlight held for the whole drag (see handleDragPointerDown) only auto-clears
-      // here if the pointer already left the drop-zone before releasing. If it's still over the
-      // zone (a successful dock, or a dropzone-card dropped back into itself), the cursor is still
-      // on the ritual — leave the highlight up and let the card's own hover-out clear it later.
-      if (!overZone) onRitualHoverChange(null)
-    }
-
-    if (dragOrigin === 'row' && overZone && dropZoneRef.current) {
-      const r = dropZoneRef.current.getBoundingClientRect()
-      setDragPos({ x: r.left, y: r.top })
-      setDragPhase('docking')
-      const ritualId = dragRitualId
-      const dockedRitual = god.rituals.find(r => r.id === ritualId) ?? null
-      setTimeout(() => { onChoose(ritualId); setEyesTo(dockedRitual); settle() }, DOCK_DURATION)
-    } else if (dragOrigin === 'dropzone' && !overZone) {
-      setDragPhase('undocking')
-      setTimeout(() => { onUnchoose(); setEyesTo(null); settle() }, DOCK_DURATION)
-    } else {
-      // Either a row card missed the drop-zone, or the docked card was dropped back inside it —
-      // both cases just snap back to where the drag started, no state change.
-      setDragPhase('returning')
-      setTimeout(settle, RETURN_DURATION)
-    }
-  }
-
-  // A pointercancel (window/tab loses focus mid-drag, the OS intercepts the gesture, browser
-  // scroll-to-refresh kicks in, etc.) never fires pointerup — without handling it separately,
-  // dragPhase stays stuck at 'dragging' forever and the card visually sticks to the cursor,
-  // since nothing else ever calls settle() again.
-  const handleDragPointerCancel = () => {
+  useEffect(() => {
     if (dragPhase !== 'dragging') return
-    setIsOverDropZone(false)
-    onRitualHoverChange(null)
-    setDragPhase('returning')
-    setTimeout(() => {
-      setDragPhase('idle')
-      setDragRitualId(null)
-      setDragOrigin(null)
-      setDragPos(null)
-    }, RETURN_DURATION)
-  }
+
+    const onMove = (e: PointerEvent) => {
+      if (!dragStartRef.current) return
+      setDragPos({ x: e.clientX - dragStartRef.current.pointerDx, y: e.clientY - dragStartRef.current.pointerDy })
+      setIsOverDropZone(isPointOverDropZone(e.clientX, e.clientY))
+    }
+
+    const onUp = (e: PointerEvent) => {
+      if (!dragRitualId || !dragOrigin) return
+      const overZone = isPointOverDropZone(e.clientX, e.clientY)
+      setIsOverDropZone(false)
+
+      const settle = () => {
+        setDragPhase('idle')
+        setDragRitualId(null)
+        setDragOrigin(null)
+        setDragPos(null)
+        // Preview highlight held for the whole drag (see handleDragPointerDown) only auto-clears
+        // here if the pointer already left the drop-zone before releasing. If it's still over the
+        // zone (a successful dock, or a dropzone-card dropped back into itself), the cursor is
+        // still on the ritual — leave the highlight up and let hover-out clear it later.
+        if (!overZone) onRitualHoverChange(null)
+      }
+
+      if (dragOrigin === 'row' && overZone && dropZoneRef.current) {
+        const r = dropZoneRef.current.getBoundingClientRect()
+        setDragPos({ x: r.left, y: r.top })
+        setDragPhase('docking')
+        const ritualId = dragRitualId
+        const dockedRitual = god.rituals.find(r => r.id === ritualId) ?? null
+        setTimeout(() => { onChoose(ritualId); setEyesTo(dockedRitual); setBodyColorTo(true); settle() }, DOCK_DURATION)
+      } else if (dragOrigin === 'dropzone' && !overZone) {
+        setDragPhase('undocking')
+        setTimeout(() => { onUnchoose(); setEyesTo(null); setBodyColorTo(false); settle() }, DOCK_DURATION)
+      } else {
+        // Either a row card missed the drop-zone, or the docked card was dropped back inside it —
+        // both cases just snap back to where the drag started, no state change.
+        setDragPhase('returning')
+        setTimeout(settle, RETURN_DURATION)
+      }
+    }
+
+    // A pointercancel (window/tab loses focus mid-drag, the OS intercepts the gesture, browser
+    // scroll-to-refresh kicks in, etc.) never fires pointerup — without handling it separately,
+    // dragPhase would stay stuck at 'dragging' forever with nothing left to call settle().
+    const onCancel = () => {
+      setIsOverDropZone(false)
+      onRitualHoverChange(null)
+      setDragPhase('returning')
+      setTimeout(() => {
+        setDragPhase('idle')
+        setDragRitualId(null)
+        setDragOrigin(null)
+        setDragPos(null)
+      }, RETURN_DURATION)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+    }
+  }, [dragPhase, dragRitualId, dragOrigin])
 
   // FLIP: start the panel transformed to exactly match the clicked card's grid position/size,
   // then animate that transform away to none so it visibly travels+grows into place.
@@ -484,6 +513,13 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     setEyeAnim(prev => ({ from, to: target, key: (prev?.key ?? 0) + 1, delay: 0 }))
   }
 
+  const setBodyColorTo = (docked: boolean) => {
+    const target = docked ? BODY_COLOR_DOCKED : BODY_COLOR_UNDOCKED
+    const from = currentBodyColorRef.current
+    currentBodyColorRef.current = target
+    setBodyColorAnim(prev => ({ from, to: target, key: (prev?.key ?? 0) + 1 }))
+  }
+
   const dragGhostRitual = dragRitualId ? god.rituals.find(r => r.id === dragRitualId) ?? null : null
   // Two tiers: brighter the whole time a ritual card is being dragged (any target is potentially
   // droppable), brighter still once the pointer is actually over this zone (the imminent-drop cue).
@@ -534,11 +570,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   padding: '3px',
                   borderRadius: '50%',
                   border: `1.5px solid ${isFaceHovered ? COLORS.gray95 : COLORS.gray30}`,
-                  backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
-                  transition: 'background-color 0.15s ease, border-color 0.15s ease',
                 }}
               >
-                <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray30} style={{ transition: 'color 0.15s ease' }} />
+                <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray30} />
               </div>
               <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 400, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             </div>
@@ -548,9 +582,10 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
             <GodSvg
               svgRaw={getSvgRaw(god.id)}
               angerLevel={god.angerLevel}
-              bodyColor={isActive ? '#e0e0e0' : COLORS.gray15}
+              bodyColor={isActive ? currentBodyColorRef.current : COLORS.gray15}
+              bodyColorAnimation={isActive && bodyColorAnim ? { fromColor: bodyColorAnim.from, toColor: bodyColorAnim.to, duration: 0.8, id: `body-${bodyColorAnim.key}` } : undefined}
               instanceId={`detail-${god.id}`}
-              eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 0.5, id: `eye-${eyeAnim.key}` } : undefined}
+              eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 1, id: `eye-${eyeAnim.key}` } : undefined}
             />
           </div>
         </div>
@@ -562,15 +597,15 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: COLORS.black,
-              border: `1.75px dashed ${zoneHighlighted ? COLORS.white : 'rgba(255,255,255,0.18)'}`,
+              backgroundColor: zoneFill,
+              border: `1.75px dashed ${zoneBorderColor}`,
               borderRadius: '10px',
               // Hidden once a ritual is docked — it's redundant against the card's own border at
               // matching size, and would otherwise peek through as a faint outline. Still shown
               // while dragging the docked card back out (dimming it reveals this base as feedback
               // that it's coming loose), and fades in the same way if the drag misses its target.
               opacity: !chosenRitual || (dragOrigin === 'dropzone' && dragRitualId === chosenRitual.id && dragPhase !== 'idle') ? 1 : 0,
-              transition: 'border-color 0.15s ease, opacity 0.15s ease',
+              transition: 'background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease',
             }}
           />
           {!chosenRitual && (
@@ -582,8 +617,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 fontFamily: FONTS.spectral,
                 fontSize: FONT_SIZE.md,
                 fontWeight: FONT_WEIGHT.light,
-                color: 'rgba(255,255,255,0.3)',
+                color: zoneTextColor,
                 pointerEvents: 'none',
+                transition: 'color 0.15s ease',
               }}
             >
               Drag and drop an appeasement ritual
@@ -592,9 +628,6 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
           {chosenRitual && (
             <div
               onPointerDown={handleDragPointerDown(chosenRitual.id, 'dropzone')}
-              onPointerMove={handleDragPointerMove}
-              onPointerUp={handleDragPointerUp}
-              onPointerCancel={handleDragPointerCancel}
               style={{
                 position: 'relative',
                 width: `${RITUAL_CARD_WIDTH}px`,
@@ -610,6 +643,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 onHoverChange={hovered => handleRitualHover(chosenRitual, hovered)}
                 outcomeBorder
                 dropShadow={false}
+                highlight={!!highlightParticipantType && chosenRitual.participants[highlightParticipantType] > 0}
               />
             </div>
           )}
@@ -627,9 +661,6 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               key={ritual.id}
               ref={el => { rowSlotRefs.current[ritual.id] = el }}
               onPointerDown={isChosen ? undefined : handleDragPointerDown(ritual.id, 'row')}
-              onPointerMove={isChosen ? undefined : handleDragPointerMove}
-              onPointerUp={isChosen ? undefined : handleDragPointerUp}
-              onPointerCancel={isChosen ? undefined : handleDragPointerCancel}
               style={{
                 width: `${RITUAL_CARD_WIDTH}px`,
                 flexShrink: 0,
@@ -645,6 +676,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 onClick={() => {}}
                 onHoverChange={hovered => handleRitualHover(ritual, hovered)}
                 outcomeBorder
+                highlight={!!highlightParticipantType && ritual.participants[highlightParticipantType] > 0}
               />
             </div>
           )
@@ -707,15 +739,18 @@ const NOOP = () => {}
 // the cover starts before the next panel actually does and its content peeks through the gap.
 const FREE_CAROUSEL_GAP = 40
 const FREE_CAROUSEL_WINDOW_RADIUS = 2
-const FREE_SCROLL_SENSITIVITY = 300 // divides wheel deltaY into virtual-index units; tuned so a strong fling covers several gods, not just one
-const FREE_SETTLE_DELAY = 180
-const FREE_SNAP_DURATION = 380
+// Total accumulated wheel deltaY needed to commit one step. Low enough that a single light
+// scroll tick (a mouse-wheel notch is ~100, already well past this alone) or a short trackpad
+// flick immediately trips it — deliberately not proportional to delta size, so a harder/faster
+// scroll still can never skip past more than one god at a time (see handleWheel's lock).
+const FREE_SCROLL_STEP_THRESHOLD = 30
+const FREE_SNAP_DURATION = 1100
 
-// Positions panels using measured per-panel heights and a continuous (fractional) `scrollPos`
-// virtual index: while wheeling, panels track the gesture 1:1 with transitions off; once wheel
-// input stops for FREE_SETTLE_DELAY, it snaps to the nearest whole index with a brief transition.
-// This is what gives the Figma-Slides-like "fly past several, then settle" feel.
-function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack }: {
+// One god at a time: each wheel gesture commits exactly one step (see handleWheel's accumulator
+// + lock), animated with a real CSS transition — not the old continuous 1:1 finger-tracking,
+// which let a hard fling blow past several gods and, worse, let light scrolls that never crossed
+// its rounding threshold do nothing at all.
+function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, highlightParticipantType }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
@@ -727,14 +762,30 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
   onUnchooseRitual: (godId: string) => void
   onRitualHoverChange: (ritual: Ritual | null) => void
   onBack: () => void
+  highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const inertScrollRef = useRef<HTMLDivElement>(null)
   const [panelHeights, setPanelHeights] = useState<Record<string, number>>({})
   const roRef = useRef<ResizeObserver | null>(null)
   const observedRef = useRef<Map<string, HTMLElement>>(new Map())
-  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [isSnapping, setIsSnapping] = useState(false)
+  // Accumulates wheel deltaY until FREE_SCROLL_STEP_THRESHOLD is crossed, then commits exactly
+  // one step and resets to 0. wheelLockRef blocks (and drops, rather than queues) all wheel input
+  // for the duration of that step's transition, so a continued flick can't stack up extra steps.
+  const wheelAccumRef = useRef(0)
+  const wheelLockRef = useRef(false)
+  const wheelLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // isSnapping used to only flip true from handleWheel, so a scrollPos change coming from
+  // anywhere else (e.g. clicking a different row in the left rail, which drives scrollPos from
+  // the parent) never got the transform transition — the carousel jumped instantly instead of
+  // sliding. It only needs to be false for the very first paint (so mount doesn't animate in from
+  // nowhere); every position change after that, regardless of source, should slide. A "has
+  // mounted" ref flipped after the first paint covers both wheel- and click-driven navigation.
+  const hasMountedRef = useRef(false)
+  const isSnapping = hasMountedRef.current
+  useLayoutEffect(() => {
+    hasMountedRef.current = true
+  }, [])
 
   useLayoutEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -787,8 +838,82 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
     onSettledIndexChange(roundedIndex)
   }, [roundedIndex])
 
-  const windowStart = Math.max(0, Math.floor(scrollPos) - FREE_CAROUSEL_WINDOW_RADIUS)
-  const windowEnd = Math.min(gods.length - 1, Math.ceil(scrollPos) + FREE_CAROUSEL_WINDOW_RADIUS)
+  // roundedIndex flips to the target god the instant a scroll is triggered (it has to, so the
+  // CSS transform transition below animates toward it) — but HomeGodDetailPanel's `isActive`
+  // prop drives the face/name/subtitle color directly (no transition matching the 1100ms slide).
+  // The new (incoming) god should brighten immediately — it's already becoming the hero, and
+  // waiting until it's done sliding in reads as if it were dark the whole way up. The outgoing
+  // god should *also* stay bright for the same duration instead of snapping dark the instant the
+  // scroll starts — otherwise it visibly darkens before it's actually left. lingerUntilRef tracks
+  // the previous roundedIndex for exactly one transition's worth of time so both the outgoing and
+  // incoming panel read as active while they're actually moving, and only the true stragglers
+  // (untouched by this transition) stay dim throughout.
+  //
+  // The onset (marking the outgoing index as lingering) is done as a plain ref mutation *during
+  // render*, not inside an effect. An effect fires one commit late: React would first render with
+  // the outgoing panel already dark, paint nothing (React 18 batches this fine), but GodSvg still
+  // sees a genuinely different `bodyColor` across those two renders and — since it draws via
+  // dangerouslySetInnerHTML — tears down and rebuilds its entire SVG subtree on each "changed
+  // props" render, which is the flash: a real DOM node replacement even though the color it
+  // settles on is identical to before. Doing the bookkeeping synchronously in the render body
+  // means roundedIndex and the linger set are always consistent within a single render — GodSvg
+  // never sees the wrong intermediate value, so it never re-renders at all. Only the *reversion*
+  // (dropping the lingering index once the transition truly ends) needs a real timer/re-render,
+  // since that's a deliberate, one-time settle rather than a same-tick correction.
+  const prevRoundedRef = useRef(roundedIndex)
+  const lingerUntilRef = useRef<Map<number, number>>(new Map())
+  const [, bumpLingerTick] = useState(0)
+  if (prevRoundedRef.current !== roundedIndex) {
+    const prev = prevRoundedRef.current
+    prevRoundedRef.current = roundedIndex
+    lingerUntilRef.current.set(prev, performance.now() + FREE_SNAP_DURATION)
+  }
+  useEffect(() => {
+    const now = performance.now()
+    const pending = Array.from(lingerUntilRef.current.values()).map(until => until - now).filter(ms => ms > 0)
+    if (pending.length === 0) return
+    const t = setTimeout(() => {
+      const cutoff = performance.now()
+      for (const [idx, until] of lingerUntilRef.current) {
+        if (until <= cutoff) lingerUntilRef.current.delete(idx)
+      }
+      bumpLingerTick(v => v + 1)
+    }, Math.max(...pending) + 16)
+    return () => clearTimeout(t)
+  }, [roundedIndex])
+  const isLingering = (index: number) => (lingerUntilRef.current.get(index) ?? 0) > performance.now()
+
+  // windowIndices only needs to span FREE_CAROUSEL_WINDOW_RADIUS around scrollPos for a
+  // single-step wheel move — the old and new position are already within radius of each other,
+  // so every panel that needs to slide is already mounted. Picking a row far down the list (via
+  // the left rail) can jump scrollPos by many gods at once, though: with only the narrow window,
+  // the target god's panel would mount already at rest on its very first render (nothing to
+  // transition from) and everything in between would never render at all — no slide, just a pop.
+  // transitSpanRef captures the full old->new range on the render where scrollPos jumps (a plain
+  // ref mutation during render, same safe pattern as lingerUntilRef above — no extra render pass,
+  // so the panels in that range are already mounted with correct positions by the very first
+  // render after the jump, ready for the CSS transform transition to carry them the whole way).
+  // It's held for one transition's worth of time, then released so the window shrinks back down
+  // once things have actually settled.
+  const prevScrollPosForWindowRef = useRef(scrollPos)
+  const transitSpanRef = useRef<{ start: number; end: number } | null>(null)
+  const [, bumpWindowTick] = useState(0)
+  if (prevScrollPosForWindowRef.current !== scrollPos) {
+    const prevPos = prevScrollPosForWindowRef.current
+    prevScrollPosForWindowRef.current = scrollPos
+    transitSpanRef.current = { start: Math.min(prevPos, scrollPos), end: Math.max(prevPos, scrollPos) }
+  }
+  useEffect(() => {
+    if (!transitSpanRef.current) return
+    const t = setTimeout(() => {
+      transitSpanRef.current = null
+      bumpWindowTick(v => v + 1)
+    }, FREE_SNAP_DURATION + 50)
+    return () => clearTimeout(t)
+  }, [scrollPos])
+  const span = transitSpanRef.current
+  const windowStart = Math.max(0, Math.floor(span ? span.start : scrollPos) - FREE_CAROUSEL_WINDOW_RADIUS)
+  const windowEnd = Math.min(gods.length - 1, Math.ceil(span ? span.end : scrollPos) + FREE_CAROUSEL_WINDOW_RADIUS)
   const windowIndices: number[] = []
   for (let i = windowStart; i <= windowEnd; i++) windowIndices.push(i)
 
@@ -800,21 +925,37 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    setIsSnapping(false)
-    if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current)
-    const next = Math.max(0, Math.min(gods.length - 1, scrollPos + e.deltaY / FREE_SCROLL_SENSITIVITY))
+    // Mid-step: drop this event entirely rather than queue it — the lock releasing only after
+    // the transition finishes is what guarantees a fast/continued flick still lands on exactly
+    // the next god, never two or three.
+    if (wheelLockRef.current) return
+
+    wheelAccumRef.current += e.deltaY
+    if (Math.abs(wheelAccumRef.current) < FREE_SCROLL_STEP_THRESHOLD) return
+
+    const direction = wheelAccumRef.current > 0 ? 1 : -1
+    wheelAccumRef.current = 0
+    const current = Math.round(scrollPos)
+    const next = Math.max(0, Math.min(gods.length - 1, current + direction))
+    if (next === current) return // already at the first/last god — nothing to step to
+
+    wheelLockRef.current = true
     onScrollPosChange(next)
-    settleTimeoutRef.current = setTimeout(() => {
-      setIsSnapping(true)
-      onScrollPosChange(Math.round(next))
-    }, FREE_SETTLE_DELAY)
+    wheelLockTimeoutRef.current = setTimeout(() => {
+      wheelLockRef.current = false
+    }, FREE_SNAP_DURATION)
   }
+
+  useEffect(() => () => {
+    if (wheelLockTimeoutRef.current) clearTimeout(wheelLockTimeoutRef.current)
+  }, [])
 
   return (
     <div ref={viewportRef} onWheel={handleWheel} style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       {windowIndices.map(index => {
         const god = gods[index]
         const isActive = index === roundedIndex
+        const isVisuallyActive = index === roundedIndex || isLingering(index)
         const top = baseOffset + (cumulativeTop(index) - anchorTop)
         return (
           <div
@@ -824,20 +965,25 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
               top: 0,
               left: 0,
               width: '100%',
-              // The active panel must always paint over every other rendered panel so its trailing
-              // cover (below) reliably hides whatever comes after it — basing this on raw list
-              // index instead of isActive was wrong: an earlier, inactive god (still rendered
-              // within the scroll window) would then always outrank and blot out whichever later
-              // god is actually selected.
-              zIndex: isActive ? 1 : 0,
-              transform: `translateY(${top}px)`,
+              // Real, non-overlapping stacked positions (cumulativeTop already accounts for every
+              // panel's real measured height + FREE_CAROUSEL_GAP) — one continuous list, each god's
+              // panel sitting directly below the last, so neighbors genuinely peek in as you scroll
+              // past instead of the active one being the only thing ever visible. Paint order just
+              // follows list order; nothing here needs to outrank anything else since nothing overlaps.
+              zIndex: index,
+              // translate3d over translateY: promotes this to its own GPU compositing layer, so
+              // the animation doesn't share a paint pass with (and stutter from) sibling panels.
+              transform: `translate3d(0, ${top}px, 0)`,
+              willChange: 'transform',
               pointerEvents: isActive ? 'auto' : 'none',
-              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)` : 'none',
+              // ease-in-out over the old cubic-bezier(0.23,1,0.32,1) — that curve's control points
+              // front-load almost all the motion into the first ~20% of the duration (near-instant
+              // snap, then a long slow tail), which reads as a jerky jump-then-crawl rather than one
+              // continuous glide. A symmetric ease-in-out actually feels smooth across the full
+              // (now much longer, 1100ms) duration.
+              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms ease-in-out` : 'none',
             }}
           >
-            {/* No overflow:hidden here — it was clipping the ritual cards' own drop shadow flush
-                against this box's edges. The trailing cover div below still hides the next god's
-                panel; it just starts a bit further down now so the shadow has room to render. */}
             <div ref={el => registerPanelEl(god.id, el)} style={{ display: 'flex', justifyContent: 'center' }}>
               <HomeGodDetailPanel
                 god={god}
@@ -850,16 +996,10 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
                 onCloseComplete={NOOP}
                 scrollContainerRef={inertScrollRef}
                 chosenRitualId={chosenRituals[god.id]}
-                isActive={isActive}
+                isActive={isVisuallyActive}
+                highlightParticipantType={highlightParticipantType}
               />
             </div>
-            {/* Covers whatever vertical room is left below this panel so the next god's panel
-                (stacked FREE_CAROUSEL_GAP below it in the same continuous list) never peeks into
-                view — only the active panel's own content should ever be visible. marginTop must
-                stay <= FREE_CAROUSEL_GAP: it's the room the ritual cards' drop shadow gets to
-                render in before this cover paints over it: too much and the next panel's real
-                content (which starts exactly FREE_CAROUSEL_GAP below) shows through instead. */}
-            <div style={{ width: '100%', height: '2000px', marginTop: '40px', backgroundColor: COLORS.black, pointerEvents: 'none' }} />
           </div>
         )
       })}
@@ -869,7 +1009,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
 
 // Left rail: every god as a full GodCard (with its own ritual panel, used as-is), in a plain
 // natively-scrolling column — always visible, independent of which god is centered in the carousel.
-function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, cardRefs, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header }: {
+function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, cardRefs, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header, highlightParticipantType }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
@@ -885,12 +1025,15 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
   onRitualHoverChange: (ritual: Ritual | null) => void
   onBack: () => void
   header: React.ReactNode
+  highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
       <div
         style={{
-          width: '280px',
+          // Widened from 280px so the header subtitle wraps to 2 lines instead of 3
+          // (232px of content width wraps it to 3; needs >=236px, this gives comfortable room).
+          width: '300px',
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -904,63 +1047,24 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px',
+            gap: SPACING.sm,
             padding: '12px 24px 24px',
           }}
         >
           {gods.map((god, index) => {
             const isSelected = index === settledIndex
-            const hasChosenRitual = !!chosenRituals[god.id]
+            const chosenRitual = god.rituals.find(r => r.id === chosenRituals[god.id]) ?? null
             const isFirstInTier = index === 0 || gods[index - 1].angerLevel !== god.angerLevel
             return (
               <Fragment key={god.id}>
                 {isFirstInTier && <ListAngerTierHeader level={god.angerLevel} isFirst={index === 0} />}
-                <div
-                  ref={el => { cardRefs.current[god.id] = el }}
+                <ListGodRow
+                  god={god}
+                  isSelected={isSelected}
+                  chosenRitual={chosenRitual}
                   onClick={() => onCardClick(god.id)}
-                  style={{
-                    position: 'relative',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
-                    transition: 'background-color 0.15s ease',
-                  }}
-                >
-                <div
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    boxShadow: `inset 0 0 0 ${EYE[god.angerLevel].weight}px ${EYE[god.angerLevel].color}`,
-                    opacity: isSelected ? 1 : 0.12,
-                    flexShrink: 0,
-                    transition: 'opacity 0.15s ease',
-                  }}
+                  domRef={el => { cardRefs.current[god.id] = el }}
                 />
-                <span
-                  style={{
-                    fontFamily: FONTS.spectral,
-                    fontSize: '13px',
-                    fontWeight: 400,
-                    color: isSelected ? COLORS.white : COLORS.gray40,
-                    opacity: isSelected ? 1 : 0.4,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    transition: 'color 0.15s ease, opacity 0.15s ease',
-                  }}
-                >
-                  {god.name}
-                </span>
-                {hasChosenRitual && (
-                  <span style={{ display: 'flex', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', opacity: isSelected ? 1 : 0.4, transition: 'opacity 0.15s ease' }}>
-                    <FireIcon size={16} color={isSelected ? COLORS.white : COLORS.gray40} />
-                  </span>
-                )}
-                </div>
               </Fragment>
             )
           })}
@@ -979,7 +1083,97 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
         onUnchooseRitual={onUnchooseRitual}
         onRitualHoverChange={onRitualHoverChange}
         onBack={onBack}
+        highlightParticipantType={highlightParticipantType}
       />
+    </div>
+  )
+}
+
+// One row in the GODS rail. Mirrors GodCard's own hover model exactly: a local isHovered
+// state combines with isSelected into a single `highlighted` flag that drives every
+// color/border/opacity toggle below, so hovering a row reads the same as hovering/selecting
+// a card in grid view.
+function ListGodRow({ god, isSelected, chosenRitual, onClick, domRef }: {
+  god: God
+  isSelected: boolean
+  chosenRitual: Ritual | null
+  onClick: () => void
+  domRef: (el: HTMLDivElement | null) => void
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+  const highlighted = isSelected || isHovered
+  // Border and icon always share this one value — same rule as RingedIcon's borderColor/icon
+  // color pairing — so the dashed/solid card and the flame read as a single unit, not two
+  // independently-colored pieces. Chosen state is a flat bright white, not the ritual's own
+  // outcome color — that color already lives on the eye ring/outcome circle elsewhere. The
+  // not-chosen highlighted border value (gray60) is GodCard's own ritual-panel hover value,
+  // copied exactly.
+  const fireColor = chosenRitual
+    ? COLORS.white
+    : highlighted ? COLORS.gray60 : COLORS.gray20
+  return (
+    <div
+      ref={domRef}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        position: 'relative',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        // Fill reflects isSelected only, not hover — hover changes the stroke alone.
+        backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+      }}
+    >
+      <div
+        style={{
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          boxShadow: `inset 0 0 0 ${EYE[god.angerLevel].weight}px ${EYE[god.angerLevel].color}`,
+          opacity: highlighted ? 1 : 0.12,
+          flexShrink: 0,
+          transition: 'opacity 0.15s ease',
+        }}
+      />
+      <span
+        style={{
+          fontFamily: FONTS.spectral,
+          fontSize: '13px',
+          fontWeight: 400,
+          color: highlighted ? COLORS.white : COLORS.gray40,
+          opacity: highlighted ? 1 : 0.4,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          transition: 'color 0.15s ease, opacity 0.15s ease',
+        }}
+      >
+        {god.name}
+      </span>
+      <span
+        style={{
+          display: 'flex',
+          flexShrink: 0,
+          marginLeft: 'auto',
+          padding: '4px',
+          borderRadius: '4px',
+          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${fireColor}`,
+          // GodCard's own ritual-panel hover fill (gray13) sits on cardBg (#151515) there, so
+          // it reads as a clear lift. This card sits on the page background (and gray18 when
+          // the row is selected) — gray13 is barely brighter than one and darker than the
+          // other, so it doesn't visibly lift here. gray20 is the nearest token that's
+          // actually lighter than both surroundings.
+          backgroundColor: highlighted ? COLORS.gray20 : 'transparent',
+        }}
+      >
+        <FireIcon size={12} color={fireColor} />
+      </span>
     </div>
   )
 }
@@ -1059,6 +1253,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   const [spentCost, setSpentCost] = useState<ResourceCost>(ZERO_COST)
   const [resultEntries, setResultEntries] = useState<Array<{ god: God; ritual: Ritual }> | null>(null)
   const [hoveredRitual, setHoveredRitual] = useState<Ritual | null>(null)
+  const [hoveredResourceType, setHoveredResourceType] = useState<'prisoners' | 'volunteers' | 'children' | 'virgins' | null>(null)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const [originGodId, setOriginGodId] = useState<string | null>(null)
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -1081,9 +1276,18 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   useEffect(() => () => onActionBarVisibleChange?.(false), [])
 
   const handleSelectGod = (godId: string) => {
-    const el = cardRefs.current[godId]
-    setOriginRect(el ? el.getBoundingClientRect() : null)
-    setOriginGodId(godId)
+    // originRect/originGodId drive HomeGodDetailPanel's FLIP grow-in animation (see the
+    // useLayoutEffect keyed on `originRect` there) — only meant to play once, when a card is
+    // first clicked from the grid. Picking a different row from the already-open list rail
+    // reuses this same handler (GodListLayout's onCardClick), but cardRefs also holds the rail
+    // rows' own (much smaller) rects; setting originRect there made the newly selected god's
+    // panel FLIP-grow from that tiny row size on every pick — a spurious rescale on top of the
+    // intended carousel scroll. Only set origin state on the actual grid->list transition.
+    if (viewMode !== 'list') {
+      const el = cardRefs.current[godId]
+      setOriginRect(el ? el.getBoundingClientRect() : null)
+      setOriginGodId(godId)
+    }
     setListScrollPos(DISPLAY_GODS_BY_TIER.findIndex(g => g.id === godId))
     setViewMode('list')
   }
@@ -1121,6 +1325,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             chosenRitual={chosenRitual}
             domRef={el => { cardRefs.current[god.id] = el }}
             onHoverChange={hovered => setHoveredRitual(hovered ? chosenRitual : null)}
+            highlightParticipantType={hoveredResourceType}
           />
         )
       })}
@@ -1129,7 +1334,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, position: 'relative', backgroundColor: COLORS.black }}>
-      <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={resourceTotals} hoveredRitual={hoveredRitual} />
+      <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={resourceTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} />
       <div
         ref={scrollContainerRef}
         style={{
@@ -1188,6 +1393,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             onUnchooseRitual={handleUnchooseRitual}
             onRitualHoverChange={setHoveredRitual}
             onBack={() => setViewMode('grid')}
+            highlightParticipantType={hoveredResourceType}
             header={
               <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
                 {/* Fixed (not absolute), matching the grid view's toggle — escapes this 260px-wide
@@ -1195,8 +1401,8 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
                   <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: '20px', fontWeight: 500, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Gods</div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Select rituals to appease the gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Avoid punishment by performing appeasement rituals for your gods</div>
               </div>
             }
           />

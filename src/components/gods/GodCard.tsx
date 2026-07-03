@@ -8,6 +8,7 @@ import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { RingedIcon } from '../icons/RingedIcon'
 import { RitualParticipantPill } from '../ritual/RitualParticipantPill'
 import tlalocRaw from '../../assets/Gods/Tlaloc.svg?raw'
 import quetzalcoatlRaw from '../../assets/Gods/Quetzalcoatl.svg?raw'
@@ -43,7 +44,7 @@ export function outcomeEye(color: string): { color: string; weight: number } {
   return { color: COLORS.white, weight: 2 }
 }
 
-function hexToRgba(hex: string, alpha: number): string {
+export function hexToRgba(hex: string, alpha: number): string {
   const n = parseInt(hex.replace('#', ''), 16)
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
 }
@@ -53,10 +54,16 @@ function abbreviateDuration(duration: string): string {
   return `${num}d`
 }
 
-export const CARD_HEIGHT = 248
+// Grown from 248 so the ritual panel's chosen-ritual content (pills + divider + duration)
+// fits without overflow — the extra height goes entirely into the face (below), so the
+// face's own top/bottom gaps to the card edges stay exactly what they were before.
+export const CARD_HEIGHT = 276
 
 const FACE_LEFT = 22
-const FACE_WIDTH = 125
+const FACE_TOP = 38
+const FACE_BOTTOM_GAP = 16 // fixed — matches the original 248-tall card's face-to-bottom-edge gap
+const FACE_HEIGHT = CARD_HEIGHT - FACE_TOP - FACE_BOTTOM_GAP
+const FACE_WIDTH = Math.round(FACE_HEIGHT * (125 / 194)) // preserves the face SVG's original aspect ratio
 const FACE_TO_CARD_GAP = 22 // matches the padding between the card's left edge and the face
 const INNER_CARD_LEFT = FACE_LEFT + FACE_WIDTH + FACE_TO_CARD_GAP
 const RITUAL_PANEL_WIDTH = 89
@@ -65,31 +72,39 @@ const RITUAL_PANEL_RIGHT_GAP = 12 // matches the padding between the card's righ
 // it never eats into either the face-gap or the right-edge-gap.
 export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP
 
+type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
+
 interface GodCardProps {
   god: God
   isSelected?: boolean
   onClick?: () => void
   chosenRitual?: Ritual | null
   domRef?: (el: HTMLDivElement | null) => void
+  onHoverChange?: (isHovered: boolean) => void
+  // Set while a resource-bar tab is hovered — if the chosen ritual actually spends that
+  // resource, the card lights up the same way it would on hover/select, tying the bar back
+  // to every card its cost touches.
+  highlightParticipantType?: ParticipantType | null
 }
 
-export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodCardProps) {
+export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHoverChange, highlightParticipantType }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const highlighted = isSelected || isHovered
-  // Once a ritual is chosen, the outer border tints toward the chosen ritual's outcome
-  // color at the top, fading down into the plain gray border — a low-opacity hint of the
-  // ritual's effect rather than a full before/after gradient.
+  const resourceHighlighted = !!chosenRitual && !!highlightParticipantType && chosenRitual.participants[highlightParticipantType] > 0
+  const highlighted = isSelected || isHovered || resourceHighlighted
+  // Once a ritual is chosen, the ritual panel's own border (not the outer card border) tints
+  // toward the chosen ritual's outcome color at the top, fading down into the plain gray
+  // border — a low-opacity hint of the ritual's effect rather than a full before/after gradient.
   const outcome = chosenRitual ? outcomeEye(chosenRitual.outcomeColor) : null
   // Peaceful (white) outcomes need a stronger opacity than colored ones to read at all against the gray border.
   const borderGradient = outcome
-    ? `linear-gradient(to bottom, ${hexToRgba(outcome.color, outcome.color === COLORS.white ? 0.8 : 0.5)}, ${COLORS.gray30})`
+    ? `linear-gradient(to bottom, ${hexToRgba(outcome.color, outcome.color === COLORS.white ? 0.8 : 0.5)}, ${COLORS.gray20})`
     : null
   return (
     <div
       ref={domRef}
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => { setIsHovered(true); onHoverChange?.(true) }}
+      onMouseLeave={() => { setIsHovered(false); onHoverChange?.(false) }}
       style={{
         width: `${CARD_WIDTH}px`,
         height: `${CARD_HEIGHT}px`,
@@ -98,17 +113,8 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         borderRadius: '4px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
         cursor: onClick ? 'pointer' : undefined,
-        ...(borderGradient
-          ? {
-              border: '1px solid transparent',
-              backgroundImage: `linear-gradient(${COLORS.cardBg}, ${COLORS.cardBg}), ${borderGradient}`,
-              backgroundOrigin: 'border-box',
-              backgroundClip: 'padding-box, border-box',
-            }
-          : {
-              backgroundColor: COLORS.cardBg,
-              border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
-            }),
+        backgroundColor: COLORS.cardBg,
+        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
       }}
     >
       <div
@@ -118,7 +124,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           left: '6px',
           width: `${INNER_CARD_LEFT - 12}px`,
           textAlign: 'center',
-          fontFamily: FONTS.cinzel,
+          fontFamily: FONTS.spectral,
           fontSize: FONT_SIZE.sm,
           fontWeight: FONT_WEIGHT.regular,
           color: highlighted ? COLORS.gray95 : COLORS.gray40,
@@ -129,8 +135,8 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
       >
         {god.name}
       </div>
-      <div style={{ position: 'absolute', left: `${FACE_LEFT}px`, top: '38px', width: `${FACE_WIDTH}px`, height: '194px' }}>
-        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : chosenRitual ? COLORS.gray60 : undefined} glow={god.angerLevel === 'high' && !chosenRitual} instanceId={`grid-${god.id}`} />
+      <div style={{ position: 'absolute', left: `${FACE_LEFT}px`, top: `${FACE_TOP}px`, width: `${FACE_WIDTH}px`, height: `${FACE_HEIGHT}px` }}>
+        <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} isHovered={highlighted} bodyColor={highlighted ? COLORS.gray95 : COLORS.gray30} glow={god.angerLevel === 'high' && !chosenRitual} instanceId={`grid-${god.id}`} />
       </div>
       <div
         style={{
@@ -139,15 +145,28 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
           right: `${RITUAL_PANEL_RIGHT_GAP}px`,
           top: '14px',
           bottom: '14px',
-          border: `1px ${chosenRitual ? 'solid' : 'dashed'} ${highlighted ? COLORS.gray40 : chosenRitual ? COLORS.gray30 : COLORS.gray20}`,
           borderRadius: '4px',
-          backgroundColor: highlighted ? COLORS.gray18 : 'transparent',
+          ...(borderGradient
+            ? {
+                border: '1px solid transparent',
+                // Fill must be opaque (not literal 'transparent') for the two-layer clip trick to
+                // work — otherwise the border-box gradient layer bleeds through the whole interior
+                // instead of staying confined to the thin border ring. COLORS.cardBg matches the
+                // outer GodCard's own background, so it reads the same as true transparency.
+                backgroundImage: `linear-gradient(${highlighted ? COLORS.gray13 : COLORS.cardBg}, ${highlighted ? COLORS.gray13 : COLORS.cardBg}), ${borderGradient}`,
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+              }
+            : {
+                border: `1px dashed ${highlighted ? COLORS.gray60 : COLORS.gray30}`,
+                backgroundColor: highlighted ? COLORS.gray13 : 'transparent',
+              }),
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: chosenRitual ? 'flex-start' : 'center',
           paddingTop: chosenRitual ? '12px' : undefined,
-          paddingBottom: chosenRitual ? '8px' : undefined,
+          paddingBottom: chosenRitual ? '12px' : undefined,
           paddingLeft: chosenRitual ? '11px' : undefined,
           paddingRight: chosenRitual ? '11px' : undefined,
           boxSizing: 'border-box',
@@ -156,7 +175,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
         {chosenRitual ? (
           <>
             <div style={{ marginBottom: '8px' }}>
-              <FireIcon size={20} color={COLORS.gray60} />
+              <FireIcon size={20} color={COLORS.gray80} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: 'auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
@@ -171,9 +190,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: COLORS.gray20 }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px' }}>
-                <div style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${COLORS.gray30}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <RingedIcon size={26} borderColor={COLORS.gray60}>
                   <PyramidIcon size={14} color={COLORS.gray60} />
-                </div>
+                </RingedIcon>
                 <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.white }}>/{abbreviateDuration(chosenRitual.duration)}</span>
               </div>
             </div>
@@ -186,12 +205,12 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef }: GodC
               alignItems: 'center',
               textAlign: 'center',
               fontFamily: FONTS.spectral,
-              fontSize: FONT_SIZE.sm,
-              color: highlighted ? COLORS.gray60 : COLORS.gray30,
+              fontSize: FONT_SIZE.md,
+              color: highlighted ? COLORS.gray80 : COLORS.gray40,
             }}
           >
             <div style={{ marginBottom: '8px' }}>
-              <FireIcon size={20} color={highlighted ? COLORS.gray60 : COLORS.gray30} />
+              <FireIcon size={20} color={highlighted ? COLORS.gray80 : COLORS.gray40} />
             </div>
             <span>No ritual chosen</span>
           </div>

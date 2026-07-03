@@ -55,9 +55,13 @@ interface RitualCardProps {
   // reads correctly while the card is "lifted" (candidate row, mid-drag); a docked card is
   // meant to look settled/flush against its slot.
   dropShadow?: boolean
+  // True while a resource-bar tab (Prisoners/Volunteers/Children/Virgins) is hovered and this
+  // ritual's cost uses that resource — an external highlight independent of this card's own
+  // hover/selected state, layered on top via a ring + pop rather than touching the outcome border.
+  highlight?: boolean
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false, dropShadow = true }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false, dropShadow = true, highlight = false }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
@@ -213,7 +217,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         cursor: outcomeBorder ? 'grab' : 'pointer',
         // Drag ghost/source stay at the card's true size (scale(1)) so it always matches the
         // drop-zone's fixed dimensions — only a plain hover (not pressed/dragged) pops it up.
-        transform: !isPressed && !forcePopped && isHovered ? 'scale(1.02)' : 'scale(1)',
+        transform: !isPressed && !forcePopped && (isHovered || highlight) ? 'scale(1.02)' : 'scale(1)',
         transition: 'transform 0.15s ease, box-shadow 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
@@ -225,7 +229,12 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         // (#1A1A1A) — a plain blur (no spread) reads as invisible regardless of opacity or
         // how much clipping room it's given (verified in isolation). A positive spread radius
         // plus near-opaque alpha is what actually makes the shadow legible against this bg.
-        boxShadow: !dropShadow ? 'none' : isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
+        // `highlight` layers an extra white ring on top of whatever shadow is already there —
+        // it needs to read regardless of outcomeBorder/hover state, so it's additive, not a replacement.
+        boxShadow: [
+          !dropShadow ? null : isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
+          highlight ? '0 0 0 2px rgba(255,255,255,0.7)' : null,
+        ].filter(Boolean).join(', ') || 'none',
         ...(borderGradient
           ? {
               backgroundImage: `linear-gradient(${cardBg}, ${cardBg}), ${borderGradient}`,
