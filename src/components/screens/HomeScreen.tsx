@@ -165,6 +165,10 @@ const DOCK_MARGIN = 48
 const RETURN_DURATION = 320
 const DOCK_DURATION = 260
 const RITUAL_CARD_WIDTH = 245
+const RITUAL_CARD_HEIGHT = 391 // measured natural height of a rendered RitualCard (fixed 4-pill layout, doesn't vary by ritual)
+const DROP_ZONE_PADDING = 16 // margin between the drop-zone's dashed edge and the ritual card it frames
+const DROP_ZONE_WIDTH = RITUAL_CARD_WIDTH + DROP_ZONE_PADDING * 2
+const DROP_ZONE_HEIGHT = RITUAL_CARD_HEIGHT + DROP_ZONE_PADDING * 2
 const FACE_HEIGHT = 300
 
 function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean }) {
@@ -364,7 +368,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
         {/* Drop-zone — a permanent dashed base layer with the docked ritual (if any) layered on
             top; dimming the docked card during an undock-drag naturally reveals the dashed base
             underneath, no extra state needed. */}
-        <div ref={dropZoneRef} style={{ flexShrink: 0, width: `${RITUAL_CARD_WIDTH}px`, position: 'relative', ...drawerRevealStyle }}>
+        <div ref={dropZoneRef} style={{ flexShrink: 0, width: `${DROP_ZONE_WIDTH}px`, height: `${DROP_ZONE_HEIGHT}px`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', ...drawerRevealStyle }}>
           <div
             style={{
               position: 'absolute',
@@ -382,6 +386,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               onPointerUp={handleDragPointerUp}
               style={{
                 position: 'relative',
+                width: `${RITUAL_CARD_WIDTH}px`,
                 cursor: 'grab',
                 touchAction: 'none',
                 opacity: dragOrigin === 'dropzone' && dragRitualId === chosenRitual.id && dragPhase !== 'idle' ? 0.18 : 1,
