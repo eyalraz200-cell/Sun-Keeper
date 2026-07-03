@@ -47,21 +47,27 @@ interface RitualCardProps {
   // selected/active/hover/wrathful — used where the card is a drag source rather than a
   // click-to-select target, so "selected" no longer means anything for its border.
   outcomeBorder?: boolean
+  // Holds the pressed/grabbed pop-up scale for the whole drag, not just the instant of
+  // pointerdown — the drag ghost portal (HomeGodDetailPanel) never receives its own
+  // pointerdown, so without this it would sit at scale(1) while being dragged around.
+  forcePopped?: boolean
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
   const duration = overrideDuration ?? ritual.duration
   const [isHovered, setIsHovered] = useState(false)
+  const [isPressed, setIsPressed] = useState(false)
 
   const compactBorderStyle = wrathful
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
     : isSelected || isActive || isHovered ? '2px solid #ffffff' : '2px solid rgba(255,255,255,0.18)'
 
   const eye = outcomeEye(outcomeColor)
-  const cardBg = isSelected || isActive || isHovered ? COLORS.gray15 : COLORS.black
+  // Fill stays constant regardless of hover — only the drop shadow reacts to it (see boxShadow below).
+  const cardBg = isSelected || isActive ? COLORS.gray15 : COLORS.black
 
   const borderStyle = wrathful
     ? isSelected || isActive || isHovered ? '2px solid #FF2435' : '2px solid rgba(255,36,53,0.28)'
@@ -183,27 +189,39 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     )
   }
 
-  const sectionLabelStyle: React.CSSProperties = { fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }
+  const sectionLabelStyle: React.CSSProperties = { fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }
 
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => { setIsHovered(true); onHoverChange?.(true) }}
-      onMouseLeave={() => { setIsHovered(false); onHoverChange?.(false) }}
+      onMouseLeave={() => { setIsHovered(false); setIsPressed(false); onHoverChange?.(false) }}
+      onPointerDown={() => setIsPressed(true)}
+      onPointerUp={() => setIsPressed(false)}
       style={{
         width: '100%',
         height: 'auto',
         padding: '19px 20px',
         border: borderGradient ? '1px solid transparent' : borderStyle,
         borderRadius: '14px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        // outcomeBorder cards are drag sources (HomeGodDetailPanel's row/drop-zone), not
+        // click-to-select targets — a plain pointer cursor doesn't read as "draggable".
+        cursor: outcomeBorder ? 'grab' : 'pointer',
+        // Drag ghost/source stay at the card's true size (scale(1)) so it always matches the
+        // drop-zone's fixed dimensions — only a plain hover (not pressed/dragged) pops it up.
+        transform: !isPressed && !forcePopped && isHovered ? 'scale(1.02)' : 'scale(1)',
+        transition: 'transform 0.15s ease, box-shadow 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
         gap: '12px',
         opacity: 1,
         textAlign: 'left',
+        // A pure-black shadow barely differs from this app's own near-black page background
+        // (#1A1A1A) — a plain blur (no spread) reads as invisible regardless of opacity or
+        // how much clipping room it's given (verified in isolation). A positive spread radius
+        // plus near-opaque alpha is what actually makes the shadow legible against this bg.
+        boxShadow: isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
         ...(borderGradient
           ? {
               backgroundImage: `linear-gradient(${cardBg}, ${cardBg}), ${borderGradient}`,
@@ -213,7 +231,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
           : { backgroundColor: cardBg }),
       }}
     >
-      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: '18px', color: isSelected || isActive || isHovered ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
+      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: '18px', color: isSelected || isActive ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
         {ritual.name}
       </h3>
 
