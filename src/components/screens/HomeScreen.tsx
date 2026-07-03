@@ -533,9 +533,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   justifyContent: 'center',
                   padding: '3px',
                   borderRadius: '50%',
-                  border: `1.5px solid ${COLORS.gray30}`,
+                  border: `1.5px solid ${isFaceHovered ? COLORS.gray95 : COLORS.gray30}`,
                   backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
-                  transition: 'background-color 0.15s ease',
+                  transition: 'background-color 0.15s ease, border-color 0.15s ease',
                 }}
               >
                 <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray40} style={{ transition: 'color 0.15s ease' }} />
