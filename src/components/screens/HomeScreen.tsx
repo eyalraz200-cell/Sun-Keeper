@@ -538,7 +538,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   transition: 'background-color 0.15s ease, border-color 0.15s ease',
                 }}
               >
-                <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray40} style={{ transition: 'color 0.15s ease' }} />
+                <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray30} style={{ transition: 'color 0.15s ease' }} />
               </div>
               <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 400, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             </div>
