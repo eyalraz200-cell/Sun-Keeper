@@ -533,6 +533,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   justifyContent: 'center',
                   padding: '8px',
                   borderRadius: '50%',
+                  border: `1.5px solid ${COLORS.gray30}`,
                   backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
                   transition: 'background-color 0.15s ease',
                 }}
