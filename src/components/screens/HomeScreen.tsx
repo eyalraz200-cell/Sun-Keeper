@@ -13,7 +13,7 @@ import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
 import { RingedIcon } from '../icons/RingedIcon'
-import { GridFour, ListBullets } from '@phosphor-icons/react'
+import { GridFour, ListBullets, CaretLeft } from '@phosphor-icons/react'
 
 const AI_TOGGLE_RESERVE = '96px' // keeps the floating AI toggle button (54px circle, 12px from right edge) off the card grid
 
@@ -485,7 +485,13 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
   }
 
   const dragGhostRitual = dragRitualId ? god.rituals.find(r => r.id === dragRitualId) ?? null : null
-  const zoneHighlighted = dragPhase === 'dragging' && isOverDropZone
+  // Two tiers: brighter the whole time a ritual card is being dragged (any target is potentially
+  // droppable), brighter still once the pointer is actually over this zone (the imminent-drop cue).
+  const isDragging = dragPhase === 'dragging'
+  const zoneHighlighted = isDragging && isOverDropZone
+  const zoneFill = zoneHighlighted ? COLORS.gray20 : isDragging ? COLORS.gray15 : COLORS.black
+  const zoneBorderColor = zoneHighlighted ? COLORS.white : isDragging ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)'
+  const zoneTextColor = zoneHighlighted ? COLORS.gray95 : isDragging ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'
 
   // Wipes in after the FLIP move+grow lands, same choreography applied to both the drop-zone
   // (dashed border included) and the candidate row below — the face card is a separate box
@@ -496,7 +502,17 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
 
   return (
     <div ref={panelRef} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 24px 0', padding: '16px 24px 24px' }}>
-      <div style={{ display: 'flex', width: 'fit-content', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '16px' }}>
+      <div style={{ position: 'relative', display: 'flex', width: 'fit-content', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '16px' }}>
+        {/* Back-to-overview affordance — same click target as the face/name area below, just
+            given its own visible icon so the "click to go back" behavior isn't undiscoverable. */}
+        <div
+          onClick={onBack}
+          onMouseEnter={() => setIsFaceHovered(true)}
+          onMouseLeave={() => setIsFaceHovered(false)}
+          style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', cursor: 'pointer', zIndex: 1 }}
+        >
+          <CaretLeft size={20} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray40} style={{ transition: 'color 0.15s ease' }} />
+        </div>
         <div
           onClick={onBack}
           onMouseEnter={() => setIsFaceHovered(true)}
