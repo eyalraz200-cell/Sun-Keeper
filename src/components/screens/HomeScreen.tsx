@@ -402,6 +402,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 onClick={() => {}}
                 onHoverChange={hovered => handleRitualHover(chosenRitual, hovered)}
                 outcomeBorder
+                dropShadow={false}
               />
             </div>
           )}

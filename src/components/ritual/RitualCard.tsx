@@ -51,9 +51,13 @@ interface RitualCardProps {
   // pointerdown — the drag ghost portal (HomeGodDetailPanel) never receives its own
   // pointerdown, so without this it would sit at scale(1) while being dragged around.
   forcePopped?: boolean
+  // False once the card is resting docked in the drop-zone — a floating drop shadow only
+  // reads correctly while the card is "lifted" (candidate row, mid-drag); a docked card is
+  // meant to look settled/flush against its slot.
+  dropShadow?: boolean
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false, dropShadow = true }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
@@ -221,7 +225,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         // (#1A1A1A) — a plain blur (no spread) reads as invisible regardless of opacity or
         // how much clipping room it's given (verified in isolation). A positive spread radius
         // plus near-opaque alpha is what actually makes the shadow legible against this bg.
-        boxShadow: isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
+        boxShadow: !dropShadow ? 'none' : isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
         ...(borderGradient
           ? {
               backgroundImage: `linear-gradient(${cardBg}, ${cardBg}), ${borderGradient}`,
