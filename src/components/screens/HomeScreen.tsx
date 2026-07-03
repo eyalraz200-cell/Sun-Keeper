@@ -35,6 +35,9 @@ const DISPLAY_GODS = Array.from({ length: DISPLAY_GOD_COUNT }, (_, i) => ({
 const DISPLAY_GOD_BUCKETS = ANGER_TIERS
   .map(level => ({ level, gods: DISPLAY_GODS.filter(g => g.angerLevel === level) }))
   .filter(bucket => bucket.gods.length > 0)
+// Same gods, flattened into tier order (Furious → Angry → Uneasy → Peaceful) — feeds the
+// list-view rail, which renders section titles inline rather than as separate grid sections.
+const DISPLAY_GODS_BY_TIER = DISPLAY_GOD_BUCKETS.flatMap(bucket => bucket.gods)
 
 type ResourceCost = { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }
 const ZERO_COST: ResourceCost = { prisoners: 0, volunteers: 0, children: 0, virgins: 0, temples: 0, greatTemples: 0 }
@@ -672,23 +675,25 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
           {gods.map((god, index) => {
             const isSelected = index === settledIndex
             const hasChosenRitual = !!chosenRituals[god.id]
+            const isFirstInTier = index === 0 || gods[index - 1].angerLevel !== god.angerLevel
             return (
-              <div
-                key={god.id}
-                ref={el => { cardRefs.current[god.id] = el }}
-                onClick={() => onCardClick(god.id)}
-                style={{
-                  position: 'relative',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
-                  transition: 'background-color 0.15s ease',
-                }}
-              >
+              <Fragment key={god.id}>
+                {isFirstInTier && <ListAngerTierHeader level={god.angerLevel} isFirst={index === 0} />}
+                <div
+                  ref={el => { cardRefs.current[god.id] = el }}
+                  onClick={() => onCardClick(god.id)}
+                  style={{
+                    position: 'relative',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
+                    transition: 'background-color 0.15s ease',
+                  }}
+                >
                 <div
                   style={{
                     width: '18px',
@@ -719,7 +724,8 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
                     <FireIcon size={16} color={isSelected ? COLORS.white : COLORS.gray40} />
                   </span>
                 )}
-              </div>
+                </div>
+              </Fragment>
             )
           })}
         </div>
@@ -766,6 +772,17 @@ function ViewModeToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list'; onC
     <div style={{ flexShrink: 0, display: 'flex', gap: '4px', border: `1px solid ${COLORS.gray20}`, borderRadius: '8px', padding: '2px' }}>
       {option('grid', c => <GridFour size={16} color={c} weight="regular" />)}
       {option('list', c => <ListBullets size={16} color={c} weight="regular" />)}
+    </div>
+  )
+}
+
+// Same title treatment as AngerTierHeader below (18px EYE-weight ring + label), sized for the
+// list rail's own padding instead of the grid's 24px horizontal gutter.
+function ListAngerTierHeader({ level, isFirst }: { level: AngerLevel; isFirst?: boolean }) {
+  return (
+    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: isFirst ? '0 0 8px' : '16px 0 8px' }}>
+      <div style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${EYE[level].weight}px ${EYE[level].color}` }} />
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>{TIER_LABELS[level]}</span>
     </div>
   )
 }
@@ -819,7 +836,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     const el = cardRefs.current[godId]
     setOriginRect(el ? el.getBoundingClientRect() : null)
     setOriginGodId(godId)
-    setListScrollPos(DISPLAY_GODS.findIndex(g => g.id === godId))
+    setListScrollPos(DISPLAY_GODS_BY_TIER.findIndex(g => g.id === godId))
     setViewMode('list')
   }
 
@@ -908,7 +925,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         )}
         {viewMode === 'list' && (
           <GodListLayout
-            gods={DISPLAY_GODS}
+            gods={DISPLAY_GODS_BY_TIER}
             scrollPos={listScrollPos}
             onScrollPosChange={setListScrollPos}
             settledIndex={listSettledIndex}
