@@ -42,11 +42,11 @@ const PARTICIPANT_ICON: Record<ParticipantKey, (color: string, size: number) => 
 // 3. Once distribution finishes, every god's eyes shift from their anger-level color to their
 //    ritual's outcome color (driven by GodSvg's own eyeAnimation delay, not JS timers).
 // 4. The caption under each card fades in last.
-const INITIAL_PAUSE = 0.5
-const RESOURCE_STEP_DURATION = 0.7
-const RESOURCE_STEP_GAP = 0.2
-const EYE_ANIM_DURATION = 1.2
-const TEXT_REVEAL_GAP = 0.3
+const INITIAL_PAUSE = 1.2
+const RESOURCE_STEP_DURATION = 1.8
+const RESOURCE_STEP_GAP = 0.5
+const EYE_ANIM_DURATION = 3
+const TEXT_REVEAL_GAP = 0.8
 
 const DISTRIBUTION_END = INITIAL_PAUSE + PARTICIPANT_ORDER.length * (RESOURCE_STEP_DURATION + RESOURCE_STEP_GAP)
 const TEXT_REVEAL_AT = DISTRIBUTION_END + EYE_ANIM_DURATION + TEXT_REVEAL_GAP
