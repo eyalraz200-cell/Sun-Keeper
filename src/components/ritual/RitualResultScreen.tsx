@@ -221,8 +221,12 @@ export function RitualResultScreen({ entries, resources, onDismiss }: RitualResu
   }, [])
 
   return (
-    <div
+    <motion.div
       onClick={onDismiss}
+      initial={{ opacity: 0, scale: 1.02 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.02 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -266,7 +270,7 @@ export function RitualResultScreen({ entries, resources, onDismiss }: RitualResu
         <ResultResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" from={before.children} to={resources.children} active={stepIndex === 2} />
         <ResultResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" from={before.virgins} to={resources.virgins} active={stepIndex === 3} />
       </div>
-    </div>
+    </motion.div>
   )
 }
 
