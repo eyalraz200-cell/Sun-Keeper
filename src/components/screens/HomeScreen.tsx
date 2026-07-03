@@ -522,12 +522,23 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
             {/* Wraps just the name line (not the subtitle below) so the chevron's vertical center,
                 driven by this row's own height, always lines up with the name specifically. */}
             <div style={{ position: 'relative' }}>
-              <CaretLeft
-                size={20}
-                weight="bold"
-                color={isFaceHovered ? COLORS.gray95 : COLORS.gray40}
-                style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', transition: 'color 0.15s ease' }}
-              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
+                  transition: 'background-color 0.15s ease',
+                }}
+              >
+                <CaretLeft size={20} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray40} style={{ transition: 'color 0.15s ease' }} />
+              </div>
               <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 400, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             </div>
             <p style={{ margin: '4px 0 0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease' }}>{god.subtitle}</p>
