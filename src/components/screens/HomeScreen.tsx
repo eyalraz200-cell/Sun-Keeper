@@ -654,7 +654,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
     <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
       <div
         style={{
-          width: '320px',
+          width: '280px',
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
