@@ -200,7 +200,11 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // A ritual actually in progress steps all the way down to gray18 — noticeably darker than even
   // the dimmed/not-relevant look above, so the face reads as "resting/spent" rather than "hover me".
   const bodyColor = isPunishing
-    ? (highlighted ? COLORS.gray0 : COLORS.white)
+    // Ritual in progress steps the face way down from the usual full white — same "resting/
+    // spent, not shouting for attention" reasoning as the non-punishing inProgress case below,
+    // just starting from white instead of gray30 since punishing's idle face is white to begin
+    // with. Still forced to gray0 on highlight/select, same as the idle-punishing look.
+    ? (highlighted ? COLORS.gray0 : inProgress ? COLORS.gray60 : COLORS.white)
     : inProgress
       ? COLORS.gray18
       : highlighted
@@ -286,52 +290,69 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // The authorize-stage card is a deliberately stripped-down look — no outer frame, no ritual
   // panel/site, just the (enlarged) face, name, and the pills themselves — different enough from
   // the grid/list layout below that it's its own branch rather than more conditionals threaded
-  // through the absolute-positioned name/face/panel layout. Still carries the same
-  // `data-flip-id={god.id}:card` as the grid card, which is all HomeScreen's authorize-stage Flip
-  // actually targets (the grid<->list hero transition's own :name/:face/:panel targets don't apply
-  // here — a stage card and a grid<->list hero card are never the same DOM instance).
+  // through the absolute-positioned name/face/panel layout.
+  //
+  // `:card`, `:name`, and `:face` are flown independently (matching HomeScreen's authorize Flip
+  // selector), reusing HERO_FLIP_VARS-style `nested:true` rather than a single whole-box
+  // `scale:true` flip — a single-target scale flip stretched non-uniformly here since the grid
+  // card's box and this stage layout have very different proportions (same failure mode the
+  // grid<->list hero transition's own comment describes for a whole-card flip). `:face` growing
+  // on its own, nested inside the `:card` anchor, tracks the SAME aspect ratio at both ends, so it
+  // just grows/moves smoothly with no stretch. `:name` MUST also be its own flip target here, not
+  // just left in normal flow: nested/absolute Flip pulls `:face` out of flex flow for the
+  // animation's duration, and `:name` (its sibling in the same column) would otherwise collapse
+  // upward into the space `:face` just vacated, overlapping it instead of sitting above it.
+  //
+  // The pills are NOT a flip target (they don't grow — see STAGE_PILL_WIDTH — and aren't a
+  // distinct piece on the grid card's side), and for that exact reason they can't be a normal flex
+  // sibling of :name/:face either: the instant GSAP pulls :name/:face out of flow for the
+  // animation, an in-flow sibling would collapse into the space they vacated, overlapping them
+  // (this is what actually happened before this comment existed). Pinning them with
+  // `position:absolute` against :card (always, not just mid-flip) sidesteps that entirely — they
+  // never participate in :card's flex flow, so nothing :name/:face do can disturb them, and
+  // `left:100%` naturally keeps them riding along the card's right edge as :card's own size tweens.
   if (stageMode) {
     const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40
     return (
-      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <div style={{ fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease-out' }}>
+      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        {/* Name centered directly above the face — both share the face's own width. */}
+        <div data-flip-id={`${god.id}:name`} style={{ width: `${STAGE_FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
           {god.name}
         </div>
-        {/* Face left, pills right — same relative arrangement as the grid card's face-left/
-            panel-right layout, just bigger, so the fly-in reads as this card growing in place
-            rather than its contents jumping to a new arrangement. */}
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '20px' }}>
-          <div style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px`, flexShrink: 0 }}>
-            <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
-          </div>
-          {chosenRitual && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                width: `${STAGE_PILL_WIDTH}px`,
-                flexShrink: 0,
-                // Once this card's own drain finishes, the pills fade away entirely instead of
-                // sitting there drained — the face stays white, only the tributes disappear.
-                opacity: drainProgress <= 0 ? 0 : 1,
-                transition: 'opacity 0.6s ease',
-              }}
-            >
-              {([
-                { key: 'prisoners', Icon: PrisonerIcon },
-                { key: 'volunteers', Icon: VolunteerIcon },
-                { key: 'children', Icon: ChildrenIcon },
-                { key: 'virgins', Icon: VirginIcon },
-              ] as const)
-                // Only the participant types this ritual actually spends are shown at all.
-                .filter(({ key }) => chosenRitual.participants[key] > 0)
-                .map(({ key, Icon }) => (
-                  <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
-                ))}
-            </div>
-          )}
+        <div data-flip-id={`${god.id}:face`} style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px`, flexShrink: 0 }}>
+          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
         </div>
+        {chosenRitual && (
+          <div
+            style={{
+              position: 'absolute',
+              left: '100%',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              marginLeft: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              width: `${STAGE_PILL_WIDTH}px`,
+              // Once this card's own drain finishes, the pills fade away entirely instead of
+              // sitting there drained — the face stays white, only the tributes disappear.
+              opacity: drainProgress <= 0 ? 0 : 1,
+              transition: 'opacity 0.6s ease',
+            }}
+          >
+            {([
+              { key: 'prisoners', Icon: PrisonerIcon },
+              { key: 'volunteers', Icon: VolunteerIcon },
+              { key: 'children', Icon: ChildrenIcon },
+              { key: 'virgins', Icon: VirginIcon },
+            ] as const)
+              // Only the participant types this ritual actually spends are shown at all.
+              .filter(({ key }) => chosenRitual.participants[key] > 0)
+              .map(({ key, Icon }) => (
+                <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+              ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -363,7 +384,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
         // card is meant to read as flat/inert, not as a raised, interactive-looking surface.
         boxShadow: inProgress ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
         cursor: onClick ? 'pointer' : undefined,
-        backgroundColor: isPunishing ? EYE.high.color : COLORS.cardBg,
+        // While a ritual is actually in progress, the punishing red fill drops to a much less
+        // opaque tint instead of the full-strength flat red used while still waiting to be
+        // appeased — the card is meant to read as calming/inert, not still shouting for attention.
+        backgroundColor: isPunishing ? (inProgress ? hexToRgba(EYE.high.color, 0.18) : EYE.high.color) : COLORS.cardBg,
         backgroundImage: isPunishing
           ? 'radial-gradient(ellipse at 50% 62%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.35) 100%)'
           : undefined,

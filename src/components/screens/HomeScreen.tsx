@@ -371,32 +371,34 @@ function isPunishingGodId(godId: string, punishingGodId?: string | null): boolea
   return !!punishingGodId && godId.replace(/-dup-\d+$/, '') === punishingGodId
 }
 
+// While a god is actively punishing (flow 2 — see App.tsx's punishingGodId), the children pool
+// is temporarily raised from RESOURCE_TOTALS.children (175) to this total, and ONLY for that
+// flow — HomeScreen's main component swaps this in for `children`'s available-resource math
+// below, and it reverts back to the normal global total the instant punishingGodId clears. This
+// exists purely so the Ultimate Ritual's fixed 200-children cost (see buildUltimateRitual) is
+// actually affordable without permanently inflating the empire's real children total.
+const PUNISHING_FLOW_CHILDREN_TOTAL = 220
+
 // The punishing-god flow's own 4th, off-menu ritual tier — deliberately NOT part of the god's
 // static `rituals` array (every god has exactly 3, per the ritual data conventions), since it only
-// ever exists for whichever single god the punishment flow currently targets. Built once per
-// render from RESOURCE_TOTALS (the fixed global pool), not from whatever's currently available —
-// so its cost is a stable, deterministic function of the god alone, not a moving target that
-// drifts as other gods' rituals get chosen/authorized elsewhere. Costs strictly more than the
-// god's own Supreme ritual: its dominant participant type (whichever the Supreme ritual leans on
-// hardest) is bumped to the ENTIRE global total for that resource, and every other type is bumped
-// to 1.6x Supreme's own number (capped at that type's own total, so it can never demand more than
-// exists). Consuming the full pool of one resource is exactly what "make sure there's enough
-// funds for it" means here — at game start, before anything else has spent from that pool, it's
-// guaranteed affordable; the existing insufficientParticipantTypes/canAfford check in
-// HomeGodDetailPanel still greys it out same as any other ritual if something else already has.
+// ever exists for whichever single god the punishment flow currently targets. Costs a fixed,
+// explicit toll on every participant type (not just whichever one the Supreme ritual leans on
+// hardest) so the "empire-wide sacrifice" flavor comes through on prisoners/volunteers too, not
+// only the god's own signature resource. Children specifically is only affordable because the
+// punishing flow bumps its pool to PUNISHING_FLOW_CHILDREN_TOTAL (see above) — the normal 175
+// total would never cover it. Virgins still scales off the god's own Supreme ritual (1.6x, capped
+// at the real total) since every god's virgin cost differs and 8 (Tlaloc) already reads as "a lot".
 function buildUltimateRitual(god: God): Ritual {
   const supreme = god.rituals[2]
   const participantTypes = ['prisoners', 'volunteers', 'children', 'virgins'] as const
   const dominant = participantTypes.reduce((a, b) => (supreme.participants[b] > supreme.participants[a] ? b : a))
-  // The dominant type is rounded DOWN to a multiple of 10, not set to the raw total — every
-  // participant pill except virgins rounds its displayed value UP to the nearest 10 (see
-  // RitualParticipantPill's `round` prop), so a raw total that isn't already a multiple of 10
-  // (e.g. RESOURCE_TOTALS.children = 175) would display as MORE than the empire actually has
-  // (180), reading as unaffordable even though the real cost is exactly the full pool. Flooring
-  // here keeps "costs the entire pool" true in spirit while guaranteeing the displayed number
-  // never exceeds what's actually available.
+  const ULTIMATE_COST_OVERRIDES: Partial<Record<typeof dominant, number>> = {
+    children: 200,
+    prisoners: 250,
+    volunteers: 400,
+  }
   const bumpedCost = (type: typeof dominant) =>
-    type === dominant ? Math.floor(RESOURCE_TOTALS[type] / 10) * 10 : Math.min(RESOURCE_TOTALS[type], Math.round(supreme.participants[type] * 1.6))
+    ULTIMATE_COST_OVERRIDES[type] ?? Math.min(RESOURCE_TOTALS[type], Math.round(supreme.participants[type] * 1.6))
   const supremeDurationDays = parseInt(supreme.duration, 10) || 5
   return {
     id: `${god.id.replace(/-dup-\d+$/, '')}-ultimate`,
@@ -494,15 +496,20 @@ const AUTHORIZE_END_HOLD_MS = 450
 // Chosen cards fly from their grid position into a centered "authorize stage" before the drain
 // sequence begins (and fly back into the grid, as ritual-in-progress cards, once it ends) — see
 // the CTA's onPerform and the finalize timeout below. Mirrors the grid<->list hero transition's
-// own GSAP Flip recipe (HERO_FLIP_VARS/handleSelectGod) but for a single rigid card box rather
-// than 4 independently-resizing pieces, so no `nested` flag is needed. `scale: true` is required
-// here specifically (the hero transition doesn't need it): the stage card's face/pills are laid
-// out at fixed pixel sizes rather than ones that reflow with their container, so without `scale`
-// GSAP would tween the box's literal width/height while that fixed-size content just sat there at
-// full size inside it — growing container, static content, instead of the whole card visibly
-// scaling as one piece.
+// own GSAP Flip recipe (HERO_FLIP_VARS/handleSelectGod) closely: `:card` is the outer position
+// anchor and `:face` flies independently within it (nested:true corrects `:face` for `:card`'s own
+// transform), rather than one whole-box `scale:true` flip — a single-target scale flip stretched
+// non-uniformly here since the grid card's box and the stage layout have very different
+// proportions, the same failure mode the hero transition's own whole-card-flip attempt hit before
+// splitting into pieces. `:face` keeps the same aspect ratio at both ends, so growing it alone
+// (nested inside `:card`) tracks smoothly with no stretch — see GodCard.tsx's stageMode branch.
 const AUTHORIZE_FLY_MS = 1400
-const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, scale: true, zIndex: 1500 }
+const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, nested: true, zIndex: 1500 }
+// Selector covering all three authorize-stage Flip pieces (the outer card anchor, the name, and
+// the face image) for every entry in a drain batch — see AUTHORIZE_FLIP_VARS above and GodCard's
+// stageMode branch for why all three (not just :card, and not just :face) are needed.
+const authorizeFlipSelector = (entries: Array<{ god: God; ritual: Ritual }>) =>
+  entries.map(({ god }) => `[data-flip-id="${god.id}:card"], [data-flip-id="${god.id}:name"], [data-flip-id="${god.id}:face"]`).join(', ')
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
 // docking/undocking a ritual reads as spending/refunding resources rather than a hard cut.
@@ -2042,10 +2049,10 @@ function ListGodRow({ god, isSelected, chosenRitual, onClick, isPunishing }: {
         position: 'relative',
         padding: '10px 12px',
         borderRadius: '4px',
-        // Punishing tints the row red (Figma's grid-card treatment, adapted here) instead of the
-        // usual gray border/fill — takes precedence over the plain highlighted look. EYE.high (the
-        // brighter render-layer red) rather than ANGER.high, matching GodCard's own punishing fill.
-        border: `1px solid ${isPunishing ? EYE.high.color : highlighted ? COLORS.gray30 : COLORS.gray15}`,
+        // Punishing tints the row's fill red (see backgroundColor below) but no longer its border —
+        // just the plain highlighted/idle gray stroke (isPunishing already folds into `highlighted`
+        // above, so a punishing row still gets the brighter gray30 stroke, not the dim default).
+        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -2321,7 +2328,11 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   const reservedCost = sumRitualCost(chosenRituals)
   const availablePrisoners = prisoners - spentCost.prisoners - reservedCost.prisoners
   const availableVolunteers = volunteers - spentCost.volunteers - reservedCost.volunteers
-  const availableChildren = children - spentCost.children - reservedCost.children
+  // Swapped to the bumped punishing-flow pool only while a god is actively punishing (see
+  // PUNISHING_FLOW_CHILDREN_TOTAL above buildUltimateRitual) — reverts to the real `children`
+  // total the instant punishingGodId clears, so this bump never leaks into normal play.
+  const childrenPool = punishingGodId ? PUNISHING_FLOW_CHILDREN_TOTAL : children
+  const availableChildren = childrenPool - spentCost.children - reservedCost.children
   const availableVirgins = virgins - spentCost.virgins - reservedCost.virgins
   const availableTemples = temples - spentCost.temples - reservedCost.temples
   const availableGreatTemples = greatTemples - spentCost.greatTemples - reservedCost.greatTemples
@@ -2395,7 +2406,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
       // the grid, mirroring handleSelectGod/handleBack's own Flip.getState -> flushSync -> Flip.from
       // recipe — the "old" state here is the stage position, the "new" state is wherever each card
       // naturally lands back in the grid (sorted to the end of its tier, per sortedGods below).
-      const flipSelector = authorizeEntries.map(({ god }) => `[data-flip-id="${god.id}:card"]`).join(',')
+      const flipSelector = authorizeFlipSelector(authorizeEntries)
       const flipEls = Array.from(document.querySelectorAll<HTMLElement>(flipSelector))
       const state = flipEls.length > 0 ? Flip.getState(flipEls) : null
       // Commit the spend and clear the selection HERE, at the very end — not at click time — and
@@ -2816,7 +2827,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
               // over to rendering an invisible placeholder in its place (see renderGrid's
               // flyingAway branch) and mounts the real card into AuthorizeStage instead — same
               // Flip.getState -> flushSync -> Flip.from recipe as handleSelectGod's hero transition.
-              const flipSelector = entries.map(({ god }) => `[data-flip-id="${god.id}:card"]`).join(',')
+              const flipSelector = authorizeFlipSelector(entries)
               const flipEls = Array.from(document.querySelectorAll<HTMLElement>(flipSelector))
               const state = flipEls.length > 0 ? Flip.getState(flipEls) : null
               flushSync(() => {
@@ -2851,7 +2862,9 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             flexWrap: 'wrap',
             alignContent: 'center',
             justifyContent: 'center',
-            gap: '24px',
+            // Wider than the grid's own 24px card gap — the enlarged faces need noticeably more
+            // breathing room between them than the small grid cards ever did.
+            gap: '64px',
             padding: '48px',
             // The stage itself never intercepts pointer events (nothing here is clickable while
             // authorizing) — each individual GodCard below already renders with no onClick anyway.
