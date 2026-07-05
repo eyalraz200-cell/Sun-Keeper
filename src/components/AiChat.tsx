@@ -51,9 +51,9 @@ function buildRitualPrompt(god: God, ritual: Ritual, gods: God[]): string {
     p.children   > 0 ? `${p.children} children`     : '',
     p.virgins    > 0 ? `${p.virgins} virgins`        : '',
   ].filter(Boolean).join(', ')
-  const othersNeedingGrandTemple = gods.filter(g => g.id !== god.id && g.angerLevel === 'high' && ritual.sacredSite.name === 'Grand Temple')
+  const othersNeedingGrandTemple = gods.filter(g => g.id !== god.id && g.angerLevel === 'high' && ritual.sacredSite.name === 'Great Pyramid')
   const templeWarning = othersNeedingGrandTemple.length > 0
-    ? ` Note: ${othersNeedingGrandTemple.map(g => g.name).join(', ')} also urgently need the Grand Temple.`
+    ? ` Note: ${othersNeedingGrandTemple.map(g => g.name).join(', ')} also urgently need the Great Pyramid.`
     : ''
   return `Emperor considers "${ritual.name}" for ${god.name.toUpperCase()}. Cost: ${sacrifices}. Site: ${ritual.sacredSite.name}. Duration: ${ritual.duration}. Outcome: ${god.name} becomes ${outcomeLabel(ritual.outcomeColor)}.${templeWarning} Reply with exactly 3 bullet points, each under 8 words, starting with —`
 }
@@ -69,11 +69,21 @@ interface AiChatProps {
   gods: God[]
   ritualMode?: import('../tokens').RitualScreenMode
   onPanelOpenChange?: (open: boolean) => void
+  // True while HomeScreen's bottom HomeActionBar is occupying the bottom-right corner (overview
+  // screen, grid view) — shifts the closed toggle button up so it clears the bar instead of
+  // overlapping it. See HomeScreen.tsx's onActionBarVisibleChange.
+  raised?: boolean
+  // True while HomeScreen's ritual-authorization fly-to-center animation is running — hides the
+  // closed toggle button entirely for that screen. See HomeScreen.tsx's onAuthorizingChange.
+  hidden?: boolean
 }
 
-export function AiChat({ selectedGod, selectedRitual, gods, ritualMode = 'ritual', onPanelOpenChange }: AiChatProps) {
+export function AiChat({ selectedGod, selectedRitual, gods, ritualMode = 'ritual', onPanelOpenChange, raised = false, hidden = false }: AiChatProps) {
   const isExpandedMode = ritualMode === 'expanded'
   const chatBottom = isExpandedMode ? '84px' : '62px'
+  // HomeActionBar's own measured height (64px) plus the same 24px clearance the toggle already
+  // keeps from the viewport edge when the bar is absent.
+  const toggleBottom = raised ? '88px' : '24px'
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -261,14 +271,14 @@ export function AiChat({ selectedGod, selectedRitual, gods, ritualMode = 'ritual
         .xolotl-input::placeholder { color: rgba(255,255,255,0.3); }
       `}</style>
 
-      {!isOpen && (
+      {!isOpen && !hidden && (
         <button
           className="xolotl-trigger"
           onClick={() => setIsOpen(true)}
           style={{
             position: 'fixed',
             right: '24px',
-            bottom: '24px',
+            bottom: toggleBottom,
             width: '54px',
             height: '54px',
             borderRadius: '50%',
@@ -280,7 +290,7 @@ export function AiChat({ selectedGod, selectedRitual, gods, ritualMode = 'ritual
             justifyContent: 'center',
             padding: 0,
             zIndex: 500,
-            transition: 'border-color 0.15s ease',
+            transition: 'border-color 0.15s ease, bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
           <img src={xolotlSvg} width={30} height={38} style={{ display: 'block' }} />
@@ -305,7 +315,7 @@ export function AiChat({ selectedGod, selectedRitual, gods, ritualMode = 'ritual
         }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 20px 16px', borderBottom: '1px solid #333333', flexShrink: 0 }}>
-            <span style={{ fontFamily: FONTS.cinzel, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '3px', color: 'rgba(255,255,255,0.5)' }}>AI Counsel</span>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '3px', color: 'rgba(255,255,255,0.5)' }}>AI Counsel</span>
             <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.3)' }}>
               <X size={15} />
             </button>

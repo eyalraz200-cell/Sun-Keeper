@@ -388,8 +388,15 @@ function buildUltimateRitual(god: God): Ritual {
   const supreme = god.rituals[2]
   const participantTypes = ['prisoners', 'volunteers', 'children', 'virgins'] as const
   const dominant = participantTypes.reduce((a, b) => (supreme.participants[b] > supreme.participants[a] ? b : a))
+  // The dominant type is rounded DOWN to a multiple of 10, not set to the raw total — every
+  // participant pill except virgins rounds its displayed value UP to the nearest 10 (see
+  // RitualParticipantPill's `round` prop), so a raw total that isn't already a multiple of 10
+  // (e.g. RESOURCE_TOTALS.children = 175) would display as MORE than the empire actually has
+  // (180), reading as unaffordable even though the real cost is exactly the full pool. Flooring
+  // here keeps "costs the entire pool" true in spirit while guaranteeing the displayed number
+  // never exceeds what's actually available.
   const bumpedCost = (type: typeof dominant) =>
-    type === dominant ? RESOURCE_TOTALS[type] : Math.min(RESOURCE_TOTALS[type], Math.round(supreme.participants[type] * 1.6))
+    type === dominant ? Math.floor(RESOURCE_TOTALS[type] / 10) * 10 : Math.min(RESOURCE_TOTALS[type], Math.round(supreme.participants[type] * 1.6))
   const supremeDurationDays = parseInt(supreme.duration, 10) || 5
   return {
     id: `${god.id.replace(/-dup-\d+$/, '')}-ultimate`,
@@ -494,7 +501,7 @@ const AUTHORIZE_END_HOLD_MS = 450
 // GSAP would tween the box's literal width/height while that fixed-size content just sat there at
 // full size inside it — growing container, static content, instead of the whole card visibly
 // scaling as one piece.
-const AUTHORIZE_FLY_MS = 700
+const AUTHORIZE_FLY_MS = 1400
 const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, scale: true, zIndex: 1500 }
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
@@ -1422,7 +1429,11 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               bodyColorAnimation={!isPunishing && isActive && bodyColorAnim ? { fromColor: bodyColorAnim.from, toColor: bodyColorAnim.to, duration: 1.4, id: `body-${bodyColorAnim.key}` } : undefined}
               instanceId={`detail-${god.id}`}
               eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 1.6, id: `eye-${eyeAnim.key}` } : undefined}
-              eyeColor={isPunishing ? COLORS.gray0 : undefined}
+              // Forced black while punishing, matching GodCard's own "punishing wins" rule — but
+              // only until a ritual is actually docked (chosenRitual). Once one is, the eyes
+              // should reflect that ritual's outcome color (via eyeAnim/eyeAnimation above) like
+              // any other god's, not stay locked to black — this override no longer applies then.
+              eyeColor={isPunishing && !chosenRitual ? COLORS.gray0 : undefined}
             />
           </div>
         </div>
@@ -2160,6 +2171,9 @@ interface HomeScreenProps {
   // HomeActionBar is occupying the bottom-right corner, so it can move up out of the way
   // instead of overlapping it. See App.tsx/AiChat.tsx for the other side of this wiring.
   onActionBarVisibleChange?: (visible: boolean) => void
+  // Same idea as onActionBarVisibleChange above, but for the ritual-authorization fly-to-center
+  // animation (see isAuthorizing below) — lets the AI toggle button hide itself for that screen.
+  onAuthorizingChange?: (authorizing: boolean) => void
   // True once the user has actually dismissed MacDesktopIntro and can see this screen. AppShell
   // (and HomeScreen inside it) is mounted from t=0 in App.tsx, sitting behind the intro overlay —
   // so the grid's GSAP entrance below fires off this instead of plain mount, or it would play out
@@ -2178,7 +2192,7 @@ interface HomeScreenProps {
   openGodSignal?: number
 }
 
-export function HomeScreen({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, aiPanelOpen = false, onActionBarVisibleChange, entered = true, punishingGodId = null, openGodId = null, openGodSignal = 0 }: HomeScreenProps) {
+export function HomeScreen({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, aiPanelOpen = false, onActionBarVisibleChange, onAuthorizingChange, entered = true, punishingGodId = null, openGodId = null, openGodSignal = 0 }: HomeScreenProps) {
   // Reorders DISPLAY_GOD_BUCKETS/DISPLAY_GODS_BY_TIER so the punishing god's card leads its own
   // tier's cards instead of sitting wherever it naturally falls in GODS order — every scroll-
   // position index below and the list rail itself all read from these instead of the raw module
@@ -2421,6 +2435,9 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   // dependency-triggered effect above never gets a final run with actionBarVisible=false here.
   useEffect(() => () => onActionBarVisibleChange?.(false), [])
 
+  useEffect(() => { onAuthorizingChange?.(isAuthorizing) }, [isAuthorizing])
+  useEffect(() => () => onAuthorizingChange?.(false), [])
+
   // GSAP Flip: capture each of the clicked god's four pieces' rects *before* the DOM changes,
   // force React to commit the grid->list swap synchronously (flushSync — Flip needs the new
   // elements to already exist to animate them), then tween whichever elements now match those
@@ -2546,8 +2563,15 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     // elements — a GSAP/CSS transition can't keep animating a DOM node that's just been removed,
     // so the clones are what actually carry the slide/shrink-away motion to completion.
     spawnRailExitGhost()
-    spawnDividerExitGhost()
+    // Header mask spawned BEFORE the divider ghost (not after) — both use the same z-index, so
+    // paint order is DOM order, and the header mask's opaque backdrop stretches all the way to
+    // the viewport edge (see its own comment) to hide the wider grid subtitle text, which means it
+    // also physically overlaps the divider's x position for the top stretch of its height. Spawned
+    // second, the divider ghost paints on top of that black rectangle instead of getting hidden
+    // under it — appearing as a flat edge slicing across the divider line the instant the mask
+    // appears, well before the divider's own shrink animation actually reaches that point.
     spawnHeaderExitGhost()
+    spawnDividerExitGhost()
     if (activeGod) spawnDrawerExitGhost(activeGod.id)
 
     // Commits (and starts the hero Flip) immediately — see the matching comment in

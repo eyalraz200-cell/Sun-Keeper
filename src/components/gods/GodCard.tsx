@@ -99,10 +99,10 @@ export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RI
 // larger face, so it isn't bound by CARD_WIDTH/FACE_WIDTH above at all — same aspect ratio, just bigger.
 const STAGE_FACE_WIDTH = 260
 const STAGE_FACE_HEIGHT = Math.round(STAGE_FACE_WIDTH * (194 / 125))
-// Pills sit beside the face (not stretched to its width) at roughly the grid card's own ritual
-// panel width — same relative face-left/pills-right arrangement as the grid card, just bigger,
-// so the fly-in reads as this same card growing in place rather than its contents rearranging.
-const STAGE_PILL_WIDTH = 150
+// Pills sit beside the face (not stretched to its width), at the exact same width they render
+// at in the grid card's own ritual panel (RITUAL_PANEL_WIDTH minus that panel's 11px×2 padding) —
+// unlike the face, the pills themselves are not meant to get any bigger here.
+const STAGE_PILL_WIDTH = RITUAL_PANEL_WIDTH - 22
 
 type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
 
@@ -237,14 +237,17 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // shown at full strength — legible enough to still read as "this is what it's becoming", muted
   // enough to match the rest of the card's inert look.
   const baseEye = EYE[god.angerLevel]
-  // Punishing wins over everything else here — a red eye ring would nearly disappear against the
-  // card's own red fill, so it goes black instead, at the same weight the anger level would've
-  // used. Stays black on hover/select too — no flipping back to the anger-level red.
+  // Punishing wins over everything else here while no ritual has been chosen yet — a red eye ring
+  // would nearly disappear against the card's own red fill, so it goes black instead, at the same
+  // weight the anger level would've used. Stays black on hover/select too — no flipping back to
+  // the anger-level red. But once a ritual IS actually docked (the empire is appeasing the god,
+  // not just being threatened by it), the eyes should reflect that ritual's outcome color like any
+  // other god's — falling through to the `outcome` branch below instead of staying forced black.
   // holdBaseEyes (the authorize-stage card only) keeps the eyes on the base anger color for as
   // long as this card hasn't started draining yet — once draining begins, it falls through to the
   // same outcome-color target as everywhere else, so the eyeAnimation tween below carries it from
   // anger color to outcome color over the drain itself instead of showing outcome color upfront.
-  const eyeTarget = isPunishing
+  const eyeTarget = isPunishing && !outcome
     ? { color: COLORS.gray0, weight: baseEye.weight }
     : inProgress && outcome
       ? { color: hexToRgba(outcome.color, 0.45), weight: outcome.weight }
