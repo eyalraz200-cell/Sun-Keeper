@@ -144,9 +144,15 @@ interface GodCardProps {
   // showing the outcome color the instant the animation starts (they've shown it since the ritual
   // was first picked in the grid) instead of visibly shifting color as the god "eats" its tribute.
   holdBaseEyes?: boolean
+  // True only for the centered "authorize stage" card — the look this card needs there differs
+  // from every other caller in three ways, bundled into one flag since they're never used apart:
+  // the face steps two brightness keys up (gray30->gray60), the fire icon and any pill for a
+  // resource this ritual doesn't spend are hidden entirely instead of shown dim/inactive, and the
+  // remaining (active) pills always render white-filled rather than only on ctaHovered/highlight.
+  stageMode?: boolean
 }
 
-export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHoverChange, highlightParticipantType, highlightSite, ctaHovered, isPunishing, draining, ritualInProgress, holdBaseEyes }: GodCardProps) {
+export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHoverChange, highlightParticipantType, highlightSite, ctaHovered, isPunishing, draining, ritualInProgress, holdBaseEyes, stageMode }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const drainProgress = useDrainProgress(!!draining, DRAIN_DURATION_S)
   const inProgress = !!ritualInProgress
@@ -192,7 +198,12 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
         ? (chosenRitual ? COLORS.white : COLORS.gray95)
         : dimmed
           ? COLORS.gray20
-          : (lightMode ? COLORS.gray40 : COLORS.gray30)
+          : stageMode
+            // Waiting for its turn: two steps brighter than the usual gray30. Once its own
+            // drain turn begins, the face goes fully white and stays there — draining never
+            // reverts to false once true, so this also covers "done, remains white".
+            ? (draining ? COLORS.white : COLORS.gray60)
+            : (lightMode ? COLORS.gray40 : COLORS.gray30)
   const bodyAnimKeyRef = useRef(0)
   const [prevBodyColor, setPrevBodyColor] = useState(bodyColor)
   const [bodyColorAnimation, setBodyColorAnimation] = useState<{ fromColor: string; toColor: string; duration: number; id: string } | undefined>(undefined)
@@ -362,23 +373,42 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.gray30, textAlign: 'center' }}>Ritual in progress</span>
         ) : chosenRitual ? (
           <>
-            <div style={{ marginBottom: '8px' }}>
-              <FireIcon size={20} color={panelLight ? COLORS.gray30 : COLORS.gray80} />
-            </div>
+            {!stageMode && (
+              <div style={{ marginBottom: '8px' }}>
+                <FireIcon size={20} color={panelLight ? COLORS.gray30 : COLORS.gray80} />
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: 'auto' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  width: '100%',
+                  // Once this card's own drain finishes (drainProgress tweens 1->0 and holds),
+                  // the pills fade away entirely instead of sitting there drained — the face
+                  // (above) stays white, only the tributes themselves disappear.
+                  opacity: stageMode && drainProgress <= 0 ? 0 : 1,
+                  transition: stageMode ? 'opacity 0.6s ease' : undefined,
+                }}
+              >
                 {([
                   { key: 'prisoners', Icon: PrisonerIcon },
                   { key: 'volunteers', Icon: VolunteerIcon },
                   { key: 'children', Icon: ChildrenIcon },
                   { key: 'virgins', Icon: VirginIcon },
-                ] as const).map(({ key, Icon }) => (
+                ] as const)
+                  // In stageMode, only the participant types this ritual actually spends are shown
+                  // at all — every other caller still shows every type, dim/inactive, as before.
+                  .filter(({ key }) => !stageMode || chosenRitual.participants[key] > 0)
+                  .map(({ key, Icon }) => (
                   // Lights up (white fill) on CTA hover, while the resource bar's matching tab is
                   // hovered, or while the card itself is hovered/selected in grid view — the card
                   // itself no longer highlights as a whole for the CTA/resource-bar cases, only
                   // this pill does; grid hover already brightens the rest of the card too, so this
-                  // just brings the relevant pills along with the same look.
-                  <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} light={lightMode || isPunishing || highlighted || highlightParticipantType === key} liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+                  // just brings the relevant pills along with the same look. Always lit in
+                  // stageMode instead (every pill left after the filter above is active anyway).
+                  <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} light={stageMode || lightMode || isPunishing || highlighted || highlightParticipantType === key} liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
                 ))}
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: panelLight ? COLORS.gray60 : COLORS.gray20, transition: 'background-color 0.4s ease' }} />

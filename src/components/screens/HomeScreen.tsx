@@ -2,7 +2,7 @@ import { useState, useRef, useLayoutEffect, useEffect, Fragment } from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import gsap from 'gsap'
 import { Flip } from 'gsap/Flip'
-import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, ANGER, RESOURCE_TOTALS, SPACING } from '../../tokens'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, ANGER, RESOURCE_TOTALS, SPACING, LAYOUT } from '../../tokens'
 import { GODS, type God, type Ritual, type AngerLevel } from '../../data/gods'
 import { GodSvg } from '../gods/GodSvg'
 import { GodCard, CARD_WIDTH, CARD_HEIGHT, outcomeEye, getSvgRaw, hexToRgba } from '../gods/GodCard'
@@ -69,37 +69,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'butterfly-vigil',
         name: 'Butterfly Vigil',
         description: 'Captives and loyal warriors offered beneath obsidian wings.',
-        participants: { prisoners: 60, children: 0, virgins: 0, volunteers: 40 },
+        participants: { prisoners: 75, children: 0, virgins: 0, volunteers: 20 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Evening',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'tezcatlipoca', before: 55, after: 40 }],
+        effects: [{ godId: 'tezcatlipoca', before: 58, after: 45 }],
       },
       {
         id: 'obsidian-wing-rite',
         name: 'Obsidian Wing Rite',
         description: 'Sacred virgins and a host of devotees dance beneath the night sky.',
-        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        participants: { prisoners: 40, children: 0, virgins: 3, volunteers: 110 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'tezcatlipoca', before: 40, after: 20 }],
+        effects: [{ godId: 'tezcatlipoca', before: 45, after: 24 }],
       },
       {
         id: 'night-warriors-descent',
         name: "Night Warrior's Descent",
         description: 'A grand host of captives, virgins, and devotees descends into obsidian dark.',
-        participants: { prisoners: 100, children: 0, virgins: 5, volunteers: 155 },
+        participants: { prisoners: 130, children: 0, virgins: 6, volunteers: 100 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'tezcatlipoca', before: 20, after: 0 }],
+        effects: [{ godId: 'tezcatlipoca', before: 24, after: 0 }],
       },
     ],
   },
@@ -116,37 +116,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'bone-queens-feast',
         name: "Bone Queen's Feast",
         description: 'Prisoners are laid before the throne of the underworld queen.',
-        participants: { prisoners: 55, children: 0, virgins: 0, volunteers: 45 },
+        participants: { prisoners: 50, children: 0, virgins: 0, volunteers: 40 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'mictlantecuhtli', before: 55, after: 40 }],
+        effects: [{ godId: 'mictlantecuhtli', before: 60, after: 46 }],
       },
       {
         id: 'underworld-descent',
         name: 'Underworld Descent',
         description: 'Devotees and sacred virgins keep watch at the gates of Mictlan.',
-        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 168 },
+        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 145 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'mictlantecuhtli', before: 40, after: 20 }],
+        effects: [{ godId: 'mictlantecuhtli', before: 46, after: 25 }],
       },
       {
         id: 'ladys-final-rite',
         name: "Lady of Mictlan's Rite",
         description: 'A grand procession of captives and virgins crosses into the underworld.',
-        participants: { prisoners: 90, children: 0, virgins: 4, volunteers: 166 },
+        participants: { prisoners: 80, children: 0, virgins: 4, volunteers: 145 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'mictlantecuhtli', before: 20, after: 0 }],
+        effects: [{ godId: 'mictlantecuhtli', before: 25, after: 0 }],
       },
     ],
   },
@@ -163,37 +163,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'twin-stars-toll',
         name: "Twin Star's Toll",
         description: 'Prisoners and fire-keepers are given to the dog-headed guide.',
-        participants: { prisoners: 70, children: 0, virgins: 0, volunteers: 30 },
+        participants: { prisoners: 40, children: 0, virgins: 0, volunteers: 45 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'xiuhtecuhtli', before: 55, after: 40 }],
+        effects: [{ godId: 'xiuhtecuhtli', before: 52, after: 38 }],
       },
       {
         id: 'evening-star-descent',
         name: 'Evening Star Descent',
         description: 'Sacred virgins and devotees walk the sun down into darkness.',
-        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 130 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'xiuhtecuhtli', before: 40, after: 20 }],
+        effects: [{ godId: 'xiuhtecuhtli', before: 38, after: 18 }],
       },
       {
         id: 'xolotls-final-guide',
         name: "Xolotl's Final Guide",
         description: "A grand host of captives and virgins is led through the underworld's trials.",
-        participants: { prisoners: 110, children: 0, virgins: 4, volunteers: 146 },
+        participants: { prisoners: 60, children: 0, virgins: 5, volunteers: 140 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'xiuhtecuhtli', before: 20, after: 0 }],
+        effects: [{ godId: 'xiuhtecuhtli', before: 18, after: 0 }],
       },
     ],
   },
@@ -210,37 +210,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'earthquake-offering',
         name: 'Earthquake Offering',
         description: 'Prisoners and children are cast to still the trembling ground.',
-        participants: { prisoners: 50, children: 30, virgins: 0, volunteers: 20 },
+        participants: { prisoners: 30, children: 40, virgins: 0, volunteers: 20 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'chalchiuhtlicue', before: 55, after: 40 }],
+        effects: [{ godId: 'chalchiuhtlicue', before: 62, after: 48 }],
       },
       {
         id: 'devourers-hunger',
         name: "Devourer's Hunger",
         description: "Children and a sacred virgin feed the earth monster's endless hunger.",
-        participants: { prisoners: 0, children: 80, virgins: 2, volunteers: 88 },
+        participants: { prisoners: 0, children: 70, virgins: 2, volunteers: 60 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'chalchiuhtlicue', before: 40, after: 20 }],
+        effects: [{ godId: 'chalchiuhtlicue', before: 48, after: 26 }],
       },
       {
         id: 'world-below-rite',
         name: 'World-Below Rite',
         description: 'Prisoners, children, and sacred virgins are given to the earth below.',
-        participants: { prisoners: 70, children: 60, virgins: 5, volunteers: 125 },
+        participants: { prisoners: 40, children: 90, virgins: 5, volunteers: 60 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'chalchiuhtlicue', before: 20, after: 0 }],
+        effects: [{ godId: 'chalchiuhtlicue', before: 26, after: 0 }],
       },
     ],
   },
@@ -257,37 +257,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'storm-callers-vow',
         name: "Storm Caller's Vow",
         description: 'Prisoners and devotees brave the gathering squall.',
-        participants: { prisoners: 40, children: 0, virgins: 0, volunteers: 60 },
+        participants: { prisoners: 25, children: 0, virgins: 0, volunteers: 55 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'ehecatl', before: 55, after: 40 }],
+        effects: [{ godId: 'ehecatl', before: 48, after: 33 }],
       },
       {
         id: 'tempest-rite',
         name: 'Tempest Rite',
         description: 'Sacred virgins and a great host stand against the rising tempest.',
-        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 168 },
+        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 117 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'ehecatl', before: 40, after: 20 }],
+        effects: [{ godId: 'ehecatl', before: 33, after: 15 }],
       },
       {
         id: 'hurricanes-reckoning',
         name: "Hurricane's Reckoning",
         description: 'Captives and sacred virgins are given to calm the raging sea.',
-        participants: { prisoners: 80, children: 0, virgins: 5, volunteers: 175 },
+        participants: { prisoners: 55, children: 0, virgins: 5, volunteers: 130 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'ehecatl', before: 20, after: 0 }],
+        effects: [{ godId: 'ehecatl', before: 15, after: 0 }],
       },
     ],
   },
@@ -304,37 +304,37 @@ const FURIOUS_FILLER_GODS: God[] = [
         id: 'serpent-mothers-toll',
         name: "Serpent Mother's Toll",
         description: 'Prisoners and devotees kneel before the mother of the gods.',
-        participants: { prisoners: 45, children: 0, virgins: 0, volunteers: 55 },
+        participants: { prisoners: 35, children: 0, virgins: 0, volunteers: 40 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Morning',
         duration: '2 days',
         outcomeColor: '#d4662a',
         available: true,
-        effects: [{ godId: 'coatlicue', before: 55, after: 40 }],
+        effects: [{ godId: 'coatlicue', before: 56, after: 42 }],
       },
       {
         id: 'skirt-of-serpents-rite',
         name: 'Skirt of Serpents Rite',
         description: 'Sacred virgins and a great host renew her serpent skirt.',
-        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 105 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
         outcomeColor: '#d4a83c',
         available: true,
-        effects: [{ godId: 'coatlicue', before: 40, after: 20 }],
+        effects: [{ godId: 'coatlicue', before: 42, after: 22 }],
       },
       {
         id: 'birth-of-war-rite',
         name: 'Birth of War Rite',
         description: 'Captives and sacred virgins reenact the birth of Huitzilopochtli.',
-        participants: { prisoners: 95, children: 0, virgins: 4, volunteers: 161 },
+        participants: { prisoners: 65, children: 0, virgins: 4, volunteers: 120 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
         outcomeColor: '#c8a83c',
         available: true,
-        effects: [{ godId: 'coatlicue', before: 20, after: 0 }],
+        effects: [{ godId: 'coatlicue', before: 22, after: 0 }],
       },
     ],
   },
@@ -746,6 +746,21 @@ const RAIL_SLIDE_STYLE: React.CSSProperties = {
 // (via spawnRailExitGhost, since the real rail unmounts synchronously) and the card finish
 // shrinking/sliding out at the same instant, same as they finish growing/sliding in together.
 const RAIL_EXIT_DURATION_MS = HERO_TRANSITION_MS
+// The divider doesn't slide in sideways with the rows (no RAIL_SLIDE_STYLE) — it stays fully
+// visible in its final position throughout, at a right-side seam that's still empty grid/carousel
+// space until the rows arrive. Instead it's held collapsed to nothing (scaleY(0), anchored at its
+// own top edge via transformOrigin) until the rows have actually landed (delay:
+// HERO_TRANSITION_MS), then grows straight down to full height — reads as the seam being drawn in
+// after the rest of the rail settles, rather than one more thing sliding in from off-screen.
+const DIVIDER_REVEAL_DURATION_MS = 350
+const DIVIDER_REVEAL_STYLE: React.CSSProperties = {
+  transformOrigin: 'top',
+  animation: `homeRailDividerGrow ${DIVIDER_REVEAL_DURATION_MS}ms ease-out ${HERO_TRANSITION_MS}ms both`,
+}
+// Mirrors DIVIDER_REVEAL_STYLE for the exit direction — the ghost clone (spawnDividerExitGhost)
+// plays this in reverse (full height -> collapsed) right away, so the seam retracts back into its
+// own top edge instead of sliding away sideways with the rest of the rail.
+const DIVIDER_EXIT_DURATION_MS = DIVIDER_REVEAL_DURATION_MS
 
 // handleBack's list->grid transition unmounts GodListLayout (and the rail with it) synchronously
 // via flushSync, same as the grid->list direction unmounts the grid — needed so the hero Flip
@@ -764,13 +779,28 @@ function spawnRailExitGhost() {
   const dividerEl = document.querySelector<HTMLElement>('[data-god-rail-divider]')
   if (!rowsEl || !dividerEl) return
   const rowsRect = rowsEl.getBoundingClientRect()
-  const dividerRect = dividerEl.getBoundingClientRect()
+
+  // Clips the ghost at SidebarNav's own right edge (LAYOUT.navWidth) so sliding it out to the
+  // left makes it disappear BEHIND the nav strip instead of sliding on top of it — the ghost's
+  // z-index (needed to stay above the incoming grid, see below) would otherwise also put it above
+  // the nav, reading as the rail briefly covering the nav icons as it exits.
+  const clip = document.createElement('div')
+  clip.style.position = 'fixed'
+  clip.style.top = `${rowsRect.top}px`
+  clip.style.left = `${LAYOUT.navWidth}px`
+  // Rows only now — the divider gets its own separate, non-sliding ghost (spawnDividerExitGhost),
+  // so this only needs to span the rows' own width, not out to the divider's right edge anymore.
+  clip.style.width = `${rowsRect.right - LAYOUT.navWidth}px`
+  clip.style.height = `${rowsRect.height}px`
+  clip.style.overflow = 'hidden'
+  clip.style.zIndex = '2000'
+  clip.style.pointerEvents = 'none'
 
   const ghost = document.createElement('div')
-  ghost.style.position = 'fixed'
-  ghost.style.top = `${rowsRect.top}px`
-  ghost.style.left = `${rowsRect.left}px`
-  ghost.style.width = `${dividerRect.right - rowsRect.left}px`
+  ghost.style.position = 'absolute'
+  ghost.style.top = '0'
+  ghost.style.left = `${rowsRect.left - LAYOUT.navWidth}px`
+  ghost.style.width = `${rowsRect.width}px`
   ghost.style.height = `${rowsRect.height}px`
   // Opaque backdrop — the real rail rows/divider never needed their own solid background (the
   // app's own black bg always showed through behind them), but this ghost slides on TOP of the
@@ -778,10 +808,9 @@ function spawnRailExitGhost() {
   // through at once and blend together — reading as the rail "fading out" into the grid instead of
   // a clean opaque panel sliding away to reveal it.
   ghost.style.backgroundColor = COLORS.black
-  ghost.style.zIndex = '2000'
-  ghost.style.pointerEvents = 'none'
   ghost.style.transition = `transform ${RAIL_EXIT_DURATION_MS}ms ease-in`
   ghost.style.willChange = 'transform'
+  clip.appendChild(ghost)
 
   const rowsClone = rowsEl.cloneNode(true) as HTMLElement
   rowsClone.style.position = 'absolute'
@@ -793,20 +822,41 @@ function spawnRailExitGhost() {
   rowsClone.style.animation = 'none'
   ghost.appendChild(rowsClone)
 
-  const dividerClone = dividerEl.cloneNode(true) as HTMLElement
-  dividerClone.style.position = 'absolute'
-  dividerClone.style.top = '0'
-  dividerClone.style.left = `${rowsRect.width}px`
-  dividerClone.style.height = `${rowsRect.height}px`
-  dividerClone.style.visibility = 'visible'
-  dividerClone.style.animation = 'none'
-  ghost.appendChild(dividerClone)
-
-  document.body.appendChild(ghost)
+  document.body.appendChild(clip)
   requestAnimationFrame(() => {
     ghost.style.transform = 'translateX(-320px)'
   })
-  setTimeout(() => ghost.remove(), RAIL_EXIT_DURATION_MS + 50)
+  setTimeout(() => clip.remove(), RAIL_EXIT_DURATION_MS + 50)
+}
+
+// Mirrors DIVIDER_REVEAL_STYLE for the exit direction: the divider doesn't slide away sideways
+// with the rows (see spawnRailExitGhost above, which no longer includes it) — instead this clones
+// it in place (no horizontal movement at all) and immediately shrinks it back up into its own top
+// edge, the reverse of how it grew down into place on entrance. Same clone-before-unmount
+// reasoning as spawnRailExitGhost/spawnDrawerExitGhost: the real divider is gone the instant
+// flushSync commits, so only a clone can carry the shrink animation to completion.
+function spawnDividerExitGhost() {
+  const dividerEl = document.querySelector<HTMLElement>('[data-god-rail-divider]')
+  if (!dividerEl) { console.log('DEBUG no dividerEl'); return }
+  const rect = dividerEl.getBoundingClientRect()
+  console.log('DEBUG dividerRect', JSON.stringify({ top: rect.top, left: rect.left, width: rect.width, height: rect.height }))
+  const ghost = dividerEl.cloneNode(true) as HTMLElement
+  ghost.style.position = 'fixed'
+  ghost.style.top = `${rect.top}px`
+  ghost.style.left = `${rect.left}px`
+  ghost.style.width = `${rect.width}px`
+  ghost.style.height = `${rect.height}px`
+  ghost.style.margin = '0'
+  ghost.style.transformOrigin = 'top'
+  ghost.style.zIndex = '2000'
+  ghost.style.pointerEvents = 'none'
+  ghost.style.animation = 'none'
+  ghost.style.transition = `transform ${DIVIDER_EXIT_DURATION_MS}ms ease-in`
+  document.body.appendChild(ghost)
+  requestAnimationFrame(() => {
+    ghost.style.transform = 'scaleY(0)'
+  })
+  setTimeout(() => ghost.remove(), DIVIDER_EXIT_DURATION_MS + 50)
 }
 
 // Same problem, same fix as spawnRailExitGhost above, for the candidate ritual row instead of the
@@ -1851,13 +1901,12 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
       </div>
       {/* The rail's right-edge divider — a separate sibling (not nested inside the rows div
           above) so it spans the FULL column height (alongside the header too, not just the
-          scrollable rows section), matching how it looked before this became animated. Given its
-          own copy of the identical slide style (RAIL_SLIDE_STYLE, same keyframes/timing as the rows
-          above) rather than being made a child of the rows wrapper, since nesting it there
-          clipped its height down to just the rows section — leaving a gap where it used to run
-          past the header. Two elements sharing one animation move in lockstep just as reliably as
-          one element containing both. */}
-      <div data-god-rail-divider style={{ flexShrink: 0, width: '1px', backgroundColor: COLORS.gray20, ...RAIL_SLIDE_STYLE }} />
+          scrollable rows section), matching how it looked before this became animated. Nesting it
+          inside the rows wrapper clipped its height down to just the rows section — leaving a gap
+          where it used to run past the header. Uses DIVIDER_REVEAL_STYLE (grows top-down once the
+          rows have landed), not RAIL_SLIDE_STYLE — see that constant's own comment for why it
+          doesn't slide sideways in lockstep with the rows the way it used to. */}
+      <div data-god-rail-divider style={{ flexShrink: 0, width: '1px', backgroundColor: COLORS.gray20, ...DIVIDER_REVEAL_STYLE }} />
       <GodFreeCarousel
         gods={gods}
         scrollPos={scrollPos}
@@ -1882,6 +1931,10 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
         @keyframes homeRailSlideIn {
           from { transform: translateX(-320px); }
           to { transform: translateX(0); }
+        }
+        @keyframes homeRailDividerGrow {
+          from { transform: scaleY(0); }
+          to { transform: scaleY(1); }
         }
       `}</style>
     </div>
@@ -2434,12 +2487,13 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     // All three pieces — hero card, candidate ritual cards, and the rail — start and run at the
     // same time, over the same HERO_TRANSITION_MS, so they land together instead of one waiting
     // on another. (An earlier version ran the ritual cards' slide-down to completion first, then
-    // started the card+rail; that read as a dead pause before anything else moved.) Both the rail
-    // and the candidate row are snapshotted into their own ghost clones (spawnRailExitGhost,
-    // spawnDrawerExitGhost) BEFORE the flushSync below unmounts the real elements — a GSAP tween
-    // can't keep animating a DOM node that's just been removed, so the clones are what actually
-    // carry the slide-away motion to completion.
+    // started the card+rail; that read as a dead pause before anything else moved.) The rail rows,
+    // divider, and candidate row are all snapshotted into their own ghost clones (spawnRailExitGhost,
+    // spawnDividerExitGhost, spawnDrawerExitGhost) BEFORE the flushSync below unmounts the real
+    // elements — a GSAP/CSS transition can't keep animating a DOM node that's just been removed,
+    // so the clones are what actually carry the slide/shrink-away motion to completion.
     spawnRailExitGhost()
+    spawnDividerExitGhost()
     if (activeGod) spawnDrawerExitGhost(activeGod.id)
 
     // Commits (and starts the hero Flip) immediately — see the matching comment in
@@ -2575,7 +2629,9 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           </div>
         </div>
       )}
-      <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} />
+      <div style={{ flexShrink: 0, opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+        <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} />
+      </div>
       <div
         ref={scrollContainerRef}
         style={{
@@ -2718,6 +2774,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
               chosenRitual={ritual}
               draining={authorizeStepIndex >= i}
               holdBaseEyes
+              stageMode
               isPunishing={isPunishingGodId(god.id, punishingGodId)}
             />
           ))}
