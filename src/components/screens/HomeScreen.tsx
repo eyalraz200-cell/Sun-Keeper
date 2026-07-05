@@ -526,6 +526,20 @@ const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.o
 // stageMode branch for why all three (not just :card, and not just :face) are needed.
 const authorizeFlipSelector = (entries: Array<{ god: God; ritual: Ritual }>) =>
   entries.map(({ god }) => `[data-flip-id="${god.id}:card"], [data-flip-id="${god.id}:name"], [data-flip-id="${god.id}:face"]`).join(', ')
+// Same three-piece selector as authorizeFlipSelector, but scoped to a single entry — the finalize
+// timeout's fly-BACK (not the fly-in) fires one of these per entry instead of one shared
+// Flip.from for the whole batch, so each entry can be given its own delay/zIndex (see
+// AUTHORIZE_RETURN_STAGGER_S below).
+const authorizeFlipSelectorForGod = (godId: string) =>
+  `[data-flip-id="${godId}:card"], [data-flip-id="${godId}:name"], [data-flip-id="${godId}:face"]`
+// Every returning card starts from roughly the same stage cluster and flies out to a DIFFERENT
+// final grid slot, on a different heading — dead simultaneous flights whose slots happen to sit
+// close together (e.g. the last slot of one tier directly above the last slot of the next) can
+// have their straight-line paths visibly cross and overlap mid-flight, since nothing otherwise
+// staggers or separates them. Firing each entry's own Flip.from a little after the previous one
+// (instead of one shared Flip.from covering every entry at once) spreads their departures out in
+// time so two cards are far less likely to occupy the same screen region at the same instant.
+const AUTHORIZE_RETURN_STAGGER_S = 0.15
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
 // docking/undocking a ritual reads as spending/refunding resources rather than a hard cut.
@@ -2518,7 +2532,22 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         // why the rest of the grid needs to stay hidden until the Flip below actually finishes.
         setFlyingBackGodIds(returningGodIds)
       })
-      if (state) Flip.from(state, { ...AUTHORIZE_FLIP_VARS, targets: flipSelector, onComplete: () => setFlyingBackGodIds(null) })
+      // One Flip.from PER ENTRY (not a single shared call across the whole selector) so each can
+      // carry its own stagger delay and stacking order — see AUTHORIZE_RETURN_STAGGER_S's own
+      // comment for why simultaneous flights need separating. onComplete only needs to fire once,
+      // so it's attached to the last (most-delayed) entry, which is always the last to land.
+      if (state) {
+        authorizeEntries.forEach(({ god }, i) => {
+          const isLast = i === authorizeEntries.length - 1
+          Flip.from(state, {
+            ...AUTHORIZE_FLIP_VARS,
+            targets: authorizeFlipSelectorForGod(god.id),
+            delay: i * AUTHORIZE_RETURN_STAGGER_S,
+            zIndex: AUTHORIZE_FLIP_VARS.zIndex + i,
+            onComplete: isLast ? () => setFlyingBackGodIds(null) : undefined,
+          })
+        })
+      }
     }, totalDrainMs + AUTHORIZE_END_HOLD_MS))
     return () => timers.forEach(clearTimeout)
   }, [authorizeEntries])
@@ -2805,6 +2834,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 isPunishing={isPunishingGodId(god.id, punishingGodId)}
                 draining={draining}
                 ritualInProgress={ritualInProgress}
+                isReturning={isReturning}
               />
             )}
           </div>

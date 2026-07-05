@@ -165,9 +165,18 @@ interface GodCardProps {
   // resource this ritual doesn't spend are hidden entirely instead of shown dim/inactive, and the
   // remaining (active) pills always render white-filled rather than only on ctaHovered/highlight.
   stageMode?: boolean
+  // True only while this specific card is mid-flight back from the authorize stage to its grid
+  // slot (HomeScreen's flyingBackGodIds) — several returning cards can be airborne at once, flying
+  // from a shared stage cluster toward different (sometimes distant) destinations, and their
+  // straight-line paths can visibly cross/overlap along the way. A drop shadow here gives the
+  // overlap some depth (one card reading as passing in front of/above the other) instead of two
+  // flat, near-identical-toned card fills clashing edge-to-edge. Dropped again the instant the
+  // Flip completes (ritualInProgress's own boxShadow:'none' below still applies once this clears),
+  // matching that state's deliberately flat/inert at-rest look.
+  isReturning?: boolean
 }
 
-export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHoverChange, highlightParticipantType, highlightSite, ctaHovered, isPunishing, draining, ritualInProgress, holdBaseEyes, stageMode }: GodCardProps) {
+export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHoverChange, highlightParticipantType, highlightSite, ctaHovered, isPunishing, draining, ritualInProgress, holdBaseEyes, stageMode, isReturning }: GodCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const drainProgress = useDrainProgress(!!draining, DRAIN_DURATION_S)
   const inProgress = !!ritualInProgress
@@ -398,7 +407,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
         borderRadius: '4px',
         // A ritual actually in progress drops both the drop shadow and the outer stroke — the
         // card is meant to read as flat/inert, not as a raised, interactive-looking surface.
-        boxShadow: inProgress ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
+        // isReturning overrides that while this card is still mid-flight (see its own comment) —
+        // it only actually finishes settling into the flat look once the Flip completes and
+        // isReturning clears.
+        boxShadow: isReturning ? '0 16px 32px rgba(0,0,0,0.55)' : inProgress ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
         cursor: onClick ? 'pointer' : undefined,
         // While a ritual is actually in progress, the punishing red fill drops to a much less
         // opaque tint instead of the full-strength flat red used while still waiting to be
