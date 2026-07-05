@@ -60,7 +60,7 @@ function abbreviateDuration(duration: string): string {
 // DashboardScreen.tsx, and importing from HomeScreen.tsx would create a circular import, since
 // HomeScreen already imports GodCard) with HomeScreen.tsx's AUTHORIZE_STEP_DURATION_MS, so a
 // card's own pill drain and the resource bar's countdown land together.
-const DRAIN_DURATION_S = 1.8
+const DRAIN_DURATION_S = 1
 
 // Tweens a 0..1 progress value from 1 (full) down to 0 (drained) once `draining` goes true, then
 // holds at 0 — mirrors RitualResultScreen's own useCountTween in spirit (animate()-driven, gated

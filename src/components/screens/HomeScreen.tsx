@@ -495,18 +495,18 @@ function ResourceDivider({ fullBleed }: { fullBleed?: boolean } = {}) {
   return <div style={{ flexShrink: 0, width: fullBleed ? '2px' : '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
 }
 
-const RESOURCE_COUNT_ANIM_DURATION = 1800
+const RESOURCE_COUNT_ANIM_DURATION = 1000
 
 // Ritual-authorization drain sequence timing (see authorizeEntries/authorizeStepIndex state in
-// HomeScreen below). AUTHORIZE_STEP_DURATION_MS has its own (slower) literal rather than reusing
-// RESOURCE_COUNT_ANIM_DURATION (that constant stays fast — it's also used for the unrelated
-// docking/undocking preview elsewhere), but is kept in sync BY CONVENTION with GodCard.tsx's
-// DRAIN_DURATION_S so each god's own pill drain and the resource bar's own useAnimatedNumber tween
-// still land together, one god-turn at a time. All four are easily tunable starting points, not a
-// strict spec.
+// HomeScreen below). AUTHORIZE_STEP_DURATION_MS has its own literal rather than reusing
+// RESOURCE_COUNT_ANIM_DURATION (that constant is also used for the unrelated docking/undocking
+// preview elsewhere), but is kept in sync BY CONVENTION with GodCard.tsx's DRAIN_DURATION_S and
+// with RESOURCE_COUNT_ANIM_DURATION so each god's own pill drain and the resource bar's own
+// useAnimatedNumber tween still land together, one god-turn at a time. All four are easily
+// tunable starting points, not a strict spec.
 const AUTHORIZE_CHROME_FADE_MS = 400
-const AUTHORIZE_STEP_DURATION_MS = 1800
-const AUTHORIZE_STEP_GAP_MS = 180
+const AUTHORIZE_STEP_DURATION_MS = 1000
+const AUTHORIZE_STEP_GAP_MS = 100
 const AUTHORIZE_END_HOLD_MS = 450
 
 // Chosen cards fly from their grid position into a centered "authorize stage" before the drain
