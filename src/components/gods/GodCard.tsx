@@ -101,6 +101,14 @@ export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RI
 // Pills sit beside the face (not stretched to its width), at the exact same width they render at
 // in the grid card's own ritual panel (RITUAL_PANEL_WIDTH minus that panel's 11px×2 padding).
 const STAGE_PILL_WIDTH = RITUAL_PANEL_WIDTH - 22
+const STAGE_PILL_GAP = 20
+// :card is given this EXACT explicit width (face + gap + pills) even though the pills are
+// positioned absolutely inside it — so its rendered box always reports its true visual footprint
+// to whatever flex container lays multiple stage cards out (see AuthorizeStage in HomeScreen.tsx),
+// letting a plain, reasonable `gap` between cards actually prevent one card's pills from
+// overlapping the next card's face, instead of needing a big fudge-factor gap to compensate for
+// an under-reported box width.
+const STAGE_CARD_WIDTH = FACE_WIDTH + STAGE_PILL_GAP + STAGE_PILL_WIDTH
 
 type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
 
@@ -211,10 +219,11 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
         : dimmed
           ? COLORS.gray20
           : stageMode
-            // Waiting for its turn: two steps brighter than the usual gray30. Once its own
-            // drain turn begins, the face goes fully white and stays there — draining never
-            // reverts to false once true, so this also covers "done, remains white".
-            ? (draining ? COLORS.white : COLORS.gray60)
+            // Waiting for its turn: one step darker than the usual gray30, so the whole batch
+            // starts out visibly dim/inert. Once its own drain turn begins, the face goes fully
+            // white and stays there — draining never reverts to false once true, so this also
+            // covers "done, remains white".
+            ? (draining ? COLORS.white : COLORS.gray20)
             : (lightMode ? COLORS.gray40 : COLORS.gray30)
   const bodyAnimKeyRef = useRef(0)
   const [prevBodyColor, setPrevBodyColor] = useState(bodyColor)
@@ -310,12 +319,14 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // animation, an in-flow sibling would collapse into the space they vacated, overlapping them
   // (this is what actually happened before this comment existed). Pinning them with
   // `position:absolute` against :card (always, not just mid-flip) sidesteps that entirely — they
-  // never participate in :card's flex flow, so nothing :name/:face do can disturb them, and
-  // `left:100%` naturally keeps them riding along the card's right edge as :card's own size tweens.
+  // never participate in :card's flex flow, so nothing :name/:face do can disturb them. :card is
+  // given STAGE_CARD_WIDTH explicitly (rather than left to shrink-wrap just the face) specifically
+  // so this absolute-positioned content still counts toward :card's own reported box size — see
+  // STAGE_CARD_WIDTH's own comment for why that matters to HomeScreen's stage layout.
   if (stageMode) {
     const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40
     return (
-      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', width: `${STAGE_CARD_WIDTH}px` }}>
         {/* Name centered directly above the face — both share the face's own width. */}
         <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
           {god.name}
@@ -327,10 +338,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
           <div
             style={{
               position: 'absolute',
-              left: '100%',
+              left: `${FACE_WIDTH + STAGE_PILL_GAP}px`,
               top: '50%',
               transform: 'translateY(-50%)',
-              marginLeft: '20px',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
@@ -350,7 +360,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
               // Only the participant types this ritual actually spends are shown at all.
               .filter(({ key }) => chosenRitual.participants[key] > 0)
               .map(({ key, Icon }) => (
-                <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+                // Dark/inert (light=false) until this card's own drain turn starts — only actively
+                // counting down turns the pills white, matching the face's own idle->white shift.
+                <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light={draining} liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
               ))}
           </div>
         )}

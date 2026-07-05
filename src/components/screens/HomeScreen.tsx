@@ -2889,14 +2889,12 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             flexWrap: 'wrap',
             alignContent: 'center',
             justifyContent: 'center',
-            // Wider than the grid's own 24px card gap on purpose: each card's pills are
-            // position:absolute against it (see GodCard.tsx's stageMode branch), so they don't
-            // contribute to the card's own box width here — a plain 24px gap would only space out
-            // the (pill-less) name/face boxes and let one card's pills overlap the next card's
-            // face. This needs to clear that pill overhang (~87px: STAGE_PILL_WIDTH + its 20px
-            // margin) plus actual breathing room on top of it.
-            gap: '120px',
-            padding: '48px',
+            // GodCard.tsx's stageMode branch gives :card an explicit STAGE_CARD_WIDTH (covering
+            // its absolutely-positioned pills too), so this box's reported width already includes
+            // the pills — a plain gap here is real breathing room between cards, not a fudge
+            // factor compensating for an under-reported box width like before.
+            gap: '64px',
+            padding: '80px',
             // Faces stay at their normal grid-card size (see GodCard.tsx's stageMode comment) no
             // matter how many gods are in this batch, so a big enough batch could in principle
             // need more room than the viewport has — scroll instead of letting cards clip off the
