@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { COLORS, LAYOUT } from '../../tokens'
-import { SquaresFour } from '@phosphor-icons/react'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
 import logoUrl from '../../assets/logo.svg'
@@ -39,15 +38,16 @@ function SkullIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
-function NavButton({ onClick, children, active = false }: { onClick?: () => void; children: (color: string) => React.ReactNode; active?: boolean }) {
+function NavButton({ onClick, children, active = false, disabled = false, dimColor = COLORS.gray20 }: { onClick?: () => void; children: (color: string) => React.ReactNode; active?: boolean; disabled?: boolean; dimColor?: string }) {
   const [hovered, setHovered] = useState(false)
-  const color = active ? COLORS.white : hovered ? COLORS.gray60 : COLORS.gray40
+  const color = disabled ? dimColor : active ? COLORS.gray95 : hovered ? COLORS.gray60 : COLORS.gray40
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ width: '32px', height: '32px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+      disabled={disabled}
+      style={{ width: '32px', height: '32px', backgroundColor: 'transparent', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
     >
       {children(color)}
     </button>
@@ -79,24 +79,21 @@ export function SidebarNav({ activeScreen = 'overview', onNavClick }: SidebarNav
       <NavButton onClick={() => onNavClick?.('overview')} active={activeScreen === 'overview'}>
         {color => <PyramidIcon size={24} color={color} />}
       </NavButton>
-      <NavButton onClick={() => onNavClick?.('dashboard')} active={activeScreen === 'dashboard'}>
-        {color => <SquaresFour size={24} color={color} weight="regular" />}
-      </NavButton>
-      <NavButton onClick={() => onNavClick?.('calendar')} active={activeScreen === 'calendar'}>
+      <NavButton disabled active={activeScreen === 'calendar'}>
         {color => <CalendarIcon size={24} color={color} />}
       </NavButton>
-      <NavButton onClick={() => onNavClick?.('resources')} active={activeScreen === 'resources'}>
+      <NavButton disabled active={activeScreen === 'resources'}>
         {color => <PrisonerIcon size={24} color={color} />}
       </NavButton>
-      <NavButton onClick={() => onNavClick?.('index')} active={activeScreen === 'index'}>
+      <NavButton disabled active={activeScreen === 'index'}>
         {color => <SkullIcon size={24} color={color} />}
       </NavButton>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingBottom: '24px' }}>
-        <NavButton onClick={() => onNavClick?.('settings')}>
+        <NavButton disabled dimColor={COLORS.gray30} onClick={() => onNavClick?.('settings')}>
           {color => <GearIcon size={24} color={color} />}
         </NavButton>
-        <NavButton onClick={() => onNavClick?.('profile')}>
+        <NavButton disabled dimColor={COLORS.gray30} onClick={() => onNavClick?.('profile')}>
           {color => <ProfileIcon size={24} color={color} />}
         </NavButton>
       </div>

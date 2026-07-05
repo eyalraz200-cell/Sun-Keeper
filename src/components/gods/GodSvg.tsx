@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { AngerLevel } from '../../data/gods'
 import { EYE, COLORS } from '../../tokens'
 
@@ -19,6 +20,17 @@ export interface EyeAnimation {
   id?: string
 }
 
+// Animates the body fill from one flat color to another — same CSS-@keyframes-on-fresh-markup
+// technique EyeAnimation uses, needed because dangerouslySetInnerHTML replaces the DOM subtree
+// wholesale every render, so a plain CSS `transition` on `fill` never has a persisting element
+// to transition from/to.
+export interface BodyColorAnimation {
+  fromColor: string
+  toColor: string
+  duration?: number
+  id?: string
+}
+
 export interface GodSvgProps {
   svgRaw: string
   angerLevel: AngerLevel
@@ -28,6 +40,12 @@ export interface GodSvgProps {
   filledEyes?: boolean
   eyeGlow?: boolean
   bodyColor?: string
+  bodyColorAnimation?: BodyColorAnimation
+  // Static override for the eye stroke/fill color, taking precedence over the anger-level lookup
+  // (and any isSelected/hover tint) — the punishing-god treatment needs black eyes against its red
+  // card background, since the normal red ring would nearly disappear against a red fill. Every
+  // other caller leaves this unset and gets the usual EYE-token-driven color.
+  eyeColor?: string
   hideEyes?: boolean
   // Pulsing glow behind the eye circles, colored to the eye's own stroke color.
   // Currently only used for high-anger ("Furious") gods in the overview grid.
@@ -53,21 +71,30 @@ function parseCircles(eyesBlock: string) {
   return circles
 }
 
-export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, hideEyes = false, glow = false, instanceId = '' }: GodSvgProps) {
+function GodSvgImpl({ svgRaw, angerLevel, isHovered = false, isSelected = false, eyeAnimation, filledEyes = false, eyeGlow = false, bodyColor: bodyColorOverride, bodyColorAnimation, eyeColor: eyeColorOverride, hideEyes = false, glow = false, instanceId = '' }: GodSvgProps) {
   const idSalt = instanceId ? `${instanceId.replace(/[^a-zA-Z0-9-]/g, '')}-` : ''
   const baseEye = EYE_STYLES[angerLevel]
-  const eye = isSelected
+  let eye = isSelected
     ? { color: SELECTED_EYE_OVERRIDES[angerLevel] ?? baseEye.color, weight: baseEye.weight }
     : isHovered && angerLevel === 'none'
     ? { color: COLORS.gray95, weight: 2 }
     : baseEye
+  if (eyeColorOverride) eye = { ...eye, color: eyeColorOverride }
 
   const bodySvg = svgRaw
     .replace(/fill="black"/g, `fill="${COLORS.gray40}"`)
     .replace(/fill="white"/g, `fill="${COLORS.gray40}"`)
     .replace(/fill="#[Ff][Ee][Ff][Ee][Ff][Ee]"/g, `fill="${COLORS.gray40}"`)
   const bodyColor = bodyColorOverride ?? (isSelected ? COLORS.gray0 : isHovered ? COLORS.gray95 : COLORS.gray40)
-  const coloredBody = bodySvg.replace(new RegExp(`fill="${COLORS.gray40}"`, 'g'), `fill="${bodyColor}"`)
+  // Animated variant bakes a CSS @keyframes fill transition into the fresh markup instead of a
+  // flat fill attribute — see BodyColorAnimation above for why a plain CSS transition can't work.
+  const bodyAnimName = bodyColorAnimation ? `bodyShift-${idSalt}${bodyColorAnimation.id ?? 'body'}` : ''
+  const bodyAnimStyle = bodyColorAnimation
+    ? `<style>@keyframes ${bodyAnimName} { 0% { fill: ${bodyColorAnimation.fromColor}; } 100% { fill: ${bodyColorAnimation.toColor}; } }</style>`
+    : ''
+  const coloredBody = bodyColorAnimation
+    ? bodySvg.replace(new RegExp(`fill="${COLORS.gray40}"`, 'g'), `fill="${bodyColorAnimation.toColor}" style="animation: ${bodyAnimName} ${bodyColorAnimation.duration ?? 0.3}s ease forwards"`)
+    : bodySvg.replace(new RegExp(`fill="${COLORS.gray40}"`, 'g'), `fill="${bodyColor}"`)
 
   const eyesMatch = coloredBody.match(/<g id="eyes">([\s\S]*?)<\/g>/)
   const eyesContent = eyesMatch?.[1] ?? ''
@@ -115,8 +142,21 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     }).join('\n')
 
     if (eyeAnimation) {
-      const { fromColor, fromWeight, toColor, toWeight, delay = 0.8, duration = 2, id = 'ritual' } = eyeAnimation
-      const animName = `eyeShift-${id}`
+      const { fromColor: rawFromColor, fromWeight, toColor: rawToColor, toWeight, delay = 0.8, duration = 2, id = 'ritual' } = eyeAnimation
+      // eyeColorOverride wins here too, not just in the plain (no-eyeAnimation) branch below —
+      // otherwise a caller mid-animating eyes toward a ritual's outcome color (HomeGodDetailPanel's
+      // dock/undock tween) would silently ignore the override the instant a ritual gets docked.
+      // From===to when overridden, so there's simply no visible color animation while it's set.
+      const fromColor = eyeColorOverride ?? rawFromColor
+      const toColor = eyeColorOverride ?? rawToColor
+      // Unlike bodyAnimName above, this wasn't salted with idSalt — `id` alone (e.g. a small
+      // per-instance counter like HomeGodDetailPanel's `eyeAnim.key`) collides across different
+      // gods' simultaneously-mounted GodSvg instances, since @keyframes names are global: two
+      // gods both on their first dock (id "eye-1") would fight over one keyframes rule, and
+      // whichever rendered last "wins" for both, making an unrelated god's eyes show the wrong
+      // color. idSalt (derived from instanceId, which every caller already sets to include the
+      // god's own id) guarantees uniqueness the same way it already does for clipPath ids below.
+      const animName = `eyeShift-${idSalt}${id}`
       const animStyle = `<style>@keyframes ${animName} { 0% { stroke: ${fromColor}; stroke-width: ${fromWeight * 2}; } 100% { stroke: ${toColor}; stroke-width: ${toWeight * 2}; } }</style>`
       const animCircles = circles.map((c) => {
         const uid = idSalt + c.cx.replace('.', '')
@@ -170,7 +210,7 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
 
   const svg = coloredBody
     .replace(/<g id="eyes">[\s\S]*?<\/g>/, '')
-    .replace('</svg>', `${eyesGroup}</svg>`)
+    .replace('</svg>', `${eyesGroup}${bodyAnimStyle}</svg>`)
     .replace(/(<svg[^>]*)\swidth="[^"]*"/, '$1 width="100%"')
     .replace(/(<svg[^>]*)\sheight="[^"]*"/, '$1 height="100%"')
 
@@ -181,3 +221,40 @@ export function GodSvg({ svgRaw, angerLevel, isHovered = false, isSelected = fal
     />
   )
 }
+
+function eyeAnimationEqual(a?: EyeAnimation, b?: EyeAnimation): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return a.fromColor === b.fromColor && a.fromWeight === b.fromWeight && a.toColor === b.toColor
+    && a.toWeight === b.toWeight && a.delay === b.delay && a.duration === b.duration && a.id === b.id
+}
+
+function bodyColorAnimationEqual(a?: BodyColorAnimation, b?: BodyColorAnimation): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return a.fromColor === b.fromColor && a.toColor === b.toColor && a.duration === b.duration && a.id === b.id
+}
+
+// dangerouslySetInnerHTML always replaces the DOM subtree wholesale, even when the generated
+// markup string is byte-identical to last render — which restarts any embedded CSS @keyframes
+// (the eye-color transition) from 0%. A parent re-render having nothing to do with this god (e.g.
+// a sibling ritual card's hover state) would otherwise make the eyes visibly flash on every such
+// re-render. `eyeAnimation` is passed as a fresh object literal each render, which would also
+// defeat React.memo's default shallow comparison — compare its fields by value instead.
+function godSvgPropsEqual(prev: GodSvgProps, next: GodSvgProps): boolean {
+  return prev.svgRaw === next.svgRaw
+    && prev.angerLevel === next.angerLevel
+    && prev.isHovered === next.isHovered
+    && prev.isSelected === next.isSelected
+    && prev.filledEyes === next.filledEyes
+    && prev.eyeGlow === next.eyeGlow
+    && prev.bodyColor === next.bodyColor
+    && prev.eyeColor === next.eyeColor
+    && prev.hideEyes === next.hideEyes
+    && prev.glow === next.glow
+    && prev.instanceId === next.instanceId
+    && eyeAnimationEqual(prev.eyeAnimation, next.eyeAnimation)
+    && bodyColorAnimationEqual(prev.bodyColorAnimation, next.bodyColorAnimation)
+}
+
+export const GodSvg = memo(GodSvgImpl, godSvgPropsEqual)

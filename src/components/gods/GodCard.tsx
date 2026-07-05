@@ -60,7 +60,7 @@ function abbreviateDuration(duration: string): string {
 // DashboardScreen.tsx, and importing from HomeScreen.tsx would create a circular import, since
 // HomeScreen already imports GodCard) with HomeScreen.tsx's AUTHORIZE_STEP_DURATION_MS, so a
 // card's own pill drain and the resource bar's countdown land together.
-const DRAIN_DURATION_S = 3.5
+const DRAIN_DURATION_S = 1.8
 
 // Tweens a 0..1 progress value from 1 (full) down to 0 (drained) once `draining` goes true, then
 // holds at 0 — mirrors RitualResultScreen's own useCountTween in spirit (animate()-driven, gated
@@ -324,11 +324,14 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // so this absolute-positioned content still counts toward :card's own reported box size — see
   // STAGE_CARD_WIDTH's own comment for why that matters to HomeScreen's stage layout.
   if (stageMode) {
-    const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40
+    // Mirrors bodyColor's own stageMode branch exactly (same colors, same idle->white shift on
+    // draining) so the name brightens in lockstep with the face — a plain CSS transition works
+    // here (unlike the face) since this is a real DOM text color, not raw SVG markup.
+    const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : (draining ? COLORS.white : COLORS.gray20)
     return (
       <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', width: `${STAGE_CARD_WIDTH}px` }}>
         {/* Name centered directly above the face — both share the face's own width. */}
-        <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
+        <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.4s ease' }}>
           {god.name}
         </div>
         <div data-flip-id={`${god.id}:face`} style={{ width: `${FACE_WIDTH}px`, height: `${FACE_HEIGHT}px`, flexShrink: 0 }}>

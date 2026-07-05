@@ -6,6 +6,7 @@ import { VirginIcon } from '../icons/VirginIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { TempleIcon } from '../icons/TempleIcon'
 import { RingedIcon } from '../icons/RingedIcon'
 import { RitualParticipantPill } from './RitualParticipantPill'
 
@@ -18,7 +19,6 @@ function outcomeLabel(color: string): string {
   if (color === '#c8322e') return 'Furious'
   if (color === '#d4662a') return 'Offended'
   if (color === '#d4a83c') return 'Uneasy'
-  if (color === '#c8a83c') return 'Peaceful'
   return 'Peaceful'
 }
 
@@ -55,13 +55,40 @@ interface RitualCardProps {
   // reads correctly while the card is "lifted" (candidate row, mid-drag); a docked card is
   // meant to look settled/flush against its slot.
   dropShadow?: boolean
-  // True while a resource-bar tab (Prisoners/Volunteers/Children/Virgins) is hovered and this
-  // ritual's cost uses that resource — an external highlight independent of this card's own
-  // hover/selected state, layered on top via a ring + pop rather than touching the outcome border.
-  highlight?: boolean
+  // Set while a resource-bar tab (Prisoners/Volunteers/Children/Virgins) is hovered — lights up
+  // (white fill) this card's own tribute pill of that same type, if it's actually used by this
+  // ritual, instead of highlighting the whole card.
+  highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null
+  // Set while a resource-bar ritual-site tab (Temple/Great Pyramid) is hovered — same idea as
+  // highlightParticipantType above, but for the "Ritual Site" row instead of a tribute pill:
+  // lights up that row (white) if this ritual's own sacredSite actually matches the hovered one.
+  highlightSite?: 'Temple' | 'Great Pyramid' | null
+  // Small label above the ritual name identifying its cost tier among the god's 3 rituals
+  // ("Basic Ritual" / "Major Ritual" / "Supreme Ritual") — caller derives this from the
+  // ritual's index in god.rituals, since this component only sees the one ritual.
+  tierLabel?: string
+  // True when the player doesn't have enough of some resource to afford this ritual right now
+  // (caller compares ritual.participants against the live available pool) — drops the lifted
+  // drop-shadow (it reads as "reachable/pick-up-able", which this card currently isn't) and
+  // dims the content, the tier label most of all since that's the first thing read top-to-bottom.
+  insufficientResources?: boolean
+  // Which specific resource types are short (caller compares each of ritual.participants against
+  // the live available pool) — draws a bright stroke on just those tribute pills, so it's clear
+  // exactly which resource is blocking the ritual rather than just that "something" is.
+  insufficientParticipantTypes?: ReadonlyArray<'prisoners' | 'volunteers' | 'children' | 'virgins'>
+  // True when the ritual's own sacred site (Temple/Great Pyramid) doesn't have enough available
+  // count to cover it — draws the same bright-stroke treatment on the "Ritual Site" row that
+  // insufficientParticipantTypes draws on a tribute pill, so a site shortage is just as visible
+  // as a resource shortage instead of silently doing nothing to the card.
+  insufficientSite?: boolean
+  // Shrinks this card's own vertical padding (root padding + the Ritual Site row's padding) —
+  // set when the viewport is too short to fit the detail card + candidate row stack (see
+  // compactSpacing in HomeScreen.tsx). Only affects the default (non-isCompact) render branch,
+  // since isCompact is a wholly separate card variant (the ritual panel — see CLAUDE.md).
+  denseSpacing?: boolean
 }
 
-export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false, dropShadow = true, highlight = false }: RitualCardProps) {
+export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHoverChange, wrathful = false, overrideOutcome, overrideParticipants, overrideSite, overrideDuration, isCompact = false, footer, outcomeBorder = false, forcePopped = false, dropShadow = true, highlightParticipantType = null, highlightSite = null, tierLabel, insufficientResources = false, insufficientParticipantTypes = [], insufficientSite = false, denseSpacing = false }: RitualCardProps) {
   const outcomeColor = overrideOutcome ?? ritual.outcomeColor
   const participants = overrideParticipants ?? ritual.participants
   const sacredSite = overrideSite ?? ritual.sacredSite
@@ -83,10 +110,19 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
 
   // Figma fades the outcome-color border from a low-opacity tint at the top edge
   // down to gray at the bottom — same opacity/endpoint convention GodCard.tsx's
-  // chosen-ritual gradient border uses, not a full-opacity color.
+  // chosen-ritual gradient border uses, not a full-opacity color. Unaffordable cards fade in
+  // further still, on top of the whole-card opacity, so the stroke doesn't read as more "alive"
+  // than the rest of a card that can't currently be picked up.
   const borderGradient = outcomeBorder
-    ? `linear-gradient(to bottom, ${hexToRgba(eye.color, eye.color === COLORS.white ? 0.8 : 0.5)}, ${COLORS.gray30})`
+    ? `linear-gradient(to bottom, ${hexToRgba(eye.color, (eye.color === COLORS.white ? 0.65 : 0.5) * (insufficientResources ? 0.5 : 1))}, ${COLORS.gray30})`
     : null
+
+  // Hovering or actively dragging brightens the price info (tribute pills + ritual-site row) so
+  // it reads as "live" under the pointer — never on an unaffordable card, which shouldn't react.
+  // Feeds the pills' own `light` prop (same white-fill treatment as the CTA-hover/resource-bar
+  // preview elsewhere), rather than a separate "bright" look, so hovering a ritual card matches
+  // hovering the CTA button or a resource-bar section exactly.
+  const brighten = !insufficientResources && (isHovered || forcePopped)
 
   if (isCompact) {
     const participantItems = [
@@ -197,7 +233,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
     )
   }
 
-  const sectionLabelStyle: React.CSSProperties = { fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }
+  const sectionLabelStyle: React.CSSProperties = { fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.regular, letterSpacing: '1px', color: 'rgba(255,255,255,0.3)' }
 
   return (
     <button
@@ -209,32 +245,37 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
       style={{
         width: '100%',
         height: 'auto',
-        padding: '19px 20px',
+        padding: denseSpacing ? '12px 20px' : '19px 20px',
         border: borderGradient ? '1px solid transparent' : borderStyle,
         borderRadius: '14px',
+        position: 'relative',
+        overflow: 'hidden',
         // outcomeBorder cards are drag sources (HomeGodDetailPanel's row/drop-zone), not
-        // click-to-select targets — a plain pointer cursor doesn't read as "draggable".
-        cursor: outcomeBorder ? 'grab' : 'pointer',
+        // click-to-select targets — a plain pointer cursor doesn't read as "draggable". An
+        // unaffordable card isn't pick-up-able at all, so it gets the plain non-interactive cursor.
+        cursor: insufficientResources ? 'default' : outcomeBorder ? 'grab' : 'pointer',
         // Drag ghost/source stay at the card's true size (scale(1)) so it always matches the
         // drop-zone's fixed dimensions — only a plain hover (not pressed/dragged) pops it up.
-        transform: !isPressed && !forcePopped && (isHovered || highlight) ? 'scale(1.02)' : 'scale(1)',
-        transition: 'transform 0.15s ease, box-shadow 0.2s ease',
+        // An unaffordable card never pops up on hover — it isn't pick-up-able right now, so
+        // nothing about it should react to the pointer.
+        transform: !insufficientResources && !isPressed && !forcePopped && isHovered ? 'scale(1.02)' : 'scale(1)',
+        transition: 'transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
         gap: '12px',
-        opacity: 1,
+        // Dimmed as a whole (not just the tier label) when unaffordable — a plain flat card
+        // reads as "can't pick this up right now" without needing a separate disabled treatment.
+        // Stays at this same 0.5 regardless of hover — only the content wrapper (below) dims
+        // further on hover, so the border/background never shift.
+        opacity: insufficientResources ? 0.5 : 1,
         textAlign: 'left',
         // A pure-black shadow barely differs from this app's own near-black page background
         // (#1A1A1A) — a plain blur (no spread) reads as invisible regardless of opacity or
         // how much clipping room it's given (verified in isolation). A positive spread radius
         // plus near-opaque alpha is what actually makes the shadow legible against this bg.
-        // `highlight` layers an extra white ring on top of whatever shadow is already there —
-        // it needs to read regardless of outcomeBorder/hover state, so it's additive, not a replacement.
-        boxShadow: [
-          !dropShadow ? null : isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
-          highlight ? '0 0 0 2px rgba(255,255,255,0.7)' : null,
-        ].filter(Boolean).join(', ') || 'none',
+        // insufficientResources always wins — an unaffordable card shouldn't look "lifted".
+        boxShadow: insufficientResources ? 'none' : !dropShadow ? 'none' : isHovered ? '0 8px 28px 3px rgba(0,0,0,0.8)' : '0 6px 18px 2px rgba(0,0,0,0.6)',
         ...(borderGradient
           ? {
               backgroundImage: `linear-gradient(${cardBg}, ${cardBg}), ${borderGradient}`,
@@ -244,27 +285,68 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
           : { backgroundColor: cardBg }),
       }}
     >
-      <h3 style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: '18px', color: isSelected || isActive ? COLORS.white : 'rgba(255,255,255,0.82)', margin: '0', textAlign: 'left' }}>
-        {ritual.name}
-      </h3>
+      {insufficientResources && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 24px',
+          textAlign: 'center',
+          opacity: isHovered ? 1 : 0,
+          transition: 'opacity 0.2s ease',
+          pointerEvents: 'none',
+          fontFamily: FONTS.spectral,
+          fontSize: FONT_SIZE.lg,
+          fontWeight: FONT_WEIGHT.regular,
+          color: COLORS.gray60,
+        }}>
+          Insufficient Resources
+        </div>
+      )}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        // The card content itself is what dims to near-invisible on hover, so the overlay
+        // above reads clearly against it — the outer button opacity handles the resting
+        // (non-hover) flat/dimmed look instead (see opacity above).
+        opacity: insufficientResources && isHovered ? 0.12 : 1,
+        transition: 'opacity 0.2s ease',
+      }}>
+      {tierLabel && (
+        <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: '18px', color: insufficientResources ? COLORS.gray40 : COLORS.gray95 }}>
+          {tierLabel}
+        </span>
+      )}
 
-      <span style={sectionLabelStyle}>Cost</span>
-      {([
-        { key: 'prisoners', label: 'Prisoners', Icon: PrisonerIcon },
-        { key: 'volunteers', label: 'Volunteers', Icon: VolunteerIcon },
-        { key: 'children', label: 'Children', Icon: ChildrenIcon },
-        { key: 'virgins', label: 'Virgins', Icon: VirginIcon },
-      ] as const).map(({ key, label, Icon }) => (
-        <RitualParticipantPill key={key} Icon={Icon} label={label} active={participants[key] > 0} value={participants[key]} variant="card" />
-      ))}
-
-      <span style={sectionLabelStyle}>Ritual Site</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <RingedIcon size={26} borderColor={COLORS.gray80}>
-          <PyramidIcon size={14} color={COLORS.gray80} />
-        </RingedIcon>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>{sacredSite.name} / {duration}</span>
+      <span style={{ ...sectionLabelStyle, marginBottom: '-6px' }}>Tributes</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {([
+          { key: 'prisoners', label: 'Prisoners', Icon: PrisonerIcon },
+          { key: 'volunteers', label: 'Volunteers', Icon: VolunteerIcon },
+          { key: 'children', label: 'Children', Icon: ChildrenIcon },
+          { key: 'virgins', label: 'Virgins', Icon: VirginIcon },
+        ] as const).map(({ key, label, Icon }) => (
+          <RitualParticipantPill key={key} Icon={Icon} label={label} active={participants[key] > 0} value={participants[key]} variant="card" muted={insufficientResources} light={highlightParticipantType === key || brighten} round={key !== 'virgins'} insufficient={insufficientParticipantTypes.includes(key)} />
+        ))}
       </div>
+
+      <span style={{ ...sectionLabelStyle, marginTop: '4px', marginBottom: '-6px' }}>Ritual Site</span>
+      {(() => {
+        const siteLit = brighten || highlightSite === sacredSite.name
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: denseSpacing ? '4px 8px' : '6px 8px', borderRadius: '8px', border: `1px solid ${insufficientSite ? COLORS.gray40 : 'transparent'}` }}>
+            <RingedIcon size={26} borderColor={siteLit ? COLORS.gray95 : COLORS.gray80} borderWidth={1}>
+              {sacredSite.name === 'Temple'
+                ? <TempleIcon size={14} color={siteLit ? COLORS.gray95 : COLORS.gray80} />
+                : <PyramidIcon size={14} color={siteLit ? COLORS.gray95 : COLORS.gray80} />}
+            </RingedIcon>
+            <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: siteLit ? COLORS.gray95 : COLORS.gray80 }}>{sacredSite.name} / {duration}</span>
+          </div>
+        )
+      })()}
 
       {footer && (
         <div onClick={e => e.stopPropagation()}>
@@ -272,7 +354,7 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
         </div>
       )}
 
-      <div style={{ height: '1px', flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: '1px', flexShrink: 0, marginTop: '4px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ flex: 1, ...sectionLabelStyle }}>Effect</span>
@@ -282,13 +364,16 @@ export function RitualCard({ ritual, isSelected, onClick, isActive = false, onHo
             height: '20px',
             borderRadius: '50%',
             backgroundColor: 'transparent',
-            boxShadow: `inset 0 0 0 ${eye.weight}px ${eye.color}`,
+            // A literal-white ring (Peaceful outcome) is the brightest thing on the card — step
+            // it down when unaffordable so it doesn't outshine the rest of the dimmed content.
+            boxShadow: `inset 0 0 0 ${eye.weight}px ${insufficientResources && eye.color === COLORS.white ? COLORS.gray60 : eye.color}`,
             flexShrink: 0,
           }} />
-          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.white }}>
+          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>
             {outcomeLabel(outcomeColor)}
           </span>
         </div>
+      </div>
       </div>
     </button>
   )

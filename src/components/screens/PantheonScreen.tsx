@@ -102,7 +102,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
       }}>
         {/* God name */}
         <div style={{
-          fontFamily: FONTS.cinzel, fontSize: 39, fontWeight: FONT_WEIGHT.regular,
+          fontFamily: FONTS.spectral, fontSize: 39, fontWeight: FONT_WEIGHT.regular,
           textTransform: 'uppercase', letterSpacing: '3.3px', color: COLORS.white,
           lineHeight: 1.2,
         }}>
@@ -146,7 +146,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
             {god?.subtitle ?? '—'}
           </span>
           <span style={{
-            fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
+            fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
             textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
             marginTop: 'auto',
           }}>
@@ -189,7 +189,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
                         flexShrink: 0, boxSizing: 'border-box',
                       }}>
                         <span style={{
-                          fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium,
+                          fontFamily: FONTS.spectral, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium,
                           textTransform: 'uppercase', letterSpacing: '1px',
                           color: COLORS.gray40, whiteSpace: 'nowrap',
                           overflow: 'hidden', textOverflow: 'ellipsis',
@@ -206,7 +206,7 @@ function GodDetailView({ godId, onBack }: { godId: string; onBack: () => void })
                       </div>
                     </div>
                     <span style={{
-                      fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
+                      fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, letterSpacing: '3px',
                       textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)',
                     }}>
                       {type}
@@ -271,7 +271,7 @@ function PantheonNode({ node, onSelect }: { node: PantheonNode; onSelect: (id: s
         flexShrink: 0, boxSizing: 'border-box',
       }}>
         <span style={{
-          fontFamily: FONTS.cinzel,
+          fontFamily: FONTS.spectral,
           fontSize: FONT_SIZE.sm,
           fontWeight: FONT_WEIGHT.medium,
           textTransform: 'uppercase',

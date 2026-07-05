@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { animate, motion } from 'framer-motion'
-import { FONTS, EYE } from '../../tokens'
+import { FONTS, EYE, COLORS } from '../../tokens'
 import { GodSvg } from '../gods/GodSvg'
 import { getSvgRaw, outcomeEye } from '../gods/GodCard'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
@@ -14,6 +14,7 @@ import type { God, Ritual } from '../../data/gods'
 const RESULT_BG = '#E4E4E4'
 const RESULT_FG = '#000000'
 const RESULT_DIVIDER = 'rgba(0,0,0,0.12)'
+const RESULT_CARD_BG = 'rgba(0,0,0,0.08)'
 
 // Same outcome-color → label mapping RitualCard.tsx's outcomeEye() uses for its color/weight lookup —
 // kept in sync by convention (see GodCard.tsx's outcomeEye export), not a shared import.
@@ -22,6 +23,21 @@ function outcomeLabel(outcomeColor: string): string {
   if (outcomeColor === '#d4662a') return 'Offended'
   if (outcomeColor === '#d4a83c') return 'Uneasy'
   return 'Peaceful'
+}
+
+// outcomeEye()'s white "Peaceful" fallback is tuned to stand out against the dark app
+// background — against this screen's light one it would be invisible, so it maps to black
+// instead. Red/orange already read fine as-is. EYE.low's pale yellow (#D7C94E) is the one that
+// washes out against the light background — swapped for a saturated mustard-gold, shifted a bit
+// further toward true yellow (away from EYE.medium's orange hue) so the two don't read as the
+// same color, rather than just a darker/muddier version of the original.
+const RESULT_EYE_COLOR: Record<string, string> = {
+  [COLORS.white]: RESULT_FG,
+  [EYE.low.color]: '#B8A600',
+}
+
+function resultEyeColor(color: string): string {
+  return RESULT_EYE_COLOR[color] ?? color
 }
 
 type ParticipantKey = 'prisoners' | 'volunteers' | 'children' | 'virgins'
@@ -118,41 +134,53 @@ function RitualResultCard({ god, ritual, scale, stepIndex, textRevealed }: Ritua
         alignItems: 'center',
       }}
     >
-      <div style={{ width: `${faceWidth}px`, height: `${180 * scale}px` }}>
-        <GodSvg
-          svgRaw={getSvgRaw(god.id)}
-          angerLevel={god.angerLevel}
-          bodyColor={RESULT_FG}
-          instanceId={`result-${god.id}`}
-          eyeAnimation={{
-            fromColor: fromEye.color,
-            fromWeight: fromEye.weight,
-            toColor: toEye.color,
-            toWeight: toEye.weight,
-            delay: DISTRIBUTION_END,
-            duration: EYE_ANIM_DURATION,
-            id: `result-${god.id}`,
-          }}
-        />
-      </div>
       <div
         style={{
-          marginTop: '24px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          columnGap: '22px',
-          rowGap: '13px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          backgroundColor: RESULT_CARD_BG,
+          border: `1px solid ${RESULT_DIVIDER}`,
+          borderRadius: '14px',
+          padding: '24px 20px',
         }}
       >
-        {PARTICIPANT_ORDER.map((key, i) => (
-          <ParticipantRow
-            key={key}
-            icon={PARTICIPANT_ICON[key]}
-            active={i === stepIndex}
-            revealed={i <= stepIndex}
-            finalCount={ritual.participants[key]}
+        <div style={{ width: `${faceWidth}px`, height: `${180 * scale}px` }}>
+          <GodSvg
+            svgRaw={getSvgRaw(god.id)}
+            angerLevel={god.angerLevel}
+            bodyColor={RESULT_FG}
+            instanceId={`result-${god.id}`}
+            eyeAnimation={{
+              fromColor: resultEyeColor(fromEye.color),
+              fromWeight: fromEye.weight,
+              toColor: resultEyeColor(toEye.color),
+              toWeight: toEye.weight,
+              delay: DISTRIBUTION_END,
+              duration: EYE_ANIM_DURATION,
+              id: `result-${god.id}`,
+            }}
           />
-        ))}
+        </div>
+        <div
+          style={{
+            marginTop: '24px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            columnGap: '22px',
+            rowGap: '13px',
+          }}
+        >
+          {PARTICIPANT_ORDER.map((key, i) => (
+            <ParticipantRow
+              key={key}
+              icon={PARTICIPANT_ICON[key]}
+              active={i === stepIndex}
+              revealed={i <= stepIndex}
+              finalCount={ritual.participants[key]}
+            />
+          ))}
+        </div>
       </div>
       <motion.p
         initial={{ opacity: 0 }}
@@ -287,12 +315,14 @@ function ResultResourceItem({
   to: number
   active: boolean
 }) {
+  // `from` doubles as the fixed "total" half of the display — it's the pre-sacrifice count,
+  // which never changes; only the "current" half counts down from it to `to`.
   const value = useCountTween(active, from, to, RESOURCE_STEP_DURATION)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '17.5px' }}>
       {icon(RESULT_FG)}
       <span style={{ fontFamily: FONTS.spectral, fontSize: '20px', fontWeight: 600, letterSpacing: '1.2px', color: RESULT_FG }}>{label}</span>
-      <span style={{ fontFamily: FONTS.spectral, fontSize: '24px', letterSpacing: '1.44px', color: RESULT_FG }}>{value}</span>
+      <span style={{ fontFamily: FONTS.spectral, fontSize: '24px', letterSpacing: '1.44px', color: RESULT_FG }}>{value}/{from}</span>
     </div>
   )
 }

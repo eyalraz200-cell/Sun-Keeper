@@ -505,7 +505,7 @@ const RESOURCE_COUNT_ANIM_DURATION = 1800
 // still land together, one god-turn at a time. All four are easily tunable starting points, not a
 // strict spec.
 const AUTHORIZE_CHROME_FADE_MS = 400
-const AUTHORIZE_STEP_DURATION_MS = 3500
+const AUTHORIZE_STEP_DURATION_MS = 1800
 const AUTHORIZE_STEP_GAP_MS = 180
 const AUTHORIZE_END_HOLD_MS = 450
 
@@ -651,7 +651,7 @@ function HomeBarSectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, hoveredRitual, onResourceHover, onSiteHover, ctaHovered, reservedCost }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: ResourceCost; hoveredRitual?: Ritual | null; onResourceHover?: (type: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null) => void; onSiteHover?: (site: 'Temple' | 'Great Pyramid' | null) => void; ctaHovered?: boolean; reservedCost?: ResourceCost }) {
+function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals: _resourceTotals = RESOURCE_TOTALS, hoveredRitual, onResourceHover, onSiteHover, ctaHovered, reservedCost, dense = false }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: ResourceCost; hoveredRitual?: Ritual | null; onResourceHover?: (type: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null) => void; onSiteHover?: (site: 'Temple' | 'Great Pyramid' | null) => void; ctaHovered?: boolean; reservedCost?: ResourceCost; dense?: boolean }) {
   const ritualActive = !!hoveredRitual
   // Two independent reasons to go into the same light-mode (white-fill) preview, OR'd together:
   // the CTA is hovered and this resource type is used by ANY chosen ritual (reservedCost, the same
@@ -665,10 +665,10 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
   const templesLight = (!!ctaHovered && (reservedCost?.temples ?? 0) > 0) || hoveredRitual?.sacredSite.name === 'Temple'
   const greatTemplesLight = (!!ctaHovered && (reservedCost?.greatTemples ?? 0) > 0) || hoveredRitual?.sacredSite.name === 'Great Pyramid'
   return (
-    <div style={{ position: 'relative', zIndex: 1, flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 48px 12px 24px' }}>
+    <div style={{ position: 'relative', zIndex: 1, flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: dense ? '14px 48px 8px 24px' : '24px 48px 12px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Tributes to Sacrifice</HomeBarSectionTitle>
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: dense ? '4px 24px' : '8px 24px', overflow: 'hidden' }}>
           <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} isFirst onHoverChange={hovered => onResourceHover?.(hovered ? 'prisoners' : null)} light={prisonersLight} />
           <ResourceDivider fullBleed />
           <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'volunteers' : null)} light={volunteersLight} />
@@ -1076,7 +1076,26 @@ const DETAIL_CARD_PADDING = 16
 // sidesteps the whole race rather than fighting over measurement timing.
 const DETAIL_CARD_WIDTH = DETAIL_LEFT_COLUMN_WIDTH + DETAIL_CARD_GAP + RITUAL_CARD_WIDTH + DETAIL_CARD_PADDING * 2 + 2 // +2 for the 1px border on each side (content-box sizing)
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, chosenRitualId, isActive = true, isCentered = true, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, isPunishing }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; chosenRitualId?: string | null; isActive?: boolean; isCentered?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null; highlightSite?: 'Temple' | 'Great Pyramid' | null; measuredCardHeight: number | null; onMeasuredCardHeight: (height: number) => void; availableResources: { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }; isPunishing?: boolean }) {
+// Vertical gap between the combined detail card and the candidate row below it — shrinks to
+// CANDIDATE_ROW_MARGIN_TOP_DENSE when the viewport is too short to fit the full stack (see
+// compactSpacing in the main HomeScreen component below, and COMPACT_HEIGHT_THRESHOLD).
+const CANDIDATE_ROW_MARGIN_TOP = 32
+const CANDIDATE_ROW_MARGIN_TOP_DENSE = 16
+// Estimated normal-mode height of everything stacked above and around the candidate row that
+// eats into the viewport's available vertical space: the resource bar, the detail panel's own
+// container padding (16px top + 24px bottom), the combined detail card (RITUAL_CARD_HEIGHT_
+// FALLBACK tall, same rule the drop-zone itself follows), the gap above, and the candidate row
+// itself (same height again). Deliberately a formula over fixed named pieces, not a single raw
+// magic number, and deliberately NOT derived from any live-measured height (resourceBar/card
+// height both react to denseSpacing themselves — comparing against a self-shrinking reference
+// would flip-flop). window.innerHeight below this threshold switches every card/bar in this
+// screen to its denser padding variant; at or above it, everything renders exactly as before.
+const HOME_RESOURCE_BAR_ESTIMATED_HEIGHT = 120
+const DETAIL_PANEL_CONTAINER_PADDING_V = 40
+const COMPACT_HEIGHT_THRESHOLD =
+  HOME_RESOURCE_BAR_ESTIMATED_HEIGHT + DETAIL_PANEL_CONTAINER_PADDING_V + RITUAL_CARD_HEIGHT_FALLBACK + CANDIDATE_ROW_MARGIN_TOP + RITUAL_CARD_HEIGHT_FALLBACK
+
+function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, chosenRitualId, isActive = true, isCentered = true, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, isPunishing, denseSpacing = false }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; chosenRitualId?: string | null; isActive?: boolean; isCentered?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null; highlightSite?: 'Temple' | 'Great Pyramid' | null; measuredCardHeight: number | null; onMeasuredCardHeight: (height: number) => void; availableResources: { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }; isPunishing?: boolean; denseSpacing?: boolean }) {
   // Widened to match outcomeEye()'s return type — EYE itself is `as const` (a literal-typed
   // union per level), which would otherwise stop `to`/`from` below from ever holding an
   // outcomeEye() result once a ritual is docked.
@@ -1527,6 +1546,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 highlightParticipantType={highlightParticipantType}
                 highlightSite={highlightSite}
                 tierLabel={tierLabelFor(chosenRitual, effectiveRituals.findIndex(r => r.id === chosenRitual.id))}
+                denseSpacing={denseSpacing}
               />
             </div>
           )}
@@ -1539,7 +1559,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
       {/* data-drawer-row names the god this row belongs to — handleBack (HomeScreen) uses it to
           find and slide these cards back down before the hero shrinks, mirroring their own
           slide-up-from-off-screen entrance (drawerRevealStyle above) in reverse. */}
-      <div data-drawer-row={god.id} style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '32px' }}>
+      <div data-drawer-row={god.id} style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: denseSpacing ? `${CANDIDATE_ROW_MARGIN_TOP_DENSE}px` : `${CANDIDATE_ROW_MARGIN_TOP}px` }}>
         {(() => {
           // availableResources already has this god's own currently-docked ritual reserved out of
           // the pool — swapping it for a different candidate frees that reservation first, so add
@@ -1597,6 +1617,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 insufficientResources={!canAfford}
                 insufficientParticipantTypes={insufficientParticipantTypes}
                 insufficientSite={insufficientSite}
+                denseSpacing={denseSpacing}
               />
             </div>
           )
@@ -1627,7 +1648,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               : {}),
           }}
         >
-          <RitualCard ritual={dragGhostRitual} isSelected={false} onClick={() => {}} outcomeBorder forcePopped tierLabel={tierLabelFor(dragGhostRitual, effectiveRituals.findIndex(r => r.id === dragGhostRitual.id))} />
+          <RitualCard ritual={dragGhostRitual} isSelected={false} onClick={() => {}} outcomeBorder forcePopped tierLabel={tierLabelFor(dragGhostRitual, effectiveRituals.findIndex(r => r.id === dragGhostRitual.id))} denseSpacing={denseSpacing} />
         </div>,
         document.body
       )}
@@ -1647,7 +1668,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               zIndex: 4000,
             }}
           >
-            <RitualCard ritual={ejectRitual} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={tierLabelFor(ejectRitual, effectiveRituals.findIndex(r => r.id === ejectRitual.id))} />
+            <RitualCard ritual={ejectRitual} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={tierLabelFor(ejectRitual, effectiveRituals.findIndex(r => r.id === ejectRitual.id))} denseSpacing={denseSpacing} />
           </div>,
           document.body
         )
@@ -1695,7 +1716,7 @@ const FREE_SNAP_DURATION = 1100
 // + lock), animated with a real CSS transition — not the old continuous 1:1 finger-tracking,
 // which let a hard fling blow past several gods and, worse, let light scrolls that never crossed
 // its rounding threshold do nothing at all.
-function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange }: {
+function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange, denseSpacing }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
@@ -1714,6 +1735,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
   heroRevealGodId: string | null
   panelHeights: Record<string, number>
   onPanelHeightsChange: React.Dispatch<React.SetStateAction<Record<string, number>>>
+  denseSpacing?: boolean
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const setPanelHeights = onPanelHeightsChange
@@ -1911,6 +1933,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
                 onMeasuredCardHeight={onMeasuredCardHeight}
                 availableResources={availableResources}
                 isPunishing={isPunishingGodId(god.id, punishingGodId)}
+                denseSpacing={denseSpacing}
               />
             </div>
           </div>
@@ -1922,7 +1945,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
 
 // Left rail: every god as a full GodCard (with its own ritual panel, used as-is), in a plain
 // natively-scrolling column — always visible, independent of which god is centered in the carousel.
-function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange }: {
+function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange, denseSpacing }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
@@ -1944,6 +1967,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
   heroRevealGodId: string | null
   panelHeights: Record<string, number>
   onPanelHeightsChange: React.Dispatch<React.SetStateAction<Record<string, number>>>
+  denseSpacing?: boolean
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -2024,6 +2048,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
         availableResources={availableResources}
         punishingGodId={punishingGodId}
         heroRevealGodId={heroRevealGodId}
+        denseSpacing={denseSpacing}
       />
       <style>{`
         @keyframes homeRailSlideIn {
@@ -2290,6 +2315,20 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   // correct sequence is what caused the detail face to visibly grow to the fallback size and then
   // snap/shrink to the real size right after the Flip transition landed — see its use below.
   const [measuredCardHeight, setMeasuredCardHeight] = useState<number | null>(null)
+  // True once the browser window is too short to fit the resource bar + full-size detail card +
+  // candidate row stack (see COMPACT_HEIGHT_THRESHOLD) — shrinks the gap between the detail card
+  // and the candidate row, plus the vertical padding on every RitualCard and the resource bar
+  // itself, so the whole stack has a better chance of actually fitting within GodFreeCarousel's
+  // own overflow:hidden viewport instead of clipping the row. Checked against window.innerHeight
+  // (not a measured element) since the threshold is a fixed estimate, not a live one — see that
+  // constant's own comment for why comparing against a self-shrinking measured height would
+  // oscillate.
+  const [compactSpacing, setCompactSpacing] = useState(() => window.innerHeight < COMPACT_HEIGHT_THRESHOLD)
+  useEffect(() => {
+    const checkHeight = () => setCompactSpacing(window.innerHeight < COMPACT_HEIGHT_THRESHOLD)
+    window.addEventListener('resize', checkHeight)
+    return () => window.removeEventListener('resize', checkHeight)
+  }, [])
   // Lifted out of GodFreeCarousel (which unmounts every time viewMode leaves 'list') for the same
   // reason as measuredCardHeight above: GodFreeCarousel stacks every panel via a cumulative sum of
   // its neighbors' heights (cumulativeTop), so if this reset to {} on every grid<->list toggle, the
@@ -2741,12 +2780,12 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
       {GODS[0]?.rituals[0] && (
         <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none', visibility: 'hidden' }}>
           <div ref={preMeasureRef} style={{ width: `${RITUAL_CARD_WIDTH}px` }}>
-            <RitualCard ritual={GODS[0].rituals[0]} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={RITUAL_TIER_LABELS[0]} />
+            <RitualCard ritual={GODS[0].rituals[0]} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={RITUAL_TIER_LABELS[0]} denseSpacing={compactSpacing} />
           </div>
         </div>
       )}
       <div style={{ flexShrink: 0, opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
-        <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} />
+        <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} dense={compactSpacing} />
       </div>
       <div
         ref={scrollContainerRef}
@@ -2816,6 +2855,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             panelHeights={panelHeights}
             onPanelHeightsChange={setPanelHeights}
             availableResources={{ prisoners: availablePrisoners, volunteers: availableVolunteers, children: availableChildren, virgins: availableVirgins, temples: availableTemples, greatTemples: availableGreatTemples }}
+            denseSpacing={compactSpacing}
             punishingGodId={punishingGodId}
             heroRevealGodId={heroRevealGodId}
             // No data-transition-chrome here either — see the matching comment on the grid

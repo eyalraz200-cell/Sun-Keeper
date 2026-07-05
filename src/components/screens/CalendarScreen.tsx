@@ -96,7 +96,7 @@ export function CalendarScreen() {
           return (
             <g key={i}>
               <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.white} strokeWidth={1} />
-              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill={COLORS.white} fontSize={FONT_SIZE.sm} fontFamily="'Cinzel', serif">
+              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill={COLORS.white} fontSize={FONT_SIZE.sm} fontFamily={FONTS.spectral}>
                 {i + 1}
               </text>
             </g>
@@ -146,7 +146,7 @@ export function CalendarScreen() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   <span style={{ fontFamily: FONTS.spectral, fontWeight: FONT_WEIGHT.light, fontSize: FONT_SIZE.sm, color: 'rgba(255,255,255,0.45)' }}>{event.label}</span>
                   {god && <AngerCircle angerColor={god.angerColor} />}
-                  <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: FONT_SIZE.xs, color: COLORS.white }}>{event.god}</span>
+                  <span style={{ fontFamily: FONTS.spectral, textTransform: 'uppercase', fontSize: FONT_SIZE.xs, color: COLORS.white }}>{event.god}</span>
                 </div>
               </div>
               <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)', margin: '0 13px 0' }} />
@@ -186,7 +186,7 @@ export function CalendarScreen() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {hoveredGod && <AngerCircle angerColor={hoveredGod.angerColor} />}
-              <span style={{ fontFamily: FONTS.cinzel, textTransform: 'uppercase', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.regular, color: COLORS.white }}>
+              <span style={{ fontFamily: FONTS.spectral, textTransform: 'uppercase', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.regular, color: COLORS.white }}>
                 {hoveredEvent?.god ?? ''}
               </span>
             </div>

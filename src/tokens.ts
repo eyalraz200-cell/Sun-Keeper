@@ -10,13 +10,14 @@
 // something "brighter"/"darker" (one step, or "much brighter" for two+
 // steps), move along this list to the next/previous existing key — don't
 // invent a new in-between hex value:
-//   gray0 → cardBg → black → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray80 → gray95 → white
+//   gray0 → cardBg → black → gray13 → gray15 → gray18 → gray20 → gray30 → gray40 → gray60 → gray80 → gray95 → white
 export const COLORS = {
   gray0: '#000000',   // true black — used for text/icons that need full contrast on a light surface
   cardBg: '#151515',  // GodCard background — slightly darker than the app background
   black: '#1A1A1A',   // the app's "black" — viewport/page background
+  gray13: '#202020',  // ritual panel fill when hovered/highlighted — between black and gray15
   gray15: '#262626',  // GodCard's default border
-  gray18: '#2e2e2e',  // ritual panel fill when hovered/highlighted
+  gray18: '#2e2e2e',  // list-view selected row fill, sacrifice-overlay glow
   gray20: '#333333',  // standard structural divider/border (nav strip, panel dividers, resource bar)
   gray30: '#4d4d4d',  // card/panel border, and default icon/text tone, when hovered or selected
   gray40: '#6C6C6C',  // default god name / muted label text
@@ -54,7 +55,6 @@ export const EYE = {
 } as const
 
 export const FONTS = {
-  cinzel: "'Cinzel', serif",
   spectral: "'Spectral', Georgia, serif",
 } as const
 
@@ -93,12 +93,15 @@ export const BORDER_WIDTH = '1px'
 
 export type RitualScreenMode = 'ritual' | 'expanded'
 
-// Global resource pool totals — shared across all gods/rituals, not per-god.
+// Global resource pool totals — shared across all gods/rituals, not per-god. Prisoners bumped to
+// 400 (from 310) and children to 200 (from 175) — several gods (Itzpapalotl, Atlacamani,
+// Huitzilopochtli, Tlaltecuhtli, Coatlicue) now lean on one of these heavily across their whole
+// ritual tier, and the old totals weren't enough headroom to afford more than one or two at once.
 export const RESOURCE_TOTALS = {
-  prisoners: 1840,
-  volunteers: 763,
-  children: 312,
-  virgins: 47,
-  temples: 25,
+  prisoners: 400,
+  volunteers: 610,
+  children: 200,
+  virgins: 21,
+  temples: 9,
   greatTemples: 3,
 } as const

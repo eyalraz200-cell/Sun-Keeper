@@ -8,10 +8,11 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 2. **Colors:** use a name from `COLORS`/`ANGER`/`EYE` in `tokens.ts` (see Design Tokens section). If you're about to type a literal hex code, stop and check whether one of those names already covers it — most of the time it does.
 3. **Eye/outcome circles specifically:** never hand-write the `{ color, weight }` anger lookup table — import `EYE` from `tokens.ts`. This exact table has been hand-copied into 3 different files before; don't make it 4.
 4. **"Brighter"/"darker"/"bigger"/"smaller"/"bolder" instructions: step along the scale, don't invent a new value.** When the user says "make it brighter" (or darker/bigger/smaller/bolder/lighter), move to the next (or previous) key in the relevant ordered scale in `tokens.ts` — `COLORS` for brightness, `FONT_SIZE` for size, `FONT_WEIGHT` for weight, `SPACING` for gaps/padding. "Much brighter"/"much bigger" = jump 2+ steps, still landing on a defined key. Never compute or guess an in-between value (e.g. don't go from `gray30` to some new `#3a3a3a` — go to `gray40`, the next real step). This is what keeps the whole app visually uniform instead of accumulating one-off values. See the Design Tokens section below for the exact scale order.
-5. **God names:** `FONTS.cinzel`, always uppercase, weight 400 — never bold, never mixed-case.
+5. **God names:** `FONTS.spectral`, always uppercase, weight 400 — never bold, never mixed-case. **Cinzel has been removed from this project entirely (2026-07-02)** — the font token, the Google Fonts `<link>`, and every usage (god names, screen headings, "AI Counsel", tier/relationship labels, resource type labels) were all switched to Spectral. If you see `FONTS.cinzel` or a literal `'Cinzel', serif` anywhere outside `_archived/`, that's stale/regressed — replace it with `FONTS.spectral`, don't reintroduce Cinzel.
 6. **Any visual/UI change tied to a Figma frame:** follow the mandatory 4-step workflow below (screenshot Figma first, screenshot current code, diff, implement) — don't skip straight to coding from memory of what the design "probably" looks like.
 7. **After this session's reorg:** components live under `src/components/{screens,gods,ritual,icons,layout}/` — check the right subfolder before assuming a flat `components/` layout (see App Architecture below).
 8. **If editing something in `_archived/`:** don't. It's excluded from the build and described as historical-only below — ask the user before reviving any of it.
+9. **Ringed circle-around-icon treatment (Temple/Grand Temple in the resource bar, ritual-site icons in `RitualCard`/`GodCard`):** use the shared `RingedIcon` component (`src/components/icons/RingedIcon.tsx`), never a hand-rolled `border-radius: 50%` div. **The ring's `borderColor` and the icon's own `color` must always be the same value** — they're not independently stylable; if you brighten/darken one, brighten/darken the other to match in the same edit.
 
 ---
 
@@ -48,12 +49,13 @@ This document ensures I reliably follow your Figma design (`azSClyWIZyeWpGcjyMKO
 - A resource bar (`HomeResourceBar`, defined locally inside `HomeScreen.tsx` — there is no separate `ResourceBar.tsx` component anymore) shows available Prisoners/Volunteers/Children/Virgins and Temple/Grand Temple counts at the top of the screen. Prisoners/Volunteers/Children/Virgins share one rounded (`10px`) `COLORS.gray15` pill container with `1px COLORS.gray20` dividers between each; Temple/Grand Temple sit bare (no shared pill) with a `PyramidIcon` in a 48px ringed circle each, also divider-separated. Both share a `HomeBarSectionTitle` label ("Available Resources" / "Available Ritual Sites") above them.
 
 **God detail panel (`HomeGodDetailPanel`, defined locally in `HomeScreen.tsx`):** clicking any god card (grid or list-rail) switches `viewMode` to `'list'` and opens this panel inside `GodListLayout`'s `GodFreeCarousel` — there is no separate `HomeGodCard`/simple-swap flow anymore, and no shared `GodCard.tsx` usage here (that component is grid-view only). Re-audited against a fresh Figma pull (node `240:3580`) on 2026-07-02, replacing an older click-to-select design:
-- **Layout:** one combined card (`COLORS.cardBg` background, `10px` radius) holds a 320px-wide left half (god name/subtitle + a `300px`-tall `GodSvg`) and a `245px`-wide right half — the **drop-zone**, a permanent dashed-border empty slot with the docked `RitualCard` (if any) layered on top of it. Below this combined card, a row holds every ritual *not* currently docked (up to 3, shrinking as one gets chosen).
+- **Layout:** one combined card (`COLORS.cardBg` background, `10px` radius) holds a 320px-wide left half (god name/subtitle + a `300px`-tall `GodSvg`) and a right half — the **drop-zone**, a permanent dashed-border empty slot with the docked `RitualCard` (if any) layered on top of it. Below this combined card, a row holds every ritual *not* currently docked (up to 3, shrinking as one gets chosen).
+- **Rule: the drop-zone's size must always exactly match a rendered `RitualCard`'s own size** (`DROP_ZONE_WIDTH`/`DROP_ZONE_HEIGHT` = `RITUAL_CARD_WIDTH`/`RITUAL_CARD_HEIGHT` in `HomeScreen.tsx`, currently `245×391`) — no padding, no oversized frame. This applies to the drop-zone, the candidate row slots, and the drag ghost alike, so a card is exactly the same size whether it's sitting in the row, mid-drag, or docked. If `RitualCard`'s natural rendered height ever changes (e.g. its content layout changes), update `RITUAL_CARD_HEIGHT` to match — don't let the drop-zone drift out of sync.
 - **Interaction is drag-and-drop, not click-to-select:** dragging a candidate card from the row into the drop-zone docks it (`onChoose`) and removes it from the row; dragging the docked card back out of the drop-zone un-docks it (`onUnchoose`, a new callback threaded `HomeScreen → GodListLayout → GodFreeCarousel → HomeGodDetailPanel` alongside the existing `onChoose` path) and returns it to the row. Hand-rolled pointer-event drag (no library — see `RitualSacrificeOverlay` below, the pattern this reuses): `onPointerDown`/`setPointerCapture` on the card, a `position:fixed` ghost tracking the pointer via `transform`, a `DOCK_MARGIN` (48px) forgiving hit-test against the drop-zone's `getBoundingClientRect()`, and a phase state machine (`dragging`/`returning`/`docking`/`undocking`) with `setTimeout`s matched to the CSS transition durations.
 - **The drag ghost is portaled to `document.body`** (`createPortal`), not rendered inline — `panelRef` (the FLIP animation's transform target) gets a non-`'none'` `transform` set directly on its DOM node once the entrance animation settles, and any transformed ancestor creates a new CSS containing block for `position:fixed` descendants. A ghost left nested inside `panelRef` tracks relative to the panel's box instead of the viewport — easy to miss since it fails silently (wrong position, no error) rather than throwing.
 - Every row/docked `RitualCard` here is called with `outcomeBorder` (border always = that ritual's own outcome-eye color, not the click-selection white/dim styling) and `isSelected={false}` (selection has no meaning under drag — a ritual is either present in the row or docked, never "selected").
 - `ChooseRitualButton`/`RitualCardWithChoose` (the old "Select Ritual" footer button + click wrapper) are gone, replaced by the drag wrapper described above.
-- Clicking the god name/back area (`onBack`) is currently a no-op in list view (`NOOP`) — this predates the redesign; the reverse-FLIP close path (`isClosing`) exists in the component but has no live caller that ever sets it `true`.
+- Clicking the god face/name area (outside the ritual card) calls `onBack`, threaded `HomeScreen → GodListLayout → GodFreeCarousel → HomeGodDetailPanel`, which switches `viewMode` back to `'grid'`. Hovering that same area brightens a `CaretLeft` chevron (in a padded, stroked circle, top-left of the combined card) from `gray30` to `gray95` — the name/face themselves do NOT brighten on this hover, only the chevron+circle.
 
 **Ritual sacrifice flow:** clicking "Authorize All Selected Rituals" on the overview screen sets `sacrificeCost` and renders `RitualSacrificeOverlay` (see Component API Reference below) — a drag-and-drop interaction, not a passive animated cutscene.
 
@@ -234,6 +236,26 @@ Each eye renders (in order, inside `<defs>` + `<g id="eyes">`):
 
 ---
 
+### RingedIcon
+**File:** `src/components/icons/RingedIcon.tsx`
+
+**Props:**
+```ts
+interface RingedIconProps {
+  size?: number        // default 44 — the resource bar's Temple/Grand Temple size
+  borderColor?: string // default COLORS.gray30
+  children: React.ReactNode
+}
+```
+
+**Renders:** a thin-bordered (`1.5px solid borderColor`) circle (`border-radius: 50%`) wrapping a smaller icon passed as `children` — the resource bar's Temple/Grand Temple treatment, reused wherever a ritual/sacred-site icon needs this delicate ringed look instead of a bare glyph. Used in `HomeScreen.tsx`'s `HomeSiteItem`, `RitualCard.tsx`'s ritual-site row, and `GodCard.tsx`'s chosen-ritual duration row.
+
+**Hard rule: the ring's `borderColor` and the wrapped icon's own `color` prop must always match.** They're two separate props (the ring doesn't read the icon's color automatically), so every call site passes the same value to both — e.g. `<RingedIcon borderColor={COLORS.gray80}><PyramidIcon color={COLORS.gray80} /></RingedIcon>`. If you brighten/darken one, brighten/darken the other in the same edit, or the ring and glyph drift out of sync.
+
+**Never hand-roll this pattern inline** (a raw `<div>` with `borderRadius: '50%'` and a manual border) — import `RingedIcon` instead, same reasoning as the `EYE` table above: this shape had been duplicated inline before being consolidated into one component.
+
+---
+
 ### RitualCard
 **File:** `src/components/ritual/RitualCard.tsx`
 
@@ -347,7 +369,6 @@ EYE = {
 
 ```ts
 FONTS = {
-  cinzel: "'Cinzel', serif",
   spectral: "'Spectral', Georgia, serif",
 }
 
@@ -386,8 +407,8 @@ FONT_WEIGHT = {
 
 ## Typography Rules
 
-- **God names:** `FONTS.cinzel`, ALWAYS uppercase (`textTransform: 'uppercase'`), weight 400 (NOT bold)
-- **Headings:** `FONTS.cinzel`, uppercase, `textBase`
+- **God names:** `FONTS.spectral`, ALWAYS uppercase (`textTransform: 'uppercase'`), weight 400 (NOT bold)
+- **Headings:** `FONTS.spectral`, uppercase, `textBase`
 - **Body:** `FONTS.spectral`, normal case, `textSecondary`
 - **Labels:** 10px uppercase, `textMuted`
 - **Buttons:** `FONTS.spectral`, 13px–16px uppercase, letter-spacing 0.8px–1.5px
@@ -435,8 +456,8 @@ interface Ritual {
 ### Core rules (non-negotiable)
 1. **Every god has exactly 3 ritual cards** — always shown, no filtering.
 2. **Ritual outcomes must be strictly calmer than the god's current anger level.**
-3. **Same outcome color within a god = similar overall cost** — neither card strictly dominates across all dimensions.
-4. **More appeasement = more sacrifice** — cost increases toward the most calming option.
+3. **More appeasement = more sacrifice** — cost (participant total) always strictly increases Basic < Major < Supreme, never flat or inverted.
+4. **Batching up should always be worth it — cost scaling is capped, not "same outcome = same cost."** Major ritual cost must stay under 2× the Basic ritual's cost, and Supreme under 3× — in practice, rebalanced (2026-07-05) to Major ≈ 1.7× Basic and Supreme ≈ 2.6× Basic for every god, uniformly, regardless of whether Basic/Major share the same outcome color (e.g. the "2× Uneasy" medium-anger composition below). This supersedes the older "same outcome color = similar cost" framing — that idea predates the cap and is no longer the rule to follow.
 
 ### Outcome colors per anger level
 | God anger | Valid outcome colors            | Card composition           |
@@ -494,7 +515,7 @@ interface Ritual {
 - Use existing components
 - Reference `tokens.ts` for all colors/fonts/spacing
 - Test with Playwright screenshots after changes
-- Keep god names in Cinzel, ALL CAPS, weight 400 (never bold)
+- Keep god names in Spectral, ALL CAPS, weight 400 (never bold)
 
 ❌ **DON'T:**
 - Add headers not in Figma design
@@ -509,7 +530,7 @@ interface Ritual {
 
 The user has explicitly authorized autonomous git commits and pushes for this project, so Claude does **not** need to ask before each one:
 
-- **Commit** after every logical change (a feature, fix, refactor, or other discrete piece of work) — small, frequent commits with descriptive messages, not one giant batch at the end.
+- **Commit** after every logical change (a feature, fix, refactor, or other discrete piece of work) — small, frequent commits with descriptive messages, not one giant batch at the end. **Exception:** during a rapid back-and-forth on one visual element (user reacts to a screenshot, gives a one-line correction, repeat) don't commit after each correction — that's one continuous iteration, not several discrete changes. Wait until the user moves on or the result settles, then make one commit covering the whole thing.
 - **Push in batches, not after every commit.** Don't push automatically after each individual commit, especially during rapid iteration (e.g. a string of small visual tweaks based on live feedback) — that creates push noise. Push at natural stopping points: a feature/fix is done and verified, the user asks, or a meaningful chunk of related commits has accumulated.
 - Still never use destructive operations (`--force` push, `reset --hard`, rewriting published history, skipping hooks) without explicit confirmation — this blanket authorization covers normal commit + push only.
 - If a change is exploratory/experimental and the user signals they might want to discard it, hold off on committing until that's resolved.

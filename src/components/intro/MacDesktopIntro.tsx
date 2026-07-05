@@ -1,8 +1,15 @@
-import { useState, type ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import logoUrl from '../../assets/logo.svg'
 import wallpaperUrl from '../../assets/mac-wallpaper.png'
-import { FONTS } from '../../tokens'
+import gongUrl from '../../assets/MP3 audio.mp3'
+import tlalocRaw from '../../assets/Gods/Tlaloc.svg?raw'
+import huitzilopochtliRaw from '../../assets/Gods/huitzilopochtli.svg?raw'
+import tezcatlipocaRaw from '../../assets/Gods/Tezcatlipoca.svg?raw'
+import mictlantecuhtliRaw from '../../assets/Gods/Mictlantecuhtli.svg?raw'
+import quetzalcoatlRaw from '../../assets/Gods/Quetzalcoatl.svg?raw'
+import { FONTS, EYE, COLORS } from '../../tokens'
+import { GodSvg } from '../gods/GodSvg'
 
 // Everything in this component except the notification card is inert set dressing —
 // a static macOS desktop backdrop meant to sell "an Omens Report just landed on your
@@ -10,6 +17,18 @@ import { FONTS } from '../../tokens'
 // built out of DOM instead of a screenshot so it can crossfade into the real app.
 const SYSTEM_FONT =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif'
+
+const NOTIFICATION_DELAY_MS = 3200
+
+// Plays the dramatic gong strike asset. Browsers that block audio before any user
+// gesture will just fail silently here.
+function playNotificationChime() {
+  try {
+    new Audio(gongUrl).play().catch(() => {})
+  } catch {
+    // Audio unsupported/blocked — this sound is decorative, fail silently
+  }
+}
 
 // Generic, hand-drawn glyphs evoking familiar mac app *categories* (browser, messages,
 // mail, photos, music, trash) — not reproductions of any real app's actual icon artwork.
@@ -97,11 +116,34 @@ interface MacDesktopIntroProps {
   // parent can enter the app AND immediately surface GodPunishmentDialog on top of it.
   onPunishmentAlert: () => void
   punishingGodName: string
+  // Same threat text GodPunishmentDialog shows, passed down so the notification and the dialog
+  // never say different things about the same god.
+  punishmentThreatText: string
+  // Which notification appears — set by the FlowChoiceScreen pre-screen. 'flow1' shows the
+  // regular omens notification only; 'flow2' shows only the Tlaloc punishment notification.
+  flow: 'flow1' | 'flow2'
 }
 
-export function MacDesktopIntro({ onEnter, onPunishmentAlert, punishingGodName }: MacDesktopIntroProps) {
+export function MacDesktopIntro({ onEnter, onPunishmentAlert, punishingGodName, punishmentThreatText, flow }: MacDesktopIntroProps) {
   const [notificationHovered, setNotificationHovered] = useState(false)
   const [punishmentNotificationHovered, setPunishmentNotificationHovered] = useState(false)
+  const [showOmensNotification, setShowOmensNotification] = useState(false)
+  const [showPunishmentNotification, setShowPunishmentNotification] = useState(false)
+
+  useEffect(() => {
+    if (flow === 'flow1') {
+      const omensTimer = setTimeout(() => {
+        setShowOmensNotification(true)
+        playNotificationChime()
+      }, NOTIFICATION_DELAY_MS)
+      return () => clearTimeout(omensTimer)
+    }
+    const punishmentTimer = setTimeout(() => {
+      setShowPunishmentNotification(true)
+      playNotificationChime()
+    }, NOTIFICATION_DELAY_MS)
+    return () => clearTimeout(punishmentTimer)
+  }, [flow])
 
   return (
     <motion.div
@@ -425,108 +467,167 @@ export function MacDesktopIntro({ onEnter, onPunishmentAlert, punishingGodName }
         ))}
       </div>
 
-      {/* Notification — the only interactive element on this screen */}
-      <motion.div
-        initial={{ opacity: 0, y: -18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.9, ease: 'easeOut' }}
-        onClick={onEnter}
-        onMouseEnter={() => setNotificationHovered(true)}
-        onMouseLeave={() => setNotificationHovered(false)}
-        style={{
-          position: 'absolute',
-          top: 34,
-          right: 12,
-          width: 340,
-          padding: '12px 14px',
-          borderRadius: 14,
-          cursor: 'pointer',
-          background: notificationHovered ? 'rgba(38,38,38,0.82)' : 'rgba(28,28,28,0.72)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
-          transition: 'background-color 0.15s ease',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div
+      {/* Notifications — the only interactive elements on this screen. Each is gated behind
+          its own timer (rather than a motion `delay`) so a chime can fire the instant it
+          actually appears, decoupled from re-renders caused by hover state. */}
+      <AnimatePresence>
+        {showOmensNotification && (
+          <motion.div
+            key="omens-notification"
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            onClick={onEnter}
+            onMouseEnter={() => setNotificationHovered(true)}
+            onMouseLeave={() => setNotificationHovered(false)}
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: 5,
-              background: '#151515',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              position: 'absolute',
+              top: 34,
+              right: 12,
+              width: 340,
+              padding: '12px 14px',
+              borderRadius: 14,
+              cursor: 'pointer',
+              background: notificationHovered ? 'rgba(38,38,38,0.82)' : 'rgba(28,28,28,0.72)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            <img src={logoUrl} alt="" style={{ width: 10, height: 12 }} />
-          </div>
-          <span style={{ fontFamily: FONTS.spectral, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)' }}>
-            TRIBUTE
-          </span>
-          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>now</span>
-        </div>
-        <div style={{ marginTop: 5, fontSize: 14, fontWeight: 600, color: '#ffffff' }}>New Bad Omens Observed</div>
-        <div style={{ marginTop: 2, fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.82)' }}>
-          6 gods have become furious and demand appeasement.
-        </div>
-      </motion.div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 5,
+                  background: '#151515',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <img src={logoUrl} alt="" style={{ width: 10, height: 12 }} />
+              </div>
+              <span style={{ fontFamily: FONTS.spectral, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)' }}>
+                TRIBUTE
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>now</span>
+            </div>
+            <div style={{ marginTop: 5, fontSize: 14, fontWeight: 600, color: '#ffffff' }}>6 Gods Are Furious At The Empire</div>
+            <div style={{ marginTop: 2, fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.82)' }}>
+              Appease them to avoid their punishment.
+            </div>
+            {/* A row of furious gods' faces — implies more gods (6 total) beyond just Tlaloc.
+                Spread out side by side, not overlapping/stacked. */}
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+              {[tlalocRaw, huitzilopochtliRaw, tezcatlipocaRaw, mictlantecuhtliRaw, quetzalcoatlRaw].map((svgRaw, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 56,
+                    height: 72,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    background: '#151515',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ width: '62%', height: '78%' }}>
+                    <GodSvg svgRaw={svgRaw} angerLevel="high" instanceId={`omens-notification-god-${i}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
-      {/* Second notification — stacked below the first, same mac-notification chrome. Clicking
-          it enters the app and immediately surfaces GodPunishmentDialog (see App.tsx). */}
-      <motion.div
-        initial={{ opacity: 0, y: -18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.3, ease: 'easeOut' }}
-        onClick={onPunishmentAlert}
-        onMouseEnter={() => setPunishmentNotificationHovered(true)}
-        onMouseLeave={() => setPunishmentNotificationHovered(false)}
-        style={{
-          position: 'absolute',
-          top: 140,
-          right: 12,
-          width: 340,
-          padding: '12px 14px',
-          borderRadius: 14,
-          cursor: 'pointer',
-          background: punishmentNotificationHovered ? 'rgba(38,38,38,0.82)' : 'rgba(28,28,28,0.72)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
-          transition: 'background-color 0.15s ease',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div
+        {/* Punishment notification — only one of the two notifications is ever shown at a time
+            (gated by `flow`), so this always sits at the same top position the omens
+            notification uses, same mac-notification chrome. Clicking it enters the app and
+            immediately surfaces GodPunishmentDialog (see App.tsx). */}
+        {showPunishmentNotification && (
+          <motion.div
+            key="punishment-notification"
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            onClick={onPunishmentAlert}
+            onMouseEnter={() => setPunishmentNotificationHovered(true)}
+            onMouseLeave={() => setPunishmentNotificationHovered(false)}
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: 5,
-              background: '#151515',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              position: 'absolute',
+              top: 34,
+              right: 12,
+              width: 340,
+              padding: '12px 14px',
+              borderRadius: 14,
+              cursor: 'pointer',
+              background: punishmentNotificationHovered ? 'rgba(38,38,38,0.82)' : 'rgba(28,28,28,0.72)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            <img src={logoUrl} alt="" style={{ width: 10, height: 12 }} />
-          </div>
-          <span style={{ fontFamily: FONTS.spectral, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)' }}>
-            TRIBUTE
-          </span>
-          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>now</span>
-        </div>
-        <div style={{ marginTop: 5, fontSize: 14, fontWeight: 600, color: '#ffffff' }}>
-          {punishingGodName} Is Punishing The Empire
-        </div>
-        <div style={{ marginTop: 2, fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.82)' }}>
-          Left unappeased, {punishingGodName}'s wrath will fall on the empire.
-        </div>
-      </motion.div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 5,
+                  background: '#151515',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <img src={logoUrl} alt="" style={{ width: 10, height: 12 }} />
+              </div>
+              <span style={{ fontFamily: FONTS.spectral, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.55)' }}>
+                TRIBUTE
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>now</span>
+            </div>
+            <div style={{ marginTop: 5, fontSize: 14, fontWeight: 600, color: '#ffffff' }}>
+              {punishingGodName} Is Punishing The Empire
+            </div>
+            <div style={{ marginTop: 2, fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.82)' }}>
+              {punishmentThreatText}
+            </div>
+            {/* Same punishing-god card treatment as GodPunishmentDialog — EYE.high red fill,
+                white body, black eyes (a red ring reads poorly against a red card). Full width
+                of the notification frame. */}
+            <div
+              style={{
+                marginTop: 10,
+                width: '100%',
+                aspectRatio: '265 / 362',
+                borderRadius: 6,
+                border: '1.5px solid rgba(77,77,77,0.56)',
+                backgroundColor: EYE.high.color,
+                backgroundImage: 'radial-gradient(ellipse at 50% 62%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.35) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ width: '62%', height: '72%' }}>
+                <GodSvg svgRaw={tlalocRaw} angerLevel="high" bodyColor={COLORS.white} eyeColor={COLORS.gray0} instanceId="punishment-notification-god" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

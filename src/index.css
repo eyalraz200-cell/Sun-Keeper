@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --font-cinzel: 'Cinzel', serif;
   --font-spectral: 'Spectral', Georgia, serif;
 
   --color-bg-base: #1A1A1A;
@@ -84,4 +83,14 @@ select {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Lets small presentational icon components (FireIcon, TempleIcon, PyramidIcon, the
+   RitualParticipantPill icons, etc.) animate their color smoothly — they set `fill` as a plain
+   SVG attribute rather than an inline style, so a `transition` declared in a parent's own style
+   object never reaches them; this reaches every such descendant instead. Non-SVG elements simply
+   ignore the inapplicable `fill`/`stroke` properties, so applying it broadly is harmless. */
+.color-transition-group,
+.color-transition-group * {
+  transition: fill 0.4s ease, stroke 0.4s ease;
 }

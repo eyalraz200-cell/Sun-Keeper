@@ -76,7 +76,7 @@ function VictimCard({
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', paddingBottom: '16px' }}>
         {icon}
-        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
+        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: FONTS.spectral }}>{label}</span>
       </div>
       <div style={DIVIDER_STYLE} />
 
@@ -136,7 +136,7 @@ function TempleCard({
     <div style={{ ...CARD_STYLE, width: undefined, flex: 1 }}>
       {/* Header */}
       <div style={{ paddingBottom: '16px' }}>
-        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Cinzel', serif" }}>{label}</span>
+        <span style={{ ...VALUE_STYLE, fontSize: FONT_SIZE.md, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: FONTS.spectral }}>{label}</span>
       </div>
       <div style={DIVIDER_STYLE} />
 
@@ -218,7 +218,7 @@ export function ResourceScreen({
     }}>
       {/* Section label */}
       <div style={{
-        fontFamily: "'Cinzel', serif",
+        fontFamily: FONTS.spectral,
         fontSize: FONT_SIZE.xs,
         fontWeight: FONT_WEIGHT.medium,
         letterSpacing: '3px',
@@ -237,7 +237,7 @@ export function ResourceScreen({
 
       {/* Section label */}
       <div style={{
-        fontFamily: "'Cinzel', serif",
+        fontFamily: FONTS.spectral,
         fontSize: FONT_SIZE.xs,
         fontWeight: FONT_WEIGHT.medium,
         letterSpacing: '3px',
@@ -260,7 +260,7 @@ export function ResourceScreen({
           ]}
         />
         <TempleCard
-          label="Grand Temple"
+          label="Great Pyramid"
           available={grandTemples}
           total={grandTemplesTotal}
           ceremonies={[]}

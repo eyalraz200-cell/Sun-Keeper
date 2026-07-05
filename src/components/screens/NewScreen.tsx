@@ -49,7 +49,7 @@ function WireResourceBar({ prisoners, volunteers, children, virgins, temples = 1
       <WireResourceItem label="Volunteers" count={volunteers} />
       <div style={{ width: '1px', height: '32px', backgroundColor: 'rgba(102,102,102,0.4)' }} />
       <WireSiteItem label="Temple" available={temples} total={templesTotal} />
-      <WireSiteItem label="Grand Temple" available={greatTemples} total={greatTemplesTotal} />
+      <WireSiteItem label="Great Pyramid" available={greatTemples} total={greatTemplesTotal} />
     </div>
   )
 }

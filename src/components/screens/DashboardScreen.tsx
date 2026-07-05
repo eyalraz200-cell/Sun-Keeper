@@ -92,7 +92,7 @@ export function DashboardScreen() {
                 return (
                   <g key={i}>
                     <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
-                    <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.6)" fontSize={10} fontFamily="'Cinzel', serif">
+                    <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.6)" fontSize={10} fontFamily={FONTS.spectral}>
                       {i + 1}
                     </text>
                   </g>
@@ -119,7 +119,7 @@ export function DashboardScreen() {
                   gap: '10px',
                 }}
               >
-                <span style={{ fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, color: 'rgba(255,255,255,0.35)', minWidth: '52px' }}>
+                <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, color: 'rgba(255,255,255,0.35)', minWidth: '52px' }}>
                   {event.duration > 1 ? `${event.day}–${event.day + event.duration - 1}` : `Day ${event.day}`}
                 </span>
                 <div style={{ width: '1px', height: '16px', backgroundColor: COLORS.gray20 }} />
@@ -128,7 +128,7 @@ export function DashboardScreen() {
                   const god = GODS.find(g => g.id === event.godId)
                   return god ? <AngerCircle angerColor={god.angerColor} /> : null
                 })()}
-                <span style={{ fontFamily: FONTS.cinzel, fontSize: FONT_SIZE.xs, textTransform: 'uppercase', color: COLORS.white }}>{event.god}</span>
+                <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xs, textTransform: 'uppercase', color: COLORS.white }}>{event.god}</span>
               </div>
             ))}
           </div>

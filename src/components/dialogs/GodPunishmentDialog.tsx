@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, ANGER, SPACING } from '../../tokens'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, SPACING } from '../../tokens'
 import { GodSvg } from '../gods/GodSvg'
 import { getSvgRaw } from '../gods/GodCard'
 import type { God } from '../../data/gods'
@@ -10,13 +11,24 @@ interface GodPunishmentDialogProps {
   onAppeaseLater: () => void
 }
 
-// Figma node 244:10627 (rough draft). The face card reuses the app's existing anger palette
-// instead of the mock's one-off pure red: ANGER.high as the card fill and EYE.high as the eye
-// ring keeps this on the same two-tier data/render red the rest of the app already uses (see
-// GodCard/RitualCard), so the eyes still read against the backdrop instead of disappearing into
-// a matching red.
+// Figma node 244:10627 (rough draft). The face card reuses the app's existing render-layer red
+// (EYE.high, the same bright red used for a Furious god's own eye ring) as the card fill, matching
+// the punishing treatment GodCard uses elsewhere (see GodCard.tsx) — brighter than the data-layer
+// ANGER.high this used before. Eyes are forced black (GodSvg's eyeColor override) rather than the
+// usual anger-level red — a red ring reads poorly against a red card.
+// Per-god punishment flavor text — falls back to the generic "wrath" line for
+// any god without a domain-specific threat written yet.
+// Exported so MacDesktopIntro's punishment notification can show the exact same threat text
+// instead of a separately hand-written sentence drifting out of sync with this dialog.
+export const PUNISHMENT_THREATS: Partial<Record<string, string>> = {
+  tlaloc: "Not a drop of rain will fall upon the empire until he is appeased",
+}
+
 export function GodPunishmentDialog({ god, onAppeaseNow, onAppeaseLater }: GodPunishmentDialogProps) {
   const godNameUpper = god.name.toUpperCase()
+  const threatText = PUNISHMENT_THREATS[god.id] ?? `The empire will suffer ${godNameUpper}'s wrath until he is appeased`
+  const [laterHovered, setLaterHovered] = useState(false)
+  const [nowHovered, setNowHovered] = useState(false)
 
   return (
     <motion.div
@@ -56,7 +68,7 @@ export function GodPunishmentDialog({ god, onAppeaseNow, onAppeaseLater }: GodPu
             height: '362px',
             borderRadius: '6px',
             border: '1.5px solid rgba(77,77,77,0.56)',
-            backgroundColor: ANGER.high,
+            backgroundColor: EYE.high.color,
             backgroundImage: 'radial-gradient(ellipse at 50% 62%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.35) 100%)',
             display: 'flex',
             alignItems: 'center',
@@ -65,7 +77,7 @@ export function GodPunishmentDialog({ god, onAppeaseNow, onAppeaseLater }: GodPu
           }}
         >
           <div style={{ width: '171px', height: '265px' }}>
-            <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel="high" bodyColor={COLORS.white} instanceId={`punish-${god.id}`} />
+            <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel="high" bodyColor={COLORS.white} eyeColor={COLORS.gray0} instanceId={`punish-${god.id}`} />
           </div>
         </div>
 
@@ -96,43 +108,49 @@ export function GodPunishmentDialog({ god, onAppeaseNow, onAppeaseLater }: GodPu
             textAlign: 'center',
           }}
         >
-The empire will suffer {godNameUpper}'s wrath until he is appeased
+{threatText}
         </p>
 
         <div style={{ display: 'flex', gap: SPACING.md, marginTop: SPACING.xxl }}>
           <button
             onClick={onAppeaseLater}
+            onMouseEnter={() => setLaterHovered(true)}
+            onMouseLeave={() => setLaterHovered(false)}
             style={{
               fontFamily: FONTS.spectral,
               fontSize: FONT_SIZE.lg,
               fontWeight: FONT_WEIGHT.medium,
               letterSpacing: '0.96px',
               color: COLORS.white,
-              backgroundColor: 'transparent',
+              backgroundColor: laterHovered ? COLORS.gray20 : 'transparent',
               border: `1px solid ${COLORS.white}`,
               borderRadius: '4px',
-              padding: SPACING.sm,
+              padding: `${SPACING.sm} ${SPACING.xl}`,
               cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            Appease {godNameUpper} Later
+            Appease Later
           </button>
           <button
             onClick={onAppeaseNow}
+            onMouseEnter={() => setNowHovered(true)}
+            onMouseLeave={() => setNowHovered(false)}
             style={{
               fontFamily: FONTS.spectral,
               fontSize: FONT_SIZE.lg,
               fontWeight: FONT_WEIGHT.medium,
               letterSpacing: '0.96px',
               color: COLORS.gray0,
-              backgroundColor: COLORS.white,
+              backgroundColor: nowHovered ? COLORS.white : COLORS.gray95,
               border: 'none',
               borderRadius: '4px',
-              padding: SPACING.sm,
+              padding: `${SPACING.sm} ${SPACING.xl}`,
               cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            Appease {godNameUpper} Now
+            Appease Now
           </button>
         </div>
       </motion.div>
