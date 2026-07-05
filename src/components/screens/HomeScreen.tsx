@@ -27,10 +27,18 @@ const TIER_LABELS: Record<AngerLevel, string> = {
 }
 
 const DISPLAY_GOD_COUNT = 24
-const DISPLAY_GODS = Array.from({ length: DISPLAY_GOD_COUNT }, (_, i) => ({
-  ...GODS[i % GODS.length],
-  id: `${GODS[i % GODS.length].id}-dup-${i}`,
-}))
+// Every real god appears at least once — this guarantees the "Furious Gods" (high-anger) section
+// never shows a duplicate, since there are only 2 high-anger gods and each gets exactly one card.
+// The remaining slots needed to pad out to DISPLAY_GOD_COUNT cycle through only the non-high-anger
+// gods, so all duplicate cards land in the lower (Angry/Uneasy/Peaceful) tiers instead.
+const NON_HIGH_GODS = GODS.filter(g => g.angerLevel !== 'high')
+const DISPLAY_GODS = [
+  ...GODS.map((g, i) => ({ ...g, id: `${g.id}-dup-${i}` })),
+  ...Array.from({ length: DISPLAY_GOD_COUNT - GODS.length }, (_, i) => {
+    const g = NON_HIGH_GODS[i % NON_HIGH_GODS.length]
+    return { ...g, id: `${g.id}-dup-${GODS.length + i}` }
+  }),
+]
 // One bucket per non-empty anger tier, in ANGER_TIERS order — feeds the grid's section headers.
 const DISPLAY_GOD_BUCKETS = ANGER_TIERS
   .map(level => ({ level, gods: DISPLAY_GODS.filter(g => g.angerLevel === level) }))
