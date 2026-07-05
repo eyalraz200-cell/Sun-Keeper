@@ -2530,7 +2530,10 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   // dependency-triggered effect above never gets a final run with actionBarVisible=false here.
   useEffect(() => () => onActionBarVisibleChange?.(false), [])
 
-  useEffect(() => { onAuthorizingChange?.(isAuthorizing) }, [isAuthorizing])
+  // chromeHidden (not just isAuthorizing) — the AI toggle button and the left nav strip (see
+  // AppShell.tsx) should stay hidden through the fly-back window too, same as every other piece
+  // of chrome in this file.
+  useEffect(() => { onAuthorizingChange?.(chromeHidden) }, [chromeHidden])
   useEffect(() => () => onAuthorizingChange?.(false), [])
 
   // GSAP Flip: capture each of the clicked god's four pieces' rects *before* the DOM changes,

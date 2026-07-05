@@ -39,6 +39,16 @@ export function AppShell({
   openGodSignal = 0,
 }: AppShellProps) {
   const [activeScreen, setActiveScreen] = useState<string>('overview')
+  // Fades out the whole left nav strip for the same duration HomeScreen's own chrome (resource
+  // bar, headers, action bar) stays hidden for — the ritual-authorization fly-to-center animation
+  // and its fly-back both count, not just the drain in between (see HomeScreen's chromeHidden).
+  // Wraps onAuthorizingChange rather than replacing it, so the AI toggle button (App.tsx's own
+  // consumer of this same signal) keeps hiding in lockstep with the nav strip.
+  const [navHidden, setNavHidden] = useState(false)
+  const handleAuthorizingChange = (authorizing: boolean) => {
+    setNavHidden(authorizing)
+    onAuthorizingChange?.(authorizing)
+  }
 
   useEffect(() => {
     if (openGodSignal === 0) return
@@ -55,12 +65,14 @@ export function AppShell({
       }}
     >
       {/* Left navigation - full height */}
-      <SidebarNav activeScreen={activeScreen} onNavClick={setActiveScreen} />
+      <div style={{ opacity: navHidden ? 0 : 1, pointerEvents: navHidden ? 'none' : 'auto', transition: 'opacity 400ms ease' }}>
+        <SidebarNav activeScreen={activeScreen} onNavClick={setActiveScreen} />
+      </div>
 
       {/* Main content column */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, position: 'relative' }}>
         <div style={{ flex: 1, overflow: 'hidden', backgroundColor: COLORS.black, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
-          {activeScreen === 'new' ? <NewScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} aiPanelOpen={aiPanelOpen} /> : activeScreen === 'overview' ? <HomeScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} temples={resources?.temples} greatTemples={resources?.greatTemples} resourceTotals={resourceTotals} aiPanelOpen={aiPanelOpen} onActionBarVisibleChange={onActionBarVisibleChange} onAuthorizingChange={onAuthorizingChange} entered={entered} punishingGodId={punishingGodId} openGodId={openGodId} openGodSignal={openGodSignal} /> : activeScreen === 'calendar' ? <CalendarScreen /> : activeScreen === 'dashboard' ? <DashboardScreen /> : activeScreen === 'resources' ? <ResourceScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} /> : activeScreen === 'index' ? <PantheonScreen /> : null}
+          {activeScreen === 'new' ? <NewScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} aiPanelOpen={aiPanelOpen} /> : activeScreen === 'overview' ? <HomeScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} temples={resources?.temples} greatTemples={resources?.greatTemples} resourceTotals={resourceTotals} aiPanelOpen={aiPanelOpen} onActionBarVisibleChange={onActionBarVisibleChange} onAuthorizingChange={handleAuthorizingChange} entered={entered} punishingGodId={punishingGodId} openGodId={openGodId} openGodSignal={openGodSignal} /> : activeScreen === 'calendar' ? <CalendarScreen /> : activeScreen === 'dashboard' ? <DashboardScreen /> : activeScreen === 'resources' ? <ResourceScreen prisoners={resources?.prisoners ?? 0} volunteers={resources?.volunteers ?? 0} children={resources?.children ?? 0} virgins={resources?.virgins ?? 0} /> : activeScreen === 'index' ? <PantheonScreen /> : null}
         </div>
       </div>
 
