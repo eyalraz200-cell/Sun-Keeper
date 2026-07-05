@@ -1079,8 +1079,8 @@ const DETAIL_CARD_WIDTH = DETAIL_LEFT_COLUMN_WIDTH + DETAIL_CARD_GAP + RITUAL_CA
 // Vertical gap between the combined detail card and the candidate row below it — shrinks to
 // CANDIDATE_ROW_MARGIN_TOP_DENSE when the viewport is too short to fit the full stack (see
 // compactSpacing in the main HomeScreen component below, and COMPACT_HEIGHT_THRESHOLD).
-const CANDIDATE_ROW_MARGIN_TOP = 32
-const CANDIDATE_ROW_MARGIN_TOP_DENSE = 16
+const CANDIDATE_ROW_MARGIN_TOP = 24
+const CANDIDATE_ROW_MARGIN_TOP_DENSE = 12
 // Estimated normal-mode height of everything stacked above and around the candidate row that
 // eats into the viewport's available vertical space: the resource bar, the detail panel's own
 // container padding (16px top + 24px bottom), the combined detail card (RITUAL_CARD_HEIGHT_
@@ -2305,6 +2305,16 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   // from. Frozen for the sequence's duration (not recomputed), since availableX/reservedCost keep
   // changing meaning once spentCost/chosenRituals are touched at finalize.
   const [authorizeBeforeCost, setAuthorizeBeforeCost] = useState<ResourceCost>(ZERO_COST)
+  // Non-null only for the fly-back Flip's own duration (set right as it starts, cleared in its
+  // onComplete) — holds the set of god ids actually being flown back, so the chrome (headers,
+  // heading, action bar, resource bar) and every OTHER card can stay hidden until they've actually
+  // landed, instead of snapping back to fully visible the instant authorizeEntries clears (which
+  // finishes in AUTHORIZE_CHROME_FADE_MS, well before the much longer fly-back animation does) —
+  // that mismatch was what made the rest of the grid look like it was "already there" underneath
+  // the still-arriving cards. The cards themselves aren't held back by this (see hideCard below) —
+  // only their own visibility, not their position, so the Flip has something real to fly.
+  const [flyingBackGodIds, setFlyingBackGodIds] = useState<Set<string> | null>(null)
+  const flyingBack = flyingBackGodIds !== null
   const [hoveredRitual, setHoveredRitual] = useState<Ritual | null>(null)
   const [hoveredResourceType, setHoveredResourceType] = useState<'prisoners' | 'volunteers' | 'children' | 'virgins' | null>(null)
   const [hoveredSiteType, setHoveredSiteType] = useState<'Temple' | 'Great Pyramid' | null>(null)
@@ -2404,6 +2414,10 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   const availableGreatTemples = greatTemples - spentCost.greatTemples - reservedCost.greatTemples
 
   const isAuthorizing = authorizeEntries !== null
+  // Drives every chrome element's own fade (headers, heading, action bar, resource bar) — stays
+  // true through flyingBack as well as isAuthorizing, so none of it reappears until the fly-back
+  // Flip actually lands (see flyingBackGodIds' own comment for why that gap matters).
+  const chromeHidden = isAuthorizing || flyingBack
   // The resource bar stays in its normal dark look during the authorize/drain sequence itself —
   // only actual CTA hover (before the click commits) lights it up as a preview.
   const showLight = ctaHovered
@@ -2479,6 +2493,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
       // in the same tick as clearing authorizeEntries, so the real available*/reservedCost
       // computed on the very next render exactly match the last override value above.
       const spent = sumEntriesCost(authorizeEntries)
+      const returningGodIds = new Set(authorizeEntries.map(({ god }) => god.id))
       flushSync(() => {
         setSpentCost(prev => ({
           prisoners: prev.prisoners + spent.prisoners,
@@ -2499,8 +2514,11 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         })
         setAuthorizeEntries(null)
         setAuthorizeStepIndex(-1)
+        // Set in the SAME commit that clears authorizeEntries — see this state's own comment for
+        // why the rest of the grid needs to stay hidden until the Flip below actually finishes.
+        setFlyingBackGodIds(returningGodIds)
       })
-      if (state) Flip.from(state, { ...AUTHORIZE_FLIP_VARS, targets: flipSelector })
+      if (state) Flip.from(state, { ...AUTHORIZE_FLIP_VARS, targets: flipSelector, onComplete: () => setFlyingBackGodIds(null) })
     }, totalDrainMs + AUTHORIZE_END_HOLD_MS))
     return () => timers.forEach(clearTimeout)
   }, [authorizeEntries])
@@ -2719,7 +2737,14 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         // AuthorizeStage (see below) — leaving this grid slot as an invisible placeholder so the
         // rest of the grid doesn't reflow around the gap.
         const flyingAway = isAuthorizing && !!chosenRitual
-        const hideCard = isAuthorizing && !chosenRitual
+        // While flyingBack, chosenRituals has already been cleared for the whole batch (see the
+        // finalize flushSync), so "which cards are actually mid-Flip back into the grid" can't be
+        // read off chosenRitual anymore — flyingBackGodIds is the snapshot taken at that exact
+        // moment for this purpose. Every OTHER card (and all the chrome — see chromeHidden below)
+        // stays hidden until the Flip finishes, instead of snapping back to visible the moment
+        // authorizeEntries clears, well before the much slower fly-back animation actually lands.
+        const isReturning = flyingBackGodIds?.has(god.id) ?? false
+        const hideCard = isAuthorizing ? !chosenRitual : (flyingBack && !isReturning)
         return (
           // data-grid-card marks the whole rendered card for the entrance-animation stagger only
           // (see the useLayoutEffect above) — the actual GSAP Flip targets for the grid<->list hero
@@ -2738,8 +2763,9 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
               height: flyingAway ? `${CARD_HEIGHT}px` : undefined,
               opacity: hideCard ? 0 : 1,
               // Blocks interaction on every card while authorizing — both the fading-out ones and
-              // the currently-relevant ones — so nothing can be clicked/hovered mid-sequence.
-              pointerEvents: isAuthorizing ? 'none' : 'auto',
+              // the currently-relevant ones — so nothing can be clicked/hovered mid-sequence. Held
+              // through flyingBack too, since the returning cards are still mid-Flip then.
+              pointerEvents: (isAuthorizing || flyingBack) ? 'none' : 'auto',
               transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease`,
             }}
           >
@@ -2784,7 +2810,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
           </div>
         </div>
       )}
-      <div style={{ flexShrink: 0, opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+      <div style={{ flexShrink: 0, opacity: chromeHidden ? 0 : 1, pointerEvents: chromeHidden ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
         <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} dense={compactSpacing} />
       </div>
       <div
@@ -2808,7 +2834,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 disappear for a stretch and reappear, when the content never actually needed to
                 change. Left at its default opaque state, it swaps instantly at the same moment
                 everything else does, with nothing to visibly vanish. */}
-            <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left', opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+            <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left', opacity: chromeHidden ? 0 : 1, pointerEvents: chromeHidden ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
               {/* Fixed (not absolute) so it escapes this column's overflow:auto scroll clipping
                   and aligns with the true viewport edge, matching the floating AI button's own
                   fixed right:24px offset — an absolute negative-right offset here gets clipped
@@ -2829,7 +2855,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
 
             {orderedGodBuckets.map(({ level, gods }) => (
               <Fragment key={level}>
-                <AngerTierHeader level={level} count={gods.length} faded={isAuthorizing} />
+                <AngerTierHeader level={level} count={gods.length} faded={chromeHidden} />
                 {renderGrid(gods)}
               </Fragment>
             ))}
@@ -2881,7 +2907,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         )}
       </div>
       {actionBarVisible && (
-        <div style={{ flexShrink: 0, opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+        <div style={{ flexShrink: 0, opacity: chromeHidden ? 0 : 1, pointerEvents: chromeHidden ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
           <HomeActionBar
             chosenCount={Object.keys(chosenRituals).length}
             cost={reservedCost}
