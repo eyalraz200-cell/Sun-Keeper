@@ -44,8 +44,16 @@ function withDisplayId<T extends { id: string }>(g: T): T {
 // section is a different god and none of them repeat, without actually duplicating Huitzilopochtli
 // or Tlaloc. Any further padding needed to reach DISPLAY_GOD_COUNT is drawn entirely from the
 // none-anger (Peaceful) gods, so real duplicate cards only ever land in the calmest tier.
+// The Basic ritual's outcome is also re-skinned to Offended (orange) to match a real furious god's
+// Basic ritual — otherwise it'd still show the borrowed god's own (calmer) real outcome color,
+// which reads as broken/unfit next to the furious-red card it's now sitting on.
 const furiousFillers = NON_HIGH_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g =>
-  withDisplayId({ ...g, angerLevel: 'high' as AngerLevel, angerColor: ANGER.high })
+  withDisplayId({
+    ...g,
+    angerLevel: 'high' as AngerLevel,
+    angerColor: ANGER.high,
+    rituals: g.rituals.map((r, i) => (i === 0 ? { ...r, outcomeColor: ANGER.medium } : r)),
+  })
 )
 const peacefulPaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
 const DISPLAY_GODS = [
