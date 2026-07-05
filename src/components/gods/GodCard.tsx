@@ -220,10 +220,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
           ? COLORS.gray20
           : stageMode
             // Waiting for its turn: one step darker than the usual gray30, so the whole batch
-            // starts out visibly dim/inert. Once its own drain turn begins, the face goes fully
-            // white and stays there — draining never reverts to false once true, so this also
-            // covers "done, remains white".
-            ? (draining ? COLORS.white : COLORS.gray20)
+            // starts out visibly dim/inert. Once its own drain turn begins, the face brightens to
+            // gray95 (one step short of true white — less harsh) and stays there — draining never
+            // reverts to false once true, so this also covers "done, stays bright".
+            ? (draining ? COLORS.gray95 : COLORS.gray20)
             : (lightMode ? COLORS.gray40 : COLORS.gray30)
   const bodyAnimKeyRef = useRef(0)
   const [prevBodyColor, setPrevBodyColor] = useState(bodyColor)
@@ -324,10 +324,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // so this absolute-positioned content still counts toward :card's own reported box size — see
   // STAGE_CARD_WIDTH's own comment for why that matters to HomeScreen's stage layout.
   if (stageMode) {
-    // Mirrors bodyColor's own stageMode branch exactly (same colors, same idle->white shift on
+    // Mirrors bodyColor's own stageMode branch exactly (same colors, same idle->gray95 shift on
     // draining) so the name brightens in lockstep with the face — a plain CSS transition works
     // here (unlike the face) since this is a real DOM text color, not raw SVG markup.
-    const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : (draining ? COLORS.white : COLORS.gray20)
+    const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : (draining ? COLORS.gray95 : COLORS.gray20)
     return (
       <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', width: `${STAGE_CARD_WIDTH}px` }}>
         {/* Name centered directly above the face — both share the face's own width. */}
