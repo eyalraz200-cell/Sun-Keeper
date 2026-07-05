@@ -28,9 +28,10 @@ const TIER_LABELS: Record<AngerLevel, string> = {
 
 const DISPLAY_GOD_COUNT = 24
 // "Furious Gods" always shows exactly this many cards, but only 2 gods are actually high-anger.
-const FURIOUS_TIER_SIZE = 6
+const FURIOUS_TIER_SIZE = 8
 const HIGH_GODS = GODS.filter(g => g.angerLevel === 'high')
 const NON_HIGH_GODS = GODS.filter(g => g.angerLevel !== 'high')
+const NONE_ANGER_GODS = GODS.filter(g => g.angerLevel === 'none')
 
 let nextDupId = 0
 function withDisplayId<T extends { id: string }>(g: T): T {
@@ -41,16 +42,16 @@ function withDisplayId<T extends { id: string }>(g: T): T {
 // is padded up to FURIOUS_TIER_SIZE by borrowing distinct lower-anger gods and re-skinning them as
 // furious (angerLevel/angerColor overridden to 'high') — a display-only trick so every card in that
 // section is a different god and none of them repeat, without actually duplicating Huitzilopochtli
-// or Tlaloc. Any further padding needed to reach DISPLAY_GOD_COUNT cycles through the non-high-anger
-// gods in their own true tiers, so real duplicate cards only ever land in the lower ranks.
+// or Tlaloc. Any further padding needed to reach DISPLAY_GOD_COUNT is drawn entirely from the
+// none-anger (Peaceful) gods, so real duplicate cards only ever land in the calmest tier.
 const furiousFillers = NON_HIGH_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g =>
   withDisplayId({ ...g, angerLevel: 'high' as AngerLevel, angerColor: ANGER.high })
 )
-const basePaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
+const peacefulPaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
 const DISPLAY_GODS = [
   ...GODS.map(g => withDisplayId(g)),
   ...furiousFillers,
-  ...Array.from({ length: basePaddingCount }, (_, i) => withDisplayId(NON_HIGH_GODS[i % NON_HIGH_GODS.length])),
+  ...Array.from({ length: peacefulPaddingCount }, (_, i) => withDisplayId(NONE_ANGER_GODS[i % NONE_ANGER_GODS.length])),
 ]
 // One bucket per non-empty anger tier, in ANGER_TIERS order — feeds the grid's section headers.
 const DISPLAY_GOD_BUCKETS = ANGER_TIERS
