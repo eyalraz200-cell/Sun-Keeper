@@ -317,7 +317,7 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
     return (
       <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
         {/* Name centered directly above the face — both share the face's own width. */}
-        <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
+        <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
           {god.name}
         </div>
         <div data-flip-id={`${god.id}:face`} style={{ width: `${FACE_WIDTH}px`, height: `${FACE_HEIGHT}px`, flexShrink: 0 }}>

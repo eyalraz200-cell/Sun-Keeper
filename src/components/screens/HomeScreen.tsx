@@ -38,7 +38,6 @@ const DISPLAY_GOD_COUNT = 24
 // "Furious Gods" always shows exactly this many cards, but only 2 gods are actually high-anger.
 const FURIOUS_TIER_SIZE = 8
 const HIGH_GODS = GODS.filter(g => g.angerLevel === 'high')
-const NONE_ANGER_GODS = GODS.filter(g => g.angerLevel === 'none')
 
 let nextDupId = 0
 function withDisplayId<T extends { id: string }>(g: T): T {
@@ -348,12 +347,29 @@ const FURIOUS_FILLER_GODS: God[] = [
     ],
   },
 ]
+// Same reused-SVG-with-its-own-name trick as FURIOUS_FILLER_GODS above, but for padding out the
+// Peaceful tier — every real angerLevel:'none' god is just Tonatiuh, so without this, the padding
+// used to fall back to NONE_ANGER_GODS (length 1) and every filler card was a literal duplicate
+// Tonatiuh. Each entry here reuses a different real god's SVG (never Tonatiuh's own, so the one
+// true Tonatiuh card stays the only card with that face in this section) as portrait art for an
+// otherwise wholly separate peaceful/abundance deity — own name, subtitle, and (per the 0-rituals-
+// for-Peaceful convention) no ritual cards.
+const PEACEFUL_FILLER_GODS: God[] = [
+  { id: 'huitzilopochtli', name: 'Xochiquetzal', subtitle: 'Goddess of Love and Flowers', svg: '/gods/huitzilopochtli.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 85, rituals: [] },
+  { id: 'tlaloc', name: 'Mayahuel', subtitle: 'Goddess of the Maguey', svg: '/gods/tlaloc.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 82, rituals: [] },
+  { id: 'tezcatlipoca', name: 'Chicomecoatl', subtitle: 'Goddess of Sustenance', svg: '/gods/tezcatlipoca.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 88, rituals: [] },
+  { id: 'quetzalcoatl', name: 'Xilonen', subtitle: 'Goddess of Young Maize', svg: '/gods/quetzalcoatl.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 79, rituals: [] },
+  { id: 'mictlantecuhtli', name: 'Centeotl', subtitle: 'God of Maize', svg: '/gods/mictlantecuhtli.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 84, rituals: [] },
+  { id: 'ehecatl', name: 'Tepoztecatl', subtitle: 'God of Pulque', svg: '/gods/ehecatl.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 76, rituals: [] },
+  { id: 'xiuhtecuhtli', name: 'Opochtli', subtitle: 'God of Fishing', svg: '/gods/xiuhtecuhtli.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 81, rituals: [] },
+  { id: 'chalchiuhtlicue', name: 'Yohualtecuhtli', subtitle: 'Lord of the Night', svg: '/gods/chalchiuhtlicue.svg', angerColor: '#6C6C6C', angerLevel: 'none', favor: 87, rituals: [] },
+]
 const furiousFillers = FURIOUS_FILLER_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g => withDisplayId(g))
 const peacefulPaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
 const DISPLAY_GODS = [
   ...GODS.map(g => withDisplayId(g)),
   ...furiousFillers,
-  ...Array.from({ length: peacefulPaddingCount }, (_, i) => withDisplayId(NONE_ANGER_GODS[i % NONE_ANGER_GODS.length])),
+  ...Array.from({ length: peacefulPaddingCount }, (_, i) => withDisplayId(PEACEFUL_FILLER_GODS[i % PEACEFUL_FILLER_GODS.length])),
 ]
 // One bucket per non-empty anger tier, in ANGER_TIERS order — feeds the grid's section headers.
 // HomeScreen itself never reads this directly — it derives orderedGodBuckets/orderedGodsByTier
@@ -2873,7 +2889,13 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             flexWrap: 'wrap',
             alignContent: 'center',
             justifyContent: 'center',
-            gap: '24px',
+            // Wider than the grid's own 24px card gap on purpose: each card's pills are
+            // position:absolute against it (see GodCard.tsx's stageMode branch), so they don't
+            // contribute to the card's own box width here — a plain 24px gap would only space out
+            // the (pill-less) name/face boxes and let one card's pills overlap the next card's
+            // face. This needs to clear that pill overhang (~87px: STAGE_PILL_WIDTH + its 20px
+            // margin) plus actual breathing room on top of it.
+            gap: '120px',
             padding: '48px',
             // Faces stay at their normal grid-card size (see GodCard.tsx's stageMode comment) no
             // matter how many gods are in this batch, so a big enough batch could in principle
