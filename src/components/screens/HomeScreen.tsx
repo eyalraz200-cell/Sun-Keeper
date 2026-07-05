@@ -44,15 +44,23 @@ function withDisplayId<T extends { id: string }>(g: T): T {
 // section is a different god and none of them repeat, without actually duplicating Huitzilopochtli
 // or Tlaloc. Any further padding needed to reach DISPLAY_GOD_COUNT is drawn entirely from the
 // none-anger (Peaceful) gods, so real duplicate cards only ever land in the calmest tier.
-// The Basic ritual's outcome is also re-skinned to Offended (orange) to match a real furious god's
-// Basic ritual — otherwise it'd still show the borrowed god's own (calmer) real outcome color,
-// which reads as broken/unfit next to the furious-red card it's now sitting on.
+// The Basic/Major rituals' outcomes are also re-skinned to Offended/Uneasy to match a real furious
+// god's 3-unique-color composition (Offended, Uneasy, Peaceful) — otherwise a borrowed low-anger god
+// (whose real rituals are all Peaceful) would show two white ritual cards, which reads as
+// broken/unfit next to the furious-red card it's now sitting on. outcomeEye() in GodCard.tsx keys
+// off these exact literals, not the (differently-valued) ANGER.low token, hence the raw hex below.
+const RITUAL_OUTCOME_OFFENDED = ANGER.medium // '#d4662a' — outcomeEye() match for "Offended"
+const RITUAL_OUTCOME_UNEASY = '#d4a83c' // outcomeEye() match for "Uneasy"
 const furiousFillers = NON_HIGH_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g =>
   withDisplayId({
     ...g,
     angerLevel: 'high' as AngerLevel,
     angerColor: ANGER.high,
-    rituals: g.rituals.map((r, i) => (i === 0 ? { ...r, outcomeColor: ANGER.medium } : r)),
+    rituals: g.rituals.map((r, i) => {
+      if (i === 0) return { ...r, outcomeColor: RITUAL_OUTCOME_OFFENDED }
+      if (i === 1) return { ...r, outcomeColor: RITUAL_OUTCOME_UNEASY }
+      return r
+    }),
   })
 )
 const peacefulPaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
