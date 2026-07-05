@@ -95,13 +95,11 @@ const RITUAL_PANEL_RIGHT_GAP = 12 // matches the padding between the card's righ
 // it never eats into either the face-gap or the right-edge-gap.
 export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP
 
-// The authorize-stage card (stageMode) drops the frame/panel/site entirely and shows only a much
-// larger face, so it isn't bound by CARD_WIDTH/FACE_WIDTH above at all — same aspect ratio, just bigger.
-const STAGE_FACE_WIDTH = 260
-const STAGE_FACE_HEIGHT = Math.round(STAGE_FACE_WIDTH * (194 / 125))
-// Pills sit beside the face (not stretched to its width), at the exact same width they render
-// at in the grid card's own ritual panel (RITUAL_PANEL_WIDTH minus that panel's 11px×2 padding) —
-// unlike the face, the pills themselves are not meant to get any bigger here.
+// The authorize-stage card (stageMode) drops the frame/panel/site entirely, but the face itself
+// stays at exactly the same size as the grid card's own face (FACE_WIDTH/FACE_HEIGHT) — it must
+// never grow, so the stage can always fit as many simultaneous gods as needed without clipping.
+// Pills sit beside the face (not stretched to its width), at the exact same width they render at
+// in the grid card's own ritual panel (RITUAL_PANEL_WIDTH minus that panel's 11px×2 padding).
 const STAGE_PILL_WIDTH = RITUAL_PANEL_WIDTH - 22
 
 type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
@@ -203,8 +201,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
     // Ritual in progress steps the face way down from the usual full white — same "resting/
     // spent, not shouting for attention" reasoning as the non-punishing inProgress case below,
     // just starting from white instead of gray30 since punishing's idle face is white to begin
-    // with. Still forced to gray0 on highlight/select, same as the idle-punishing look.
-    ? (highlighted ? COLORS.gray0 : inProgress ? COLORS.gray60 : COLORS.white)
+    // with. Still forced to gray0 on highlight/select, same as the idle-punishing look. Matches
+    // nameColor below exactly — the name and face read as one unit at this darker step.
+    ? (highlighted ? COLORS.gray0 : inProgress ? COLORS.gray40 : COLORS.white)
     : inProgress
       ? COLORS.gray18
       : highlighted
@@ -295,13 +294,15 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   // `:card`, `:name`, and `:face` are flown independently (matching HomeScreen's authorize Flip
   // selector), reusing HERO_FLIP_VARS-style `nested:true` rather than a single whole-box
   // `scale:true` flip — a single-target scale flip stretched non-uniformly here since the grid
-  // card's box and this stage layout have very different proportions (same failure mode the
-  // grid<->list hero transition's own comment describes for a whole-card flip). `:face` growing
-  // on its own, nested inside the `:card` anchor, tracks the SAME aspect ratio at both ends, so it
-  // just grows/moves smoothly with no stretch. `:name` MUST also be its own flip target here, not
-  // just left in normal flow: nested/absolute Flip pulls `:face` out of flex flow for the
-  // animation's duration, and `:name` (its sibling in the same column) would otherwise collapse
-  // upward into the space `:face` just vacated, overlapping it instead of sitting above it.
+  // card's box and this stage layout have different proportions (same failure mode the
+  // grid<->list hero transition's own comment describes for a whole-card flip). `:face` is the
+  // exact same size at both ends (FACE_WIDTH/FACE_HEIGHT, never enlarged — see the constants'
+  // comment above), so its own flip is really just a position move, not a resize; flying it as its
+  // own nested target still keeps it visually locked to its actual size the whole time rather than
+  // inheriting :card's own transform. `:name` MUST also be its own flip target here, not just left
+  // in normal flow: nested/absolute Flip pulls `:face` out of flex flow for the animation's
+  // duration, and `:name` (its sibling in the same column) would otherwise collapse upward into
+  // the space `:face` just vacated, overlapping it instead of sitting above it.
   //
   // The pills are NOT a flip target (they don't grow — see STAGE_PILL_WIDTH — and aren't a
   // distinct piece on the grid card's side), and for that exact reason they can't be a normal flex
@@ -316,10 +317,10 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
     return (
       <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
         {/* Name centered directly above the face — both share the face's own width. */}
-        <div data-flip-id={`${god.id}:name`} style={{ width: `${STAGE_FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
+        <div data-flip-id={`${god.id}:name`} style={{ width: `${FACE_WIDTH}px`, textAlign: 'center', fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1.2px', transition: 'color 0.15s ease-out' }}>
           {god.name}
         </div>
-        <div data-flip-id={`${god.id}:face`} style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px`, flexShrink: 0 }}>
+        <div data-flip-id={`${god.id}:face`} style={{ width: `${FACE_WIDTH}px`, height: `${FACE_HEIGHT}px`, flexShrink: 0 }}>
           <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
         </div>
         {chosenRitual && (
@@ -413,7 +414,9 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
           fontFamily: FONTS.spectral,
           fontSize: '13px',
           fontWeight: FONT_WEIGHT.light,
-          color: isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : inProgress ? COLORS.gray20 : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40,
+          // Matches bodyColor's own isPunishing branch exactly (including its inProgress step to
+          // gray40) — the name and face read as one unit, not two independently-colored pieces.
+          color: isPunishing ? (highlighted ? COLORS.gray0 : inProgress ? COLORS.gray40 : COLORS.white) : inProgress ? COLORS.gray20 : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40,
           textTransform: 'uppercase',
           letterSpacing: '1px',
           transition: 'color 0.15s ease-out',
@@ -457,7 +460,11 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
         }}
       >
         {inProgress ? (
-          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.gray30, textAlign: 'center' }}>Ritual in progress</span>
+          // Brighter than the usual gray30 while punishing — the panel itself has no border/fill
+          // here (see the transparent inProgress branch above), so this label sits directly on
+          // the card's own translucent red tint instead of the plain dark cardBg every other
+          // god's inProgress panel sits on, and needed the lift to stay legible against it.
+          <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: isPunishing ? COLORS.gray60 : COLORS.gray30, textAlign: 'center' }}>Ritual in progress</span>
         ) : chosenRitual ? (
           <>
             <div style={{ marginBottom: '8px' }}>

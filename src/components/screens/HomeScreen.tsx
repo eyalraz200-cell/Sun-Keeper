@@ -1060,7 +1060,7 @@ const DETAIL_CARD_PADDING = 16
 // sidesteps the whole race rather than fighting over measurement timing.
 const DETAIL_CARD_WIDTH = DETAIL_LEFT_COLUMN_WIDTH + DETAIL_CARD_GAP + RITUAL_CARD_WIDTH + DETAIL_CARD_PADDING * 2 + 2 // +2 for the 1px border on each side (content-box sizing)
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, chosenRitualId, isActive = true, isCentered = true, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, isPunishing }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; chosenRitualId?: string | null; isActive?: boolean; isCentered?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null; highlightSite?: 'Temple' | 'Great Pyramid' | null; measuredCardHeight: number | null; onMeasuredCardHeight: (height: number) => void; availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }; isPunishing?: boolean }) {
+function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, chosenRitualId, isActive = true, isCentered = true, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, isPunishing }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; chosenRitualId?: string | null; isActive?: boolean; isCentered?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null; highlightSite?: 'Temple' | 'Great Pyramid' | null; measuredCardHeight: number | null; onMeasuredCardHeight: (height: number) => void; availableResources: { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }; isPunishing?: boolean }) {
   // Widened to match outcomeEye()'s return type — EYE itself is `as const` (a literal-typed
   // union per level), which would otherwise stop `to`/`from` below from ever holding an
   // outcomeEye() result once a ritual is docked.
@@ -1535,6 +1535,14 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
             children: availableResources.children + (chosenRitual?.participants.children ?? 0),
             virgins: availableResources.virgins + (chosenRitual?.participants.virgins ?? 0),
           }
+          // Same "add this god's own currently-docked ritual back first" reasoning as
+          // effectiveAvailable above, but for the ritual site (Temple/Great Pyramid) count —
+          // sites were never checked here at all before, so running out of one silently never
+          // blocked a ritual as "unaffordable" the way running out of a tribute type already did.
+          const effectiveAvailableSite: Record<'Temple' | 'Great Pyramid', number> = {
+            Temple: availableResources.temples + (chosenRitual?.sacredSite.name === 'Temple' ? chosenRitual.sacredSite.count : 0),
+            'Great Pyramid': availableResources.greatTemples + (chosenRitual?.sacredSite.name === 'Great Pyramid' ? chosenRitual.sacredSite.count : 0),
+          }
           // While this god is punishing, effectiveRituals already IS just its single Ultimate
           // Ritual (see its own declaration above) — no separate filter needed here anymore.
           return effectiveRituals
@@ -1543,7 +1551,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
           const isChosen = ritual.id === chosenRitualId
           const insufficientParticipantTypes = (['prisoners', 'volunteers', 'children', 'virgins'] as const)
             .filter(type => ritual.participants[type] > effectiveAvailable[type])
-          const canAfford = insufficientParticipantTypes.length === 0
+          const siteName = ritual.sacredSite.name as 'Temple' | 'Great Pyramid'
+          const insufficientSite = ritual.sacredSite.count > effectiveAvailableSite[siteName]
+          const canAfford = insufficientParticipantTypes.length === 0 && !insufficientSite
           return (
             <div
               key={ritual.id}
@@ -1570,6 +1580,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 tierLabel={tierLabelFor(ritual, index)}
                 insufficientResources={!canAfford}
                 insufficientParticipantTypes={insufficientParticipantTypes}
+                insufficientSite={insufficientSite}
               />
             </div>
           )
@@ -1682,7 +1693,7 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
   highlightSite?: 'Temple' | 'Great Pyramid' | null
   measuredCardHeight: number | null
   onMeasuredCardHeight: (height: number) => void
-  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }
+  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }
   punishingGodId?: string | null
   heroRevealGodId: string | null
   panelHeights: Record<string, number>
@@ -1912,7 +1923,7 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
   highlightSite?: 'Temple' | 'Great Pyramid' | null
   measuredCardHeight: number | null
   onMeasuredCardHeight: (height: number) => void
-  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }
+  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }
   punishingGodId?: string | null
   heroRevealGodId: string | null
   panelHeights: Record<string, number>
@@ -2788,7 +2799,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             onMeasuredCardHeight={setMeasuredCardHeight}
             panelHeights={panelHeights}
             onPanelHeightsChange={setPanelHeights}
-            availableResources={{ prisoners: availablePrisoners, volunteers: availableVolunteers, children: availableChildren, virgins: availableVirgins }}
+            availableResources={{ prisoners: availablePrisoners, volunteers: availableVolunteers, children: availableChildren, virgins: availableVirgins, temples: availableTemples, greatTemples: availableGreatTemples }}
             punishingGodId={punishingGodId}
             heroRevealGodId={heroRevealGodId}
             // No data-transition-chrome here either — see the matching comment on the grid
@@ -2862,13 +2873,15 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
             flexWrap: 'wrap',
             alignContent: 'center',
             justifyContent: 'center',
-            // Wider than the grid's own 24px card gap — the enlarged faces need noticeably more
-            // breathing room between them than the small grid cards ever did.
-            gap: '64px',
+            gap: '24px',
             padding: '48px',
-            // The stage itself never intercepts pointer events (nothing here is clickable while
-            // authorizing) — each individual GodCard below already renders with no onClick anyway.
-            pointerEvents: 'none',
+            // Faces stay at their normal grid-card size (see GodCard.tsx's stageMode comment) no
+            // matter how many gods are in this batch, so a big enough batch could in principle
+            // need more room than the viewport has — scroll instead of letting cards clip off the
+            // fixed-position stage invisibly. Left interactive (no pointerEvents:'none' here,
+            // unlike before) purely so that scroll can actually happen — nothing inside has an
+            // onClick anyway, so this doesn't make anything clickable.
+            overflow: 'auto',
           }}
         >
           {authorizeEntries.map(({ god, ritual }, i) => (
