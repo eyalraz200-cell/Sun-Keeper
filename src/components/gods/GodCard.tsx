@@ -95,6 +95,11 @@ const RITUAL_PANEL_RIGHT_GAP = 12 // matches the padding between the card's righ
 // it never eats into either the face-gap or the right-edge-gap.
 export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RIGHT_GAP
 
+// The authorize-stage card (stageMode) drops the frame/panel/site entirely and shows only a much
+// larger face, so it isn't bound by CARD_WIDTH/FACE_WIDTH above at all — same aspect ratio, just bigger.
+const STAGE_FACE_WIDTH = 260
+const STAGE_FACE_HEIGHT = Math.round(STAGE_FACE_WIDTH * (194 / 125))
+
 type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
 
 interface GodCardProps {
@@ -230,15 +235,13 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   const baseEye = EYE[god.angerLevel]
   // Punishing wins over everything else here — a red eye ring would nearly disappear against the
   // card's own red fill, so it goes black instead, at the same weight the anger level would've
-  // used. Hovering flips the face to black too (see bodyColor below), so black eyes would vanish
-  // into it — the base anger-level red takes back over there instead, same as any other highlighted
-  // furious card.
+  // used. Stays black on hover/select too — no flipping back to the anger-level red.
   // holdBaseEyes (the authorize-stage card only) keeps the eyes on the base anger color for as
   // long as this card hasn't started draining yet — once draining begins, it falls through to the
   // same outcome-color target as everywhere else, so the eyeAnimation tween below carries it from
   // anger color to outcome color over the drain itself instead of showing outcome color upfront.
   const eyeTarget = isPunishing
-    ? (highlighted ? baseEye : { color: COLORS.gray0, weight: baseEye.weight })
+    ? { color: COLORS.gray0, weight: baseEye.weight }
     : inProgress && outcome
       ? { color: hexToRgba(outcome.color, 0.45), weight: outcome.weight }
       : holdBaseEyes && !draining
@@ -271,6 +274,53 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
     const duration = draining ? DRAIN_DURATION_S : 0.4
     setEyeAnimation({ fromColor: prevEye.color, fromWeight: prevEye.weight, toColor: eyeTarget.color, toWeight: eyeTarget.weight, delay: 0, duration, id: `eye-${god.id}-${eyeAnimKeyRef.current}` })
     setPrevEye(eyeTarget)
+  }
+
+  // The authorize-stage card is a deliberately stripped-down look — no outer frame, no ritual
+  // panel/site, just the (enlarged) face, name, and the pills themselves — different enough from
+  // the grid/list layout below that it's its own branch rather than more conditionals threaded
+  // through the absolute-positioned name/face/panel layout. Still carries the same
+  // `data-flip-id={god.id}:card` as the grid card, which is all HomeScreen's authorize-stage Flip
+  // actually targets (the grid<->list hero transition's own :name/:face/:panel targets don't apply
+  // here — a stage card and a grid<->list hero card are never the same DOM instance).
+  if (stageMode) {
+    const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40
+    return (
+      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px` }}>
+          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
+        </div>
+        <div style={{ fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease-out' }}>
+          {god.name}
+        </div>
+        {chosenRitual && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              width: `${STAGE_FACE_WIDTH}px`,
+              // Once this card's own drain finishes, the pills fade away entirely instead of
+              // sitting there drained — the face stays white, only the tributes disappear.
+              opacity: drainProgress <= 0 ? 0 : 1,
+              transition: 'opacity 0.6s ease',
+            }}
+          >
+            {([
+              { key: 'prisoners', Icon: PrisonerIcon },
+              { key: 'volunteers', Icon: VolunteerIcon },
+              { key: 'children', Icon: ChildrenIcon },
+              { key: 'virgins', Icon: VirginIcon },
+            ] as const)
+              // Only the participant types this ritual actually spends are shown at all.
+              .filter(({ key }) => chosenRitual.participants[key] > 0)
+              .map(({ key, Icon }) => (
+                <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+              ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -373,42 +423,23 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.gray30, textAlign: 'center' }}>Ritual in progress</span>
         ) : chosenRitual ? (
           <>
-            {!stageMode && (
-              <div style={{ marginBottom: '8px' }}>
-                <FireIcon size={20} color={panelLight ? COLORS.gray30 : COLORS.gray80} />
-              </div>
-            )}
+            <div style={{ marginBottom: '8px' }}>
+              <FireIcon size={20} color={panelLight ? COLORS.gray30 : COLORS.gray80} />
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: 'auto' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  width: '100%',
-                  // Once this card's own drain finishes (drainProgress tweens 1->0 and holds),
-                  // the pills fade away entirely instead of sitting there drained — the face
-                  // (above) stays white, only the tributes themselves disappear.
-                  opacity: stageMode && drainProgress <= 0 ? 0 : 1,
-                  transition: stageMode ? 'opacity 0.6s ease' : undefined,
-                }}
-              >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                 {([
                   { key: 'prisoners', Icon: PrisonerIcon },
                   { key: 'volunteers', Icon: VolunteerIcon },
                   { key: 'children', Icon: ChildrenIcon },
                   { key: 'virgins', Icon: VirginIcon },
-                ] as const)
-                  // In stageMode, only the participant types this ritual actually spends are shown
-                  // at all — every other caller still shows every type, dim/inactive, as before.
-                  .filter(({ key }) => !stageMode || chosenRitual.participants[key] > 0)
-                  .map(({ key, Icon }) => (
+                ] as const).map(({ key, Icon }) => (
                   // Lights up (white fill) on CTA hover, while the resource bar's matching tab is
                   // hovered, or while the card itself is hovered/selected in grid view — the card
                   // itself no longer highlights as a whole for the CTA/resource-bar cases, only
                   // this pill does; grid hover already brightens the rest of the card too, so this
-                  // just brings the relevant pills along with the same look. Always lit in
-                  // stageMode instead (every pill left after the filter above is active anyway).
-                  <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} light={stageMode || lightMode || isPunishing || highlighted || highlightParticipantType === key} liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+                  // just brings the relevant pills along with the same look.
+                  <RitualParticipantPill key={key} Icon={Icon} active={chosenRitual.participants[key] > 0} value={chosenRitual.participants[key]} light={lightMode || isPunishing || highlighted || highlightParticipantType === key} liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
                 ))}
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: panelLight ? COLORS.gray60 : COLORS.gray20, transition: 'background-color 0.4s ease' }} />
