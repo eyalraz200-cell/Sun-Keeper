@@ -1,21 +1,29 @@
 import { useState, useRef, useLayoutEffect, useEffect, Fragment } from 'react'
-import { createPortal } from 'react-dom'
-import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, RESOURCE_TOTALS, SPACING } from '../../tokens'
+import { createPortal, flushSync } from 'react-dom'
+import gsap from 'gsap'
+import { Flip } from 'gsap/Flip'
+import { COLORS, FONTS, FONT_SIZE, FONT_WEIGHT, EYE, ANGER, RESOURCE_TOTALS, SPACING } from '../../tokens'
 import { GODS, type God, type Ritual, type AngerLevel } from '../../data/gods'
 import { GodSvg } from '../gods/GodSvg'
-import { GodCard, CARD_WIDTH, outcomeEye, getSvgRaw } from '../gods/GodCard'
+import { GodCard, CARD_WIDTH, CARD_HEIGHT, outcomeEye, getSvgRaw, hexToRgba } from '../gods/GodCard'
 import { RitualCard } from '../ritual/RitualCard'
-import { RitualResultScreen } from '../ritual/RitualResultScreen'
 import { FireIcon } from '../icons/FireIcon'
 import { PrisonerIcon } from '../icons/PrisonerIcon'
 import { ChildrenIcon } from '../icons/ChildrenIcon'
 import { VirginIcon } from '../icons/VirginIcon'
 import { VolunteerIcon } from '../icons/VolunteerIcon'
 import { PyramidIcon } from '../icons/PyramidIcon'
+import { TempleIcon } from '../icons/TempleIcon'
 import { RingedIcon } from '../icons/RingedIcon'
-import { GridFour, ListBullets, CaretLeft } from '@phosphor-icons/react'
+import { CaretLeft, GridFour, ListBullets } from '@phosphor-icons/react'
+
+gsap.registerPlugin(Flip)
 
 const AI_TOGGLE_RESERVE = '96px' // keeps the floating AI toggle button (54px circle, 12px from right edge) off the card grid
+
+// Every god has exactly 3 rituals, always ordered cheapest to costliest (see Ritual Data
+// Conventions) — index maps directly to a fixed cost-tier label shown on each RitualCard.
+const RITUAL_TIER_LABELS = ['Basic Ritual', 'Major Ritual', 'Supreme Ritual']
 
 // Gods are grouped into sections by anger tier, in this fixed order.
 const ANGER_TIERS: AngerLevel[] = ['high', 'medium', 'low', 'none']
@@ -30,7 +38,6 @@ const DISPLAY_GOD_COUNT = 24
 // "Furious Gods" always shows exactly this many cards, but only 2 gods are actually high-anger.
 const FURIOUS_TIER_SIZE = 8
 const HIGH_GODS = GODS.filter(g => g.angerLevel === 'high')
-const NON_HIGH_GODS = GODS.filter(g => g.angerLevel !== 'high')
 const NONE_ANGER_GODS = GODS.filter(g => g.angerLevel === 'none')
 
 let nextDupId = 0
@@ -39,30 +46,300 @@ function withDisplayId<T extends { id: string }>(g: T): T {
 }
 
 // Every real god appears at least once in its own true tier. On top of that, the Furious section
-// is padded up to FURIOUS_TIER_SIZE by borrowing distinct lower-anger gods and re-skinning them as
-// furious (angerLevel/angerColor overridden to 'high') — a display-only trick so every card in that
-// section is a different god and none of them repeat, without actually duplicating Huitzilopochtli
-// or Tlaloc. Any further padding needed to reach DISPLAY_GOD_COUNT is drawn entirely from the
-// none-anger (Peaceful) gods, so real duplicate cards only ever land in the calmest tier.
-// The Basic/Major rituals' outcomes are also re-skinned to Offended/Uneasy to match a real furious
-// god's 3-unique-color composition (Offended, Uneasy, Peaceful) — otherwise a borrowed low-anger god
-// (whose real rituals are all Peaceful) would show two white ritual cards, which reads as
-// broken/unfit next to the furious-red card it's now sitting on. outcomeEye() in GodCard.tsx keys
-// off these exact literals, not the (differently-valued) ANGER.low token, hence the raw hex below.
-const RITUAL_OUTCOME_OFFENDED = ANGER.medium // '#d4662a' — outcomeEye() match for "Offended"
-const RITUAL_OUTCOME_UNEASY = '#d4a83c' // outcomeEye() match for "Uneasy"
-const furiousFillers = NON_HIGH_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g =>
-  withDisplayId({
-    ...g,
-    angerLevel: 'high' as AngerLevel,
+// is padded up to FURIOUS_TIER_SIZE with wholly separate filler gods — their own name, subtitle,
+// and independent 3-ritual set (Offended/Uneasy/Peaceful, at furious-tier cost). These are NOT
+// borrowed/re-skinned real gods: real medium/low gods now carry fewer ritual cards each (see
+// Ritual Data Conventions — 2 for Angry, 1 for Uneasy, 0 for Peaceful), so spreading their (now
+// short) ritual arrays into a "furious" card used to leave it with too few cards. Each filler only
+// reuses an existing god's SVG as portrait art, via a shared `id` that getSvgRaw() resolves back
+// to that SVG after stripping the "-dup-N" suffix — the name/rituals/everything else is its own.
+// Any further padding needed to reach DISPLAY_GOD_COUNT is drawn entirely from the none-anger
+// (Peaceful) gods, so real duplicate cards only ever land in the calmest tier.
+const FURIOUS_FILLER_GODS: God[] = [
+  {
+    id: 'tezcatlipoca',
+    name: 'Itzpapalotl',
+    subtitle: 'Obsidian Butterfly of War',
+    svg: '/gods/Tezcatlipoca.svg',
     angerColor: ANGER.high,
-    rituals: g.rituals.map((r, i) => {
-      if (i === 0) return { ...r, outcomeColor: RITUAL_OUTCOME_OFFENDED }
-      if (i === 1) return { ...r, outcomeColor: RITUAL_OUTCOME_UNEASY }
-      return r
-    }),
-  })
-)
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'butterfly-vigil',
+        name: 'Butterfly Vigil',
+        description: 'Captives and loyal warriors offered beneath obsidian wings.',
+        participants: { prisoners: 60, children: 0, virgins: 0, volunteers: 40 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Evening',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'tezcatlipoca', before: 55, after: 40 }],
+      },
+      {
+        id: 'obsidian-wing-rite',
+        name: 'Obsidian Wing Rite',
+        description: 'Sacred virgins and a host of devotees dance beneath the night sky.',
+        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Midnight',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'tezcatlipoca', before: 40, after: 20 }],
+      },
+      {
+        id: 'night-warriors-descent',
+        name: "Night Warrior's Descent",
+        description: 'A grand host of captives, virgins, and devotees descends into obsidian dark.',
+        participants: { prisoners: 100, children: 0, virgins: 5, volunteers: 155 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'tezcatlipoca', before: 20, after: 0 }],
+      },
+    ],
+  },
+  {
+    id: 'mictlantecuhtli',
+    name: 'Mictecacihuatl',
+    subtitle: 'Lady of the Bone Throne',
+    svg: '/gods/Mictlantecuhtli.svg',
+    angerColor: ANGER.high,
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'bone-queens-feast',
+        name: "Bone Queen's Feast",
+        description: 'Prisoners are laid before the throne of the underworld queen.',
+        participants: { prisoners: 55, children: 0, virgins: 0, volunteers: 45 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Midnight',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'mictlantecuhtli', before: 55, after: 40 }],
+      },
+      {
+        id: 'underworld-descent',
+        name: 'Underworld Descent',
+        description: 'Devotees and sacred virgins keep watch at the gates of Mictlan.',
+        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 168 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Midnight',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'mictlantecuhtli', before: 40, after: 20 }],
+      },
+      {
+        id: 'ladys-final-rite',
+        name: "Lady of Mictlan's Rite",
+        description: 'A grand procession of captives and virgins crosses into the underworld.',
+        participants: { prisoners: 90, children: 0, virgins: 4, volunteers: 166 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'mictlantecuhtli', before: 20, after: 0 }],
+      },
+    ],
+  },
+  {
+    id: 'xiuhtecuhtli',
+    name: 'Xolotl',
+    subtitle: 'Twin of the Evening Star',
+    svg: '/gods/Xiuhtecuhtli.svg',
+    angerColor: ANGER.high,
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'twin-stars-toll',
+        name: "Twin Star's Toll",
+        description: 'Prisoners and fire-keepers are given to the dog-headed guide.',
+        participants: { prisoners: 70, children: 0, virgins: 0, volunteers: 30 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dusk',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'xiuhtecuhtli', before: 55, after: 40 }],
+      },
+      {
+        id: 'evening-star-descent',
+        name: 'Evening Star Descent',
+        description: 'Sacred virgins and devotees walk the sun down into darkness.',
+        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dusk',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'xiuhtecuhtli', before: 40, after: 20 }],
+      },
+      {
+        id: 'xolotls-final-guide',
+        name: "Xolotl's Final Guide",
+        description: "A grand host of captives and virgins is led through the underworld's trials.",
+        participants: { prisoners: 110, children: 0, virgins: 4, volunteers: 146 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'xiuhtecuhtli', before: 20, after: 0 }],
+      },
+    ],
+  },
+  {
+    id: 'chalchiuhtlicue',
+    name: 'Tlaltecuhtli',
+    subtitle: 'Devourer of the Earth',
+    svg: '/gods/Chalchiuhtlicue.svg',
+    angerColor: ANGER.high,
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'earthquake-offering',
+        name: 'Earthquake Offering',
+        description: 'Prisoners and children are cast to still the trembling ground.',
+        participants: { prisoners: 50, children: 30, virgins: 0, volunteers: 20 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dawn',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'chalchiuhtlicue', before: 55, after: 40 }],
+      },
+      {
+        id: 'devourers-hunger',
+        name: "Devourer's Hunger",
+        description: "Children and a sacred virgin feed the earth monster's endless hunger.",
+        participants: { prisoners: 0, children: 80, virgins: 2, volunteers: 88 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dusk',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'chalchiuhtlicue', before: 40, after: 20 }],
+      },
+      {
+        id: 'world-below-rite',
+        name: 'World-Below Rite',
+        description: 'Prisoners, children, and sacred virgins are given to the earth below.',
+        participants: { prisoners: 70, children: 60, virgins: 5, volunteers: 125 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'chalchiuhtlicue', before: 20, after: 0 }],
+      },
+    ],
+  },
+  {
+    id: 'ehecatl',
+    name: 'Atlacamani',
+    subtitle: 'Goddess of Storms & Sea',
+    svg: '/gods/Ehecatl.svg',
+    angerColor: ANGER.high,
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'storm-callers-vow',
+        name: "Storm Caller's Vow",
+        description: 'Prisoners and devotees brave the gathering squall.',
+        participants: { prisoners: 40, children: 0, virgins: 0, volunteers: 60 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dawn',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'ehecatl', before: 55, after: 40 }],
+      },
+      {
+        id: 'tempest-rite',
+        name: 'Tempest Rite',
+        description: 'Sacred virgins and a great host stand against the rising tempest.',
+        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 168 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dawn',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'ehecatl', before: 40, after: 20 }],
+      },
+      {
+        id: 'hurricanes-reckoning',
+        name: "Hurricane's Reckoning",
+        description: 'Captives and sacred virgins are given to calm the raging sea.',
+        participants: { prisoners: 80, children: 0, virgins: 5, volunteers: 175 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'ehecatl', before: 20, after: 0 }],
+      },
+    ],
+  },
+  {
+    id: 'quetzalcoatl',
+    name: 'Coatlicue',
+    subtitle: 'Serpent-Skirted Mother',
+    svg: '/gods/Quetzalcoatl.svg',
+    angerColor: ANGER.high,
+    angerLevel: 'high',
+    favor: 30,
+    rituals: [
+      {
+        id: 'serpent-mothers-toll',
+        name: "Serpent Mother's Toll",
+        description: 'Prisoners and devotees kneel before the mother of the gods.',
+        participants: { prisoners: 45, children: 0, virgins: 0, volunteers: 55 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Morning',
+        duration: '2 days',
+        outcomeColor: '#d4662a',
+        available: true,
+        effects: [{ godId: 'coatlicue', before: 55, after: 40 }],
+      },
+      {
+        id: 'skirt-of-serpents-rite',
+        name: 'Skirt of Serpents Rite',
+        description: 'Sacred virgins and a great host renew her serpent skirt.',
+        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 167 },
+        sacredSite: { name: 'Temple', count: 1 },
+        schedule: 'Dusk',
+        duration: '3 days',
+        outcomeColor: '#d4a83c',
+        available: true,
+        effects: [{ godId: 'coatlicue', before: 40, after: 20 }],
+      },
+      {
+        id: 'birth-of-war-rite',
+        name: 'Birth of War Rite',
+        description: 'Captives and sacred virgins reenact the birth of Huitzilopochtli.',
+        participants: { prisoners: 95, children: 0, virgins: 4, volunteers: 161 },
+        sacredSite: { name: 'Great Pyramid', count: 1 },
+        schedule: 'Midnight',
+        duration: '4 days',
+        outcomeColor: '#c8a83c',
+        available: true,
+        effects: [{ godId: 'coatlicue', before: 20, after: 0 }],
+      },
+    ],
+  },
+]
+const furiousFillers = FURIOUS_FILLER_GODS.slice(0, Math.max(0, FURIOUS_TIER_SIZE - HIGH_GODS.length)).map(g => withDisplayId(g))
 const peacefulPaddingCount = DISPLAY_GOD_COUNT - GODS.length - furiousFillers.length
 const DISPLAY_GODS = [
   ...GODS.map(g => withDisplayId(g)),
@@ -70,12 +347,75 @@ const DISPLAY_GODS = [
   ...Array.from({ length: peacefulPaddingCount }, (_, i) => withDisplayId(NONE_ANGER_GODS[i % NONE_ANGER_GODS.length])),
 ]
 // One bucket per non-empty anger tier, in ANGER_TIERS order — feeds the grid's section headers.
+// HomeScreen itself never reads this directly — it derives orderedGodBuckets/orderedGodsByTier
+// from it on every render, reordering the punishing god's card to the front of its own tier (see
+// that derivation for why grid, list, and every scroll-position index all need to agree on one
+// consistently-ordered list rather than each reordering independently).
 const DISPLAY_GOD_BUCKETS = ANGER_TIERS
   .map(level => ({ level, gods: DISPLAY_GODS.filter(g => g.angerLevel === level) }))
   .filter(bucket => bucket.gods.length > 0)
-// Same gods, flattened into tier order (Furious → Angry → Uneasy → Peaceful) — feeds the
-// list-view rail, which renders section titles inline rather than as separate grid sections.
-const DISPLAY_GODS_BY_TIER = DISPLAY_GOD_BUCKETS.flatMap(bucket => bucket.gods)
+
+// DISPLAY_GODS suffixes every entry with "-dup-N" (see above) — strip it before comparing
+// against the punishing-god flow's real id (App.tsx's PUNISHING_GOD.id), so every duplicated
+// card for that god (grid and list rail alike) picks up the punishing treatment, not just one.
+function isPunishingGodId(godId: string, punishingGodId?: string | null): boolean {
+  return !!punishingGodId && godId.replace(/-dup-\d+$/, '') === punishingGodId
+}
+
+// The punishing-god flow's own 4th, off-menu ritual tier — deliberately NOT part of the god's
+// static `rituals` array (every god has exactly 3, per the ritual data conventions), since it only
+// ever exists for whichever single god the punishment flow currently targets. Built once per
+// render from RESOURCE_TOTALS (the fixed global pool), not from whatever's currently available —
+// so its cost is a stable, deterministic function of the god alone, not a moving target that
+// drifts as other gods' rituals get chosen/authorized elsewhere. Costs strictly more than the
+// god's own Supreme ritual: its dominant participant type (whichever the Supreme ritual leans on
+// hardest) is bumped to the ENTIRE global total for that resource, and every other type is bumped
+// to 1.6x Supreme's own number (capped at that type's own total, so it can never demand more than
+// exists). Consuming the full pool of one resource is exactly what "make sure there's enough
+// funds for it" means here — at game start, before anything else has spent from that pool, it's
+// guaranteed affordable; the existing insufficientParticipantTypes/canAfford check in
+// HomeGodDetailPanel still greys it out same as any other ritual if something else already has.
+function buildUltimateRitual(god: God): Ritual {
+  const supreme = god.rituals[2]
+  const participantTypes = ['prisoners', 'volunteers', 'children', 'virgins'] as const
+  const dominant = participantTypes.reduce((a, b) => (supreme.participants[b] > supreme.participants[a] ? b : a))
+  const bumpedCost = (type: typeof dominant) =>
+    type === dominant ? RESOURCE_TOTALS[type] : Math.min(RESOURCE_TOTALS[type], Math.round(supreme.participants[type] * 1.6))
+  const supremeDurationDays = parseInt(supreme.duration, 10) || 5
+  return {
+    id: `${god.id.replace(/-dup-\d+$/, '')}-ultimate`,
+    name: 'Ultimate Ritual',
+    description: `Every last ${dominant} the empire holds, offered at once to break ${god.name}'s wrath for good.`,
+    participants: {
+      prisoners: bumpedCost('prisoners'),
+      volunteers: bumpedCost('volunteers'),
+      children: bumpedCost('children'),
+      virgins: bumpedCost('virgins'),
+    },
+    sacredSite: { name: 'Great Pyramid', count: 1 },
+    schedule: supreme.schedule,
+    duration: `${supremeDurationDays + 2} days`,
+    outcomeColor: supreme.outcomeColor,
+    available: true,
+    effects: supreme.effects,
+  }
+}
+
+// Resolves a chosen ritual id back to its Ritual object, checking the synthetic Ultimate Ritual
+// (see buildUltimateRitual above) whenever the id doesn't match anything in god.rituals — every
+// call site that used to do a plain `god.rituals.find(...)` on a possibly-punishing god's chosen
+// ritual needs this instead, or an ultimate-ritual choice resolves to nothing everywhere outside
+// HomeGodDetailPanel itself (grid card border, list rail pill, cost totals, authorize entries).
+function resolveRitual(god: God, ritualId: string | null | undefined): Ritual | null {
+  if (!ritualId) return null
+  const found = god.rituals.find(r => r.id === ritualId)
+  if (found) return found
+  return ritualId === `${god.id.replace(/-dup-\d+$/, '')}-ultimate` ? buildUltimateRitual(god) : null
+}
+
+function tierLabelFor(ritual: Ritual, index: number): string {
+  return ritual.name === 'Ultimate Ritual' ? 'Ultimate Ritual' : RITUAL_TIER_LABELS[index]
+}
 
 type ResourceCost = { prisoners: number; volunteers: number; children: number; virgins: number; temples: number; greatTemples: number }
 const ZERO_COST: ResourceCost = { prisoners: 0, volunteers: 0, children: 0, virgins: 0, temples: 0, greatTemples: 0 }
@@ -84,14 +424,31 @@ function sumRitualCost(chosenRituals: Record<string, string>): ResourceCost {
   const total = { ...ZERO_COST }
   for (const godId in chosenRituals) {
     const god = DISPLAY_GODS.find(g => g.id === godId)
-    const ritual = god?.rituals.find(r => r.id === chosenRituals[godId])
+    const ritual = god ? resolveRitual(god, chosenRituals[godId]) : null
     if (!ritual) continue
     total.prisoners += ritual.participants.prisoners
     total.volunteers += ritual.participants.volunteers
     total.children += ritual.participants.children
     total.virgins += ritual.participants.virgins
     if (ritual.sacredSite.name === 'Temple') total.temples += ritual.sacredSite.count
-    if (ritual.sacredSite.name === 'Grand Temple') total.greatTemples += ritual.sacredSite.count
+    if (ritual.sacredSite.name === 'Great Pyramid') total.greatTemples += ritual.sacredSite.count
+  }
+  return total
+}
+
+// Same shape as sumRitualCost but operating on an ordered entries array (god+ritual pairs) instead
+// of the chosenRituals record — needed because the authorization drain sequence sums cost over a
+// specific ordered SLICE of entries (however many gods have had their turn so far), which
+// sumRitualCost's record-based signature has no way to express.
+function sumEntriesCost(entries: Array<{ god: God; ritual: Ritual }>): ResourceCost {
+  const total = { ...ZERO_COST }
+  for (const { ritual } of entries) {
+    total.prisoners += ritual.participants.prisoners
+    total.volunteers += ritual.participants.volunteers
+    total.children += ritual.participants.children
+    total.virgins += ritual.participants.virgins
+    if (ritual.sacredSite.name === 'Temple') total.temples += ritual.sacredSite.count
+    if (ritual.sacredSite.name === 'Great Pyramid') total.greatTemples += ritual.sacredSite.count
   }
   return total
 }
@@ -104,7 +461,27 @@ function ResourceDivider({ fullBleed }: { fullBleed?: boolean } = {}) {
   return <div style={{ flexShrink: 0, width: fullBleed ? '2px' : '1px', alignSelf: 'stretch', backgroundColor: fullBleed ? COLORS.black : COLORS.gray20, margin: fullBleed ? '-8px 0' : 0 }} />
 }
 
-const RESOURCE_COUNT_ANIM_DURATION = 1000
+const RESOURCE_COUNT_ANIM_DURATION = 1800
+
+// Ritual-authorization drain sequence timing (see authorizeEntries/authorizeStepIndex state in
+// HomeScreen below). AUTHORIZE_STEP_DURATION_MS has its own (slower) literal rather than reusing
+// RESOURCE_COUNT_ANIM_DURATION (that constant stays fast — it's also used for the unrelated
+// docking/undocking preview elsewhere), but is kept in sync BY CONVENTION with GodCard.tsx's
+// DRAIN_DURATION_S so each god's own pill drain and the resource bar's own useAnimatedNumber tween
+// still land together, one god-turn at a time. All four are easily tunable starting points, not a
+// strict spec.
+const AUTHORIZE_CHROME_FADE_MS = 400
+const AUTHORIZE_STEP_DURATION_MS = 3500
+const AUTHORIZE_STEP_GAP_MS = 180
+const AUTHORIZE_END_HOLD_MS = 450
+
+// Chosen cards fly from their grid position into a centered "authorize stage" before the drain
+// sequence begins (and fly back into the grid, as ritual-in-progress cards, once it ends) — see
+// the CTA's onPerform and the finalize timeout below. Mirrors the grid<->list hero transition's
+// own GSAP Flip recipe (HERO_FLIP_VARS/handleSelectGod) but for a single rigid card box rather
+// than 4 independently-resizing pieces, so no `nested` flag is needed.
+const AUTHORIZE_FLY_MS = 700
+const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, zIndex: 1500 }
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
 // docking/undocking a ritual reads as spending/refunding resources rather than a hard cut.
@@ -139,35 +516,47 @@ function useAnimatedNumber(value: number, duration = RESOURCE_COUNT_ANIM_DURATIO
   return display
 }
 
-function HomeResourceItem({ icon, label, count, total, cost, ritualActive, isFirst, isLast, onHoverChange }: { icon: (color: string) => React.ReactNode; label: string; count: number; total: number; cost?: number; ritualActive?: boolean; isFirst?: boolean; isLast?: boolean; onHoverChange?: (isHovered: boolean) => void }) {
+function HomeResourceItem({ icon, label, count, cost, ritualActive, isFirst, isLast, onHoverChange, light }: { icon: (color: string) => React.ReactNode; label: string; count: number; cost?: number; ritualActive?: boolean; isFirst?: boolean; isLast?: boolean; onHoverChange?: (isHovered: boolean) => void; light?: boolean }) {
   const displayCount = useAnimatedNumber(count)
   const affected = (cost ?? 0) > 0
   const dimmed = ritualActive && !affected
-  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
-  const valueColor = ritualActive ? (affected ? COLORS.white : 'rgba(255,255,255,0.25)') : COLORS.gray95
-  const valueOpacity = ritualActive && affected ? 1 : 0.7
+  // Hovering this item's own section lights it up the same way the CTA-hover `light` prop does —
+  // independent reasons to reach the same white-fill treatment, so they're just OR'd together.
+  const [isHovered, setIsHovered] = useState(false)
+  const lit = light || isHovered
+  const labelColor = lit ? COLORS.gray30 : ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
+  const valueColor = lit ? COLORS.gray0 : ritualActive ? (affected ? COLORS.white : 'rgba(255,255,255,0.25)') : COLORS.gray95
+  const valueOpacity = lit ? 1 : ritualActive && affected ? 1 : 0.7
   // Only the pill's true outer corners round to match its own border-radius — an interior edge
   // (butting against a divider, not the pill's edge) stays square, or the fill reads as its own
   // separate rounded chip floating mid-pill instead of a flush segment of one shared shape.
   const fillRadius = `${isFirst ? '8px' : '0'} ${isLast ? '8px' : '0'} ${isLast ? '8px' : '0'} ${isFirst ? '8px' : '0'}`
+  // Light mode (this resource type is used by every chosen ritual combined, while the CTA is
+  // hovered — or this section itself is hovered) turns this same fill rect white instead of the
+  // usual dark "irrelevant" overlay — the "pill lights up" preview the rest of the item's colors
+  // above key off of via `lit`.
+  const fillColor = lit ? COLORS.white : dimmed ? 'rgba(0,0,0,0.18)' : 'transparent'
   return (
     <div
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
-      style={{ position: 'relative', flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px' }}
+      onMouseEnter={() => { setIsHovered(true); onHoverChange?.(true) }}
+      onMouseLeave={() => { setIsHovered(false); onHoverChange?.(false) }}
+      // fill/stroke transition for the plain SVG icon component (PrisonerIcon etc.) — see
+      // GodCard.tsx's identical use of this rule for why a `transition` in this file's own style
+      // objects can't reach it. See index.css.
+      className="color-transition-group"
+      style={{ position: 'relative', flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '24px', cursor: 'default' }}
     >
       {/* Bleeds the full 24px gap on each side to reach the divider itself (the divider is its own
           flex child with a 24px gap on both sides, not a shared 12px split) and to the pill's own
           top/bottom edge — so the fill reads as its full segment between dividers, not a box
           hugging the icon/text with a sliver of the pill's base color still showing around it. */}
-      <div style={{ position: 'absolute', top: '-8px', bottom: '-8px', left: '-24px', right: '-24px', borderRadius: fillRadius, backgroundColor: dimmed ? 'rgba(0,0,0,0.18)' : 'transparent', transition: 'background-color 0.2s ease' }} />
+      <div style={{ position: 'absolute', top: '-8px', bottom: '-8px', left: '-24px', right: '-24px', borderRadius: fillRadius, backgroundColor: fillColor, transition: 'background-color 0.4s ease' }} />
       <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center' }}>{icon(labelColor)}</div>
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.4s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: valueOpacity, transition: 'color 0.2s ease, opacity 0.2s ease' }}>{displayCount}</span>
-            <span style={{ color: valueColor, opacity: 0.25, transition: 'color 0.2s ease' }}> / {total}</span>
+            <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: valueOpacity, fontVariantNumeric: 'tabular-nums', transition: 'color 0.4s ease, opacity 0.4s ease' }}>{displayCount}</span>
           </span>
         </div>
       </div>
@@ -175,26 +564,36 @@ function HomeResourceItem({ icon, label, count, total, cost, ritualActive, isFir
   )
 }
 
-function HomeSiteItem({ icon, label, available, total, cost, ritualActive }: { icon: (color: string) => React.ReactNode; label: string; available: number; total: number; cost?: number; ritualActive?: boolean }) {
+function HomeSiteItem({ icon, label, available, cost, ritualActive, light, onHoverChange }: { icon: (color: string) => React.ReactNode; label: string; available: number; cost?: number; ritualActive?: boolean; light?: boolean; onHoverChange?: (isHovered: boolean) => void }) {
   const displayAvailable = useAnimatedNumber(available)
   const affected = (cost ?? 0) > 0
-  const dimmed = ritualActive && !affected
-  const labelColor = ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
-  const valueColor = ritualActive ? (affected ? COLORS.white : 'rgba(255,255,255,0.25)') : COLORS.gray95
-  const valueOpacity = ritualActive && affected ? 1 : 0.7
+  // Hovering this item's own section lights it up the same way the CTA-hover `light` prop does —
+  // same OR'd-together reasoning as HomeResourceItem above.
+  const [isHovered, setIsHovered] = useState(false)
+  const lit = light || isHovered
+  // light (this site is used by any chosen ritual, while the CTA is hovered, or this section
+  // itself is hovered) steps everything up to the brightest tones on the same dark bar — unlike
+  // the tribute pills, sites have no fill background to invert to white, so "brighter" here means
+  // climbing the gray scale, not a theme flip. Independent of ritualActive/hoveredRitual, same
+  // decoupling as HomeResourceItem above.
+  const labelColor = lit ? COLORS.gray95 : ritualActive ? (affected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)') : COLORS.gray60
+  const valueColor = lit ? COLORS.white : ritualActive ? (affected ? COLORS.white : 'rgba(255,255,255,0.25)') : COLORS.gray95
+  const valueOpacity = lit ? 1 : ritualActive && affected ? 1 : 0.7
   return (
     // Bare item, no shared pill behind it (unlike HomeResourceItem) — so unlike that one, dimming
     // here is text/ring-only, no dark fill rect to bleed toward a divider that doesn't exist.
-    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px' }}>
-      <RingedIcon size={44} borderColor={dimmed ? COLORS.gray20 : COLORS.gray30}>
+    <div
+      onMouseEnter={() => { setIsHovered(true); onHoverChange?.(true) }}
+      onMouseLeave={() => { setIsHovered(false); onHoverChange?.(false) }}
+      className="color-transition-group" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '16px', cursor: 'default' }}>
+      <RingedIcon size={44} borderColor={labelColor}>
         {icon(labelColor)}
       </RingedIcon>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.2s ease' }}>{label}</span>
+        <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: labelColor, transition: 'color 0.4s ease' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: valueOpacity, transition: 'color 0.2s ease, opacity 0.2s ease' }}>{displayAvailable}</span>
-            <span style={{ color: valueColor, opacity: 0.25, transition: 'color 0.2s ease' }}> / {total}</span>
+            <span style={{ fontSize: FONT_SIZE.xl, color: valueColor, opacity: valueOpacity, fontVariantNumeric: 'tabular-nums', transition: 'color 0.4s ease, opacity 0.4s ease' }}>{displayAvailable}</span>
           </span>
         </div>
       </div>
@@ -208,28 +607,39 @@ function HomeBarSectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, hoveredRitual, onResourceHover }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: typeof RESOURCE_TOTALS; hoveredRitual?: Ritual | null; onResourceHover?: (type: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null) => void }) {
+function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, hoveredRitual, onResourceHover, onSiteHover, ctaHovered, reservedCost }: { prisoners: number; volunteers: number; children: number; virgins: number; temples?: number; greatTemples?: number; resourceTotals?: ResourceCost; hoveredRitual?: Ritual | null; onResourceHover?: (type: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null) => void; onSiteHover?: (site: 'Temple' | 'Great Pyramid' | null) => void; ctaHovered?: boolean; reservedCost?: ResourceCost }) {
   const ritualActive = !!hoveredRitual
+  // Two independent reasons to go into the same light-mode (white-fill) preview, OR'd together:
+  // the CTA is hovered and this resource type is used by ANY chosen ritual (reservedCost, the same
+  // total the bottom action bar's own pills sum up), or a single ritual card is being hovered right
+  // now and this type is used by that one ritual — same white-fill look either way, rather than the
+  // ritualActive/cost opacity-based dim-vs-highlight scheme below applying to the relevant type.
+  const prisonersLight = (!!ctaHovered && (reservedCost?.prisoners ?? 0) > 0) || !!hoveredRitual?.participants.prisoners
+  const volunteersLight = (!!ctaHovered && (reservedCost?.volunteers ?? 0) > 0) || !!hoveredRitual?.participants.volunteers
+  const childrenLight = (!!ctaHovered && (reservedCost?.children ?? 0) > 0) || !!hoveredRitual?.participants.children
+  const virginsLight = (!!ctaHovered && (reservedCost?.virgins ?? 0) > 0) || !!hoveredRitual?.participants.virgins
+  const templesLight = (!!ctaHovered && (reservedCost?.temples ?? 0) > 0) || hoveredRitual?.sacredSite.name === 'Temple'
+  const greatTemplesLight = (!!ctaHovered && (reservedCost?.greatTemples ?? 0) > 0) || hoveredRitual?.sacredSite.name === 'Great Pyramid'
   return (
     <div style={{ position: 'relative', zIndex: 1, flexShrink: 0, backgroundColor: COLORS.black, borderBottom: `1px solid ${COLORS.gray20}`, boxShadow: '0 4px 8px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 48px 12px 24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <HomeBarSectionTitle>Available Tributes</HomeBarSectionTitle>
+        <HomeBarSectionTitle>Available Tributes to Sacrifice</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: '24px', width: '730px', borderRadius: '10px', backgroundColor: COLORS.gray15, padding: '8px 24px', overflow: 'hidden' }}>
-          <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} total={resourceTotals.prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} isFirst onHoverChange={hovered => onResourceHover?.(hovered ? 'prisoners' : null)} />
+          <HomeResourceItem icon={c => <PrisonerIcon size={28} color={c} />} label="Prisoners" count={prisoners} cost={hoveredRitual?.participants.prisoners} ritualActive={ritualActive} isFirst onHoverChange={hovered => onResourceHover?.(hovered ? 'prisoners' : null)} light={prisonersLight} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} total={resourceTotals.volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'volunteers' : null)} />
+          <HomeResourceItem icon={c => <VolunteerIcon size={28} color={c} />} label="Volunteers" count={volunteers} cost={hoveredRitual?.participants.volunteers} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'volunteers' : null)} light={volunteersLight} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} total={resourceTotals.children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'children' : null)} />
+          <HomeResourceItem icon={c => <ChildrenIcon size={28} color={c} />} label="Children" count={children} cost={hoveredRitual?.participants.children} ritualActive={ritualActive} onHoverChange={hovered => onResourceHover?.(hovered ? 'children' : null)} light={childrenLight} />
           <ResourceDivider fullBleed />
-          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} total={resourceTotals.virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} isLast onHoverChange={hovered => onResourceHover?.(hovered ? 'virgins' : null)} />
+          <HomeResourceItem icon={c => <VirginIcon size={28} color={c} />} label="Virgins" count={virgins} cost={hoveredRitual?.participants.virgins} ritualActive={ritualActive} isLast onHoverChange={hovered => onResourceHover?.(hovered ? 'virgins' : null)} light={virginsLight} />
         </div>
       </div>
       <div style={{ flexShrink: 0, width: '40px' }} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <HomeBarSectionTitle>Available Ritual Sites</HomeBarSectionTitle>
         <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingTop: '8px' }}>
-          <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Temple" available={temples} total={resourceTotals.temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} />
-          <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Grand Temple" available={greatTemples} total={resourceTotals.greatTemples} cost={hoveredRitual?.sacredSite.name === 'Grand Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} />
+          <HomeSiteItem icon={c => <TempleIcon size={20} color={c} />} label="Temple" available={temples} cost={hoveredRitual?.sacredSite.name === 'Temple' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} light={templesLight} onHoverChange={hovered => onSiteHover?.(hovered ? 'Temple' : null)} />
+          <HomeSiteItem icon={c => <PyramidIcon size={24} color={c} />} label="Great Pyramid" available={greatTemples} cost={hoveredRitual?.sacredSite.name === 'Great Pyramid' ? hoveredRitual.sacredSite.count : 0} ritualActive={ritualActive} light={greatTemplesLight} onHoverChange={hovered => onSiteHover?.(hovered ? 'Great Pyramid' : null)} />
         </div>
       </div>
     </div>
@@ -240,18 +650,19 @@ function HomeResourceBar({ prisoners, volunteers, children, virgins, temples = R
 // rituals — only rendered for resource types the current selection actually costs.
 function HomeActionBarPill({ icon, label, value }: { icon: (color: string) => React.ReactNode; label: string; value: number }) {
   return (
-    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 6px', borderRadius: '8px', backgroundColor: COLORS.gray15 }}>
+    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: `${SPACING.sm} ${SPACING.md}`, borderRadius: '8px', backgroundColor: COLORS.gray15 }}>
       {icon(COLORS.gray80)}
       <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, color: COLORS.gray80, letterSpacing: '1px', whiteSpace: 'nowrap' }}>{label} {value}</span>
     </div>
   )
 }
 
-// Bottom bar summarizing every chosen-but-not-yet-authorized ritual's total resource cost,
-// plus the CTA that authorizes them all at once (triggers RitualResultScreen via
-// onPerform). Always present on the overview screen's grid view — reads "0 Rituals Chosen"
-// with no pills and a disabled CTA when nothing's been picked yet, rather than disappearing.
-function HomeActionBar({ chosenCount, cost, onPerform, aiPanelOpen }: { chosenCount: number; cost: ResourceCost; onPerform: () => void; aiPanelOpen: boolean }) {
+// Bottom bar summarizing every chosen-but-not-yet-authorized ritual's total resource cost, plus
+// the CTA that authorizes them all at once (triggers HomeScreen's in-place drain sequence via
+// onPerform — see authorizeEntries there). Always present on the overview screen's grid view —
+// reads "0 Rituals Chosen" with no pills and a disabled CTA when nothing's been picked yet, rather
+// than disappearing.
+function HomeActionBar({ chosenCount, cost, onPerform, aiPanelOpen, onHoverChange }: { chosenCount: number; cost: ResourceCost; onPerform: () => void; aiPanelOpen: boolean; onHoverChange?: (hovered: boolean) => void }) {
   const [hovered, setHovered] = useState(false)
   const hasChosen = chosenCount > 0
   const allPills: Array<{ key: string; icon: (color: string) => React.ReactNode; label: string; value: number }> = [
@@ -276,19 +687,19 @@ function HomeActionBar({ chosenCount, cost, onPerform, aiPanelOpen }: { chosenCo
       </div>
       <button
         onClick={hasChosen ? onPerform : undefined}
-        onMouseEnter={() => hasChosen && setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={() => { if (hasChosen) { setHovered(true); onHoverChange?.(true) } }}
+        onMouseLeave={() => { setHovered(false); onHoverChange?.(false) }}
         disabled={!hasChosen}
         style={{
           flexShrink: 0,
           fontFamily: FONTS.spectral,
           fontSize: FONT_SIZE.md,
           fontWeight: FONT_WEIGHT.medium,
-          color: !hasChosen ? 'rgba(255,255,255,0.3)' : hovered ? COLORS.white : 'rgba(255,255,255,0.72)',
+          color: !hasChosen ? 'rgba(255,255,255,0.3)' : COLORS.gray0,
           textTransform: 'uppercase',
           letterSpacing: '1px',
-          background: hasChosen && hovered ? COLORS.gray15 : 'transparent',
-          border: `1px solid ${hasChosen ? 'rgba(255,255,255,0.71)' : 'rgba(255,255,255,0.25)'}`,
+          background: !hasChosen ? 'transparent' : hovered ? COLORS.white : COLORS.gray95,
+          border: `1px solid ${hasChosen ? COLORS.white : 'rgba(255,255,255,0.25)'}`,
           borderRadius: '4px',
           padding: `${SPACING.sm} ${SPACING.md}`,
           boxShadow: hasChosen ? '0 0 13.6px rgba(0,0,0,1)' : 'none',
@@ -296,15 +707,213 @@ function HomeActionBar({ chosenCount, cost, onPerform, aiPanelOpen }: { chosenCo
           transition: 'color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease',
         }}
       >
-        Perform All Chosen Rituals
+        Authorize All Chosen Rituals
       </button>
     </div>
   )
 }
 
-const FLIP_DURATION = 900
-const DRAWER_CLOSE_DURATION = 260
-const SCROLL_TOP_GAP = 24
+// Duration/easing for the grid-card <-> detail-panel grow/shrink transition, driven by GSAP's
+// Flip plugin (see handleSelectGod/handleBack below): Flip.getState() captures the clicked
+// element's rect *before* the view swaps, flushSync forces React to commit the swap
+// synchronously so the new element already exists in the DOM, then Flip.from() animates that
+// new element from the old rect to wherever it naturally landed. This replaced an earlier
+// framer-motion `layoutId` version — framer's shared-layout matching turned out to be fragile
+// here (a StrictMode double-invoke left the exiting grid stuck mounted forever, and scoping the
+// layoutId to only the clicked card to fix that left the FLIP with no "before" state to animate
+// from, so it just popped in at full size instead of growing). GSAP's explicit before/after
+// capture sidesteps both failure modes entirely. Also reused (in ms) to time the ritual-drawer's
+// own CSS reveal-wipe so it plays once the box has actually landed, not while still mid-flight.
+const HERO_TRANSITION_MS = 900
+// The ritual candidate row's own slide-up-from-off-screen reveal (see drawerRevealStyle in
+// HomeGodDetailPanel) — duration per card, and the extra delay each successive card (by its
+// left-to-right index) gets stacked on top of the shared HERO_TRANSITION_MS base delay.
+const DRAWER_REVEAL_DURATION_MS = 1100
+const DRAWER_REVEAL_STAGGER_MS = 150
+// The god rail's entrance (GodListLayout's row list + its own right-edge divider, see
+// RAIL_SLIDE_STYLE's call sites), applied identically to two separate elements (row list, divider)
+// so they move in lockstep without needing to be nested inside one shared wrapper (nesting the
+// divider inside the rows div clipped its height down to just the scrollable rows section instead
+// of running the full column height alongside the header too). Runs from t=0 over the same
+// HERO_TRANSITION_MS the hero card's own Flip takes — no delay, no separate duration — so the list
+// and the clicked card grow into place together and land at the same instant, rather than the rail
+// only starting once the card has already finished (which read as the card arriving alone, then
+// the rest of the list catching up afterward).
+const RAIL_SLIDE_STYLE: React.CSSProperties = {
+  animation: `homeRailSlideIn ${HERO_TRANSITION_MS}ms ease-out both`,
+}
+// Exit mirrors entrance exactly: same duration as the hero's own shrink-back Flip, so the rail
+// (via spawnRailExitGhost, since the real rail unmounts synchronously) and the card finish
+// shrinking/sliding out at the same instant, same as they finish growing/sliding in together.
+const RAIL_EXIT_DURATION_MS = HERO_TRANSITION_MS
+
+// handleBack's list->grid transition unmounts GodListLayout (and the rail with it) synchronously
+// via flushSync, same as the grid->list direction unmounts the grid — needed so the hero Flip
+// itself starts immediately rather than waiting on anything (see the "no delay before the
+// transition kicks in" comment in handleSelectGod). That leaves no way to play a real exit
+// animation on the ACTUAL rail elements; they're gone before any animation frame could render
+// them mid-transition. Instead, right before that unmount, this clones the rail's current DOM
+// (whatever it happens to look like at that exact moment — correct scroll position, highlighted
+// row, etc., since it's a literal snapshot rather than a re-render) into a `position: fixed`
+// overlay appended to <body>, then slides that clone out to the left with a plain CSS transition
+// and removes it once done. Purely decorative — doesn't touch React state or block anything else
+// in the transition, mirroring the ejectGhost/dragGhost pattern already used elsewhere in this
+// file for "something needs to visibly leave, but the source element is already gone" cases.
+function spawnRailExitGhost() {
+  const rowsEl = document.querySelector<HTMLElement>('[data-god-rail-rows]')
+  const dividerEl = document.querySelector<HTMLElement>('[data-god-rail-divider]')
+  if (!rowsEl || !dividerEl) return
+  const rowsRect = rowsEl.getBoundingClientRect()
+  const dividerRect = dividerEl.getBoundingClientRect()
+
+  const ghost = document.createElement('div')
+  ghost.style.position = 'fixed'
+  ghost.style.top = `${rowsRect.top}px`
+  ghost.style.left = `${rowsRect.left}px`
+  ghost.style.width = `${dividerRect.right - rowsRect.left}px`
+  ghost.style.height = `${rowsRect.height}px`
+  // Opaque backdrop — the real rail rows/divider never needed their own solid background (the
+  // app's own black bg always showed through behind them), but this ghost slides on TOP of the
+  // grid that's simultaneously fading/growing in underneath. Left transparent, both layers show
+  // through at once and blend together — reading as the rail "fading out" into the grid instead of
+  // a clean opaque panel sliding away to reveal it.
+  ghost.style.backgroundColor = COLORS.black
+  ghost.style.zIndex = '2000'
+  ghost.style.pointerEvents = 'none'
+  ghost.style.transition = `transform ${RAIL_EXIT_DURATION_MS}ms ease-in`
+  ghost.style.willChange = 'transform'
+
+  const rowsClone = rowsEl.cloneNode(true) as HTMLElement
+  rowsClone.style.position = 'absolute'
+  rowsClone.style.top = '0'
+  rowsClone.style.left = '0'
+  rowsClone.style.width = `${rowsRect.width}px`
+  rowsClone.style.height = `${rowsRect.height}px`
+  rowsClone.style.visibility = 'visible'
+  rowsClone.style.animation = 'none'
+  ghost.appendChild(rowsClone)
+
+  const dividerClone = dividerEl.cloneNode(true) as HTMLElement
+  dividerClone.style.position = 'absolute'
+  dividerClone.style.top = '0'
+  dividerClone.style.left = `${rowsRect.width}px`
+  dividerClone.style.height = `${rowsRect.height}px`
+  dividerClone.style.visibility = 'visible'
+  dividerClone.style.animation = 'none'
+  ghost.appendChild(dividerClone)
+
+  document.body.appendChild(ghost)
+  requestAnimationFrame(() => {
+    ghost.style.transform = 'translateX(-320px)'
+  })
+  setTimeout(() => ghost.remove(), RAIL_EXIT_DURATION_MS + 50)
+}
+
+// Same problem, same fix as spawnRailExitGhost above, for the candidate ritual row instead of the
+// rail: handleBack's flushSync unmounts the real cards synchronously, which would cut off a GSAP
+// tween started against them mid-flight (the DOM nodes it's targeting are simply gone). Cloning
+// each card into its own fixed-position ghost before that unmount lets the slide-down continue
+// to completion afterward, run alongside the rail ghost's slide and the hero's own Flip instead of
+// having to finish beforehand.
+function spawnDrawerExitGhost(godId: string) {
+  const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-drawer-row="${godId}"] > *`))
+  if (els.length === 0) return
+  const ghosts = els.map(el => {
+    const rect = el.getBoundingClientRect()
+    const clone = el.cloneNode(true) as HTMLElement
+    clone.style.position = 'fixed'
+    clone.style.top = `${rect.top}px`
+    clone.style.left = `${rect.left}px`
+    clone.style.width = `${rect.width}px`
+    clone.style.height = `${rect.height}px`
+    clone.style.margin = '0'
+    clone.style.zIndex = '2000'
+    clone.style.pointerEvents = 'none'
+    // Cancel drawerRevealStyle's own entrance animation on the clone — see the matching comment
+    // at its previous use in handleBack for why an active "both" fill-mode animation would
+    // otherwise silently override the GSAP transform below.
+    clone.style.animation = 'none'
+    document.body.appendChild(clone)
+    return clone
+  })
+  gsap.to(ghosts, {
+    y: '100vh',
+    duration: HERO_TRANSITION_MS / 1000,
+    ease: 'power2.in',
+    // from: 'end' sweeps right-to-left — the reverse of drawerRevealStyle's left-to-right rise.
+    stagger: { each: DRAWER_REVEAL_STAGGER_MS / 1000, from: 'end' },
+    onComplete: () => ghosts.forEach(g => g.remove()),
+  })
+}
+// No `scale: true` — the flip targets are the card's individual pieces (name/face/panel, see
+// FLIP_PARTS below), and each one's grid vs list-view box has a genuinely different aspect ratio
+// (e.g. the face's narrow-tall grid box vs its wide list box). `scale: true` would render that as
+// a non-uniform CSS transform: scale(sx, sy), visibly stretching the artwork/text. Animating the
+// real width/height instead lets the face SVG's own viewBox + default preserveAspectRatio=
+// "xMidYMid meet" (see GodSvg.tsx) keep the art itself undistorted, just growing/repositioning
+// within a box that's changing shape. `absolute: true` pulls each piece out of normal flow for the
+// animation's duration so its changing box size can't shove flex siblings around mid-flight.
+// nested: true — card is a Flip target that's also the ancestor of the panel target (direct
+// child) and the name/face targets (via the left column, itself not flipped). Without it, having
+// parent and descendant elements Flip simultaneously measured the card's own fit-content "natural"
+// width as ~34px (basically just its padding, as if every child had briefly collapsed to 0) instead
+// of ~623px, so it shrank the wrong way for most of the tween before hard-snapping to the true
+// width at the very end. nested tells Flip to account for an ancestor's own Flip-driven changes
+// when it measures/animates a descendant, instead of each element being measured in isolation.
+// zIndex: every data-grid-card wrapper needed position: relative for the containing-block fixes
+// above, which put ALL 24 grid cards into the same "positioned elements" paint layer — so once the
+// hero starts flying from its old (list) position across the grid toward its new (small) one,
+// stacking order came down to DOM order rather than which card is actually animating, and it could
+// paint *behind* neighboring cards it passed over instead of staying on top the whole flight. This
+// forces the 4 flipping pieces above everything else for the animation's duration only; Flip
+// restores whatever z-index they had before once it completes.
+const HERO_FLIP_VARS = { duration: HERO_TRANSITION_MS / 1000, ease: 'power3.out', absolute: true, nested: true, zIndex: 1000 }
+
+// The card "becomes" its expanded self piece by piece rather than as one flipped blob: card frame,
+// name, face, and ritual panel each carry their own data-flip-id (`${godId}:${part}`, see
+// GodCard.tsx and HomeGodDetailPanel) and get captured/animated as four independent Flip targets
+// that happen to run in the same Flip.getState/Flip.from call. A single whole-card flip stretched
+// everything non-uniformly as one blob, since the grid card and the list's combined card have
+// entirely different proportions — flipping each meaningful part into its corresponding list-view
+// element (card -> combined-card frame, name -> header, face -> face box, panel -> drop-zone) is
+// what makes the *card itself*, not just its contents, read as expanding into the new one.
+const FLIP_PARTS = ['card', 'name', 'face', 'panel'] as const
+const flipIdsFor = (godId: string) => FLIP_PARTS.map(part => `${godId}:${part}`)
+const flipSelectorFor = (godId: string) => flipIdsFor(godId).map(id => `[data-flip-id="${id}"]`).join(', ')
+
+// Flip's absolute:true makes the hero card's flip-tagged pieces sweep across a wide swath of the
+// screen while resizing in real time — easily passing directly under wherever the pointer happens
+// to be sitting (e.g. right where the user just clicked to trigger the transition in the first
+// place). Chromium re-hit-tests "what's under the cursor" on every layout change even without any
+// actual mouse movement, so GodCard's onMouseEnter/onMouseLeave (and HomeGodDetailPanel's
+// isFaceHovered) can fire mid-flight purely from the card moving under a stationary pointer —
+// flashing the face to its brighter hovered body color for most of the transition before snapping
+// back to its resting color right at the end. Disabling pointer events on the hero's own pieces
+// for the transition's duration keeps them out of hit-testing entirely, so no spurious hover ever
+// fires. Restored once heroTransitionInProgressRef is cleared (see both handlers below).
+const setHeroPointerEvents = (godId: string, enabled: boolean) => {
+  document.querySelectorAll<HTMLElement>(flipSelectorFor(godId)).forEach(el => {
+    el.style.pointerEvents = enabled ? '' : 'none'
+  })
+}
+
+// Everything in the incoming view OTHER than the clicked hero card's four pieces ([data-flip-id])
+// or [data-transition-chrome] (headers, tier headers, the list rail) — faded IN after the Flip
+// commits so the rest of the screen settles in smoothly instead of popping in the same tick the
+// hero starts growing. The outgoing view's equivalent elements are NOT faded out first anymore —
+// see the comment in handleSelectGod for why (that pre-commit fade was gating the hero Flip's
+// start behind its own ~180ms duration, which read as a delay before the transition kicked in).
+const CHROME_FADE_SELECTOR = '[data-flip-id], [data-transition-chrome]'
+const CHROME_FADE_IN_S = 0.35
+// Total spread for the fade-in's stagger, NOT a per-element delay — grid mode alone has up to
+// ~23 non-hero cards x 4 flip-tagged pieces each (card/name/face/panel) now that the card frame
+// is its own piece too, so a flat per-element `stagger: 0.015` scaled with target count and could
+// take over 1.5s to sweep through every element, most of it sitting at low opacity for a long,
+// visually awkward stretch (a "wave" of dark card frames fading in one after another instead of
+// the rest of the screen just resolving in behind the hero). GSAP's `{ amount }` stagger form
+// distributes this fixed total across however many targets exist, so the whole reveal always
+// finishes in the same short window regardless of whether it's ~90 grid pieces or ~15 list ones.
+const CHROME_FADE_IN_STAGGER_TOTAL_S = 0.15
 
 // Drag-and-drop tuning — a phase state machine with setTimeouts matched to CSS transition
 // durations to commit state once the animation finishes, with a forgiving drop margin.
@@ -312,17 +921,39 @@ const DOCK_MARGIN = 48
 const RETURN_DURATION = 320
 const DOCK_DURATION = 260
 const RITUAL_CARD_WIDTH = 245
-const RITUAL_CARD_HEIGHT = 391 // measured natural height of a rendered RitualCard (fixed 4-pill layout, doesn't vary by ritual) — drop-zone matches this exactly, same as the dragged card
-const DROP_ZONE_WIDTH = RITUAL_CARD_WIDTH
-const DROP_ZONE_HEIGHT = RITUAL_CARD_HEIGHT
-const FACE_HEIGHT = 300
+// Fallback only, used for the drop-zone's height until the first real RitualCard renders and
+// reports its actual height (see measuredCardHeight below) — RitualCard's content keeps changing,
+// so this must never be treated as the source of truth. Rule: the drop-zone always matches
+// RitualCard's own rendered size exactly (same for row slots and the drag ghost) — it's measured
+// live, not hardcoded, specifically so it can't drift out of sync as the card's content evolves.
+const RITUAL_CARD_HEIGHT_FALLBACK = 391
 
-function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, originRect, isClosing, onCloseComplete, scrollContainerRef, chosenRitualId, isActive = true, highlightParticipantType }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; originRect: DOMRect | null; isClosing: boolean; onCloseComplete: () => void; scrollContainerRef: React.RefObject<HTMLDivElement | null>; chosenRitualId?: string | null; isActive?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null }) {
+// The combined card's left column (name/subtitle + face) — used both for that column's own width
+// and to derive DETAIL_CARD_WIDTH below, so the two can never drift out of sync.
+const DETAIL_LEFT_COLUMN_WIDTH = 320
+const DETAIL_CARD_GAP = 24
+const DETAIL_CARD_PADDING = 16
+// Explicit width for the combined-card wrapper, replacing a `width: 'fit-content'` that measured
+// wrong once the card itself became a GSAP Flip target (see the comment on its data-flip-id below).
+// fit-content depends on reading its children's current rendered width — fine normally, but Flip
+// applying position: absolute to several of those children (and their own descendants) as part of
+// the very same animation intermittently pulls them out of flow, so fit-content briefly measures
+// as if the row were empty (~34px, just the borders/padding) instead of ~623px. All the pieces that
+// make up this width are fixed constants regardless of any of that, so computing it directly
+// sidesteps the whole race rather than fighting over measurement timing.
+const DETAIL_CARD_WIDTH = DETAIL_LEFT_COLUMN_WIDTH + DETAIL_CARD_GAP + RITUAL_CARD_WIDTH + DETAIL_CARD_PADDING * 2 + 2 // +2 for the 1px border on each side (content-box sizing)
+
+function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverChange, chosenRitualId, isActive = true, isCentered = true, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, isPunishing }: { god: God; onBack: () => void; onChoose: (ritualId: string) => void; onUnchoose: () => void; onRitualHoverChange: (ritual: Ritual | null) => void; chosenRitualId?: string | null; isActive?: boolean; isCentered?: boolean; highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null; highlightSite?: 'Temple' | 'Great Pyramid' | null; measuredCardHeight: number | null; onMeasuredCardHeight: (height: number) => void; availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }; isPunishing?: boolean }) {
   // Widened to match outcomeEye()'s return type — EYE itself is `as const` (a literal-typed
   // union per level), which would otherwise stop `to`/`from` below from ever holding an
   // outcomeEye() result once a ritual is docked.
   const baseEye: { color: string; weight: number } = EYE[god.angerLevel as AngerLevel]
-  const chosenRitual = chosenRitualId ? god.rituals.find(r => r.id === chosenRitualId) ?? null : null
+  // While this god is punishing, its candidate row offers exactly one ritual — its own Ultimate
+  // Ritual (see buildUltimateRitual) — instead of the normal three. Computed here (not just in the
+  // row below) since chosenRitual/dragGhostRitual/ejectGhost all need to resolve against the same
+  // set of candidates.
+  const effectiveRituals = isPunishing ? [buildUltimateRitual(god)] : god.rituals
+  const chosenRitual = chosenRitualId ? effectiveRituals.find(r => r.id === chosenRitualId) ?? null : null
   // Eyes reflect the DOCKED ritual's outcome, not whatever's under the pointer — initialize from
   // chosenRitual (already-docked on mount, e.g. re-opening this god's panel) with from===to so
   // there's no spurious animation on first paint, only on an actual dock/undock afterward.
@@ -339,13 +970,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
   const initialBodyColor = chosenRitual ? BODY_COLOR_DOCKED : BODY_COLOR_UNDOCKED
   const [bodyColorAnim, setBodyColorAnim] = useState<{ from: string; to: string; key: number } | null>(null)
   const currentBodyColorRef = useRef(initialBodyColor)
-  const panelRef = useRef<HTMLDivElement>(null)
   // Hovering the face/name area (outside the ritual card) previews the same brighter look
   // GodCard uses for its own highlighted state, and clicking it returns to the overview grid.
   const [isFaceHovered, setIsFaceHovered] = useState(false)
-  // Caches the one-time scroll delta below — unlike the transform reset, scrolling the container
-  // is a side effect that persists across StrictMode's double-invoke, so it must run at most once.
-  const scrollAdjustRef = useRef<number | null>(null)
 
   // Drag state — one machine handles both directions around the same target rect (the
   // drop-zone): dragging a row card in (dock) and dragging the docked card out (undock).
@@ -354,9 +981,38 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
   const [dragPhase, setDragPhase] = useState<'idle' | 'dragging' | 'returning' | 'docking' | 'undocking'>('idle')
   const [isOverDropZone, setIsOverDropZone] = useState(false)
+  // Separate one-shot ghost for the ritual getting bumped out of the drop-zone when a *different*
+  // row card is dropped in its place — not part of the drag lifecycle above (nothing's being
+  // pointer-dragged for this one), so it needs its own mount-then-animate state instead of
+  // reusing dragPos/dragPhase. `animate: false` on mount pins it at the drop-zone position for one
+  // frame so the browser has something to transition *from* once `animate` flips true.
+  const [ejectGhost, setEjectGhost] = useState<{ ritualId: string; x: number; y: number; animate: boolean } | null>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const rowSlotRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const dragStartRef = useRef<{ originLeft: number; originTop: number; pointerDx: number; pointerDy: number } | null>(null)
+
+  // Drop-zone height rule: always match a real rendered RitualCard's own height exactly, live —
+  // never a hardcoded number, so it can't drift out of sync as the card's content keeps changing.
+  // Every row slot holds the same fixed-layout card, so the first one is representative; watched
+  // with a ResizeObserver (not measured once) since content changes can happen after mount too.
+  // measuredCardHeight/onMeasuredCardHeight are lifted up to HomeScreen (not local state here)
+  // because this whole component unmounts every time viewMode leaves 'list' — local state would
+  // reset to null on every single grid<->list transition, forcing dropZoneHeight through
+  // RITUAL_CARD_HEIGHT_FALLBACK for a frame before the ResizeObserver corrected it. That fallback-
+  // then-correct jump is exactly what made the detail face visibly overshoot to the fallback size
+  // and then snap down right after landing. Lifting it means only the very first time the app ever
+  // enters list mode pays that cost — every transition after reuses the already-known value.
+  useEffect(() => {
+    const el = rowSlotRefs.current[effectiveRituals[0]?.id]
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const height = entries[0]?.contentRect.height
+      if (height) onMeasuredCardHeight(height)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [effectiveRituals[0]?.id, onMeasuredCardHeight])
+  const dropZoneHeight = measuredCardHeight ?? RITUAL_CARD_HEIGHT_FALLBACK
 
   // Pointer capture routes all move/up events to the card that started the drag, but the
   // cursor icon itself follows whatever's under the pointer — which, mid-drag, is wherever the
@@ -395,7 +1051,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     setDragPhase('dragging')
     // Drives the resource-bar preview explicitly from the drag lifecycle instead of relying on
     // this card's own onMouseLeave, which may not fire reliably once the cursor moves off it.
-    onRitualHoverChange(god.rituals.find(r => r.id === ritualId) ?? null)
+    onRitualHoverChange(effectiveRituals.find(r => r.id === ritualId) ?? null)
   }
 
   useEffect(() => {
@@ -429,9 +1085,34 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
         setDragPos({ x: r.left, y: r.top })
         setDragPhase('docking')
         const ritualId = dragRitualId
-        const dockedRitual = god.rituals.find(r => r.id === ritualId) ?? null
+        const dockedRitual = effectiveRituals.find(r => r.id === ritualId) ?? null
+        // A different ritual is already sitting in the drop-zone — bump it back out to its own
+        // row slot with the same fly-back motion as a manual undock, instead of it just snapping
+        // into view the instant onChoose replaces chosenRitualId.
+        if (chosenRitualId && chosenRitualId !== ritualId) {
+          const outgoingId = chosenRitualId
+          const slotEl = rowSlotRefs.current[outgoingId]
+          if (slotEl) {
+            const toRect = slotEl.getBoundingClientRect()
+            setEjectGhost({ ritualId: outgoingId, x: r.left, y: r.top, animate: false })
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                setEjectGhost({ ritualId: outgoingId, x: toRect.left, y: toRect.top, animate: true })
+              })
+            })
+            setTimeout(() => setEjectGhost(null), DOCK_DURATION)
+          }
+        }
         setTimeout(() => { onChoose(ritualId); setEyesTo(dockedRitual); setBodyColorTo(true); settle() }, DOCK_DURATION)
       } else if (dragOrigin === 'dropzone' && !overZone) {
+        // Animate the ghost flying back to its row slot (same transform-transition treatment as
+        // docking) instead of just fading out in place — the slot itself stays invisible
+        // (isChosen) until onUnchoose flips it, so there's no flicker/overlap at handoff.
+        const slotEl = dragRitualId ? rowSlotRefs.current[dragRitualId] : null
+        if (slotEl) {
+          const r = slotEl.getBoundingClientRect()
+          setDragPos({ x: r.left, y: r.top })
+        }
         setDragPhase('undocking')
         setTimeout(() => { onUnchoose(); setEyesTo(null); setBodyColorTo(false); settle() }, DOCK_DURATION)
       } else {
@@ -467,73 +1148,6 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     }
   }, [dragPhase, dragRitualId, dragOrigin])
 
-  // FLIP: start the panel transformed to exactly match the clicked card's grid position/size,
-  // then animate that transform away to none so it visibly travels+grows into place.
-  useLayoutEffect(() => {
-    const panel = panelRef.current
-    if (!panel || !originRect || isClosing) return
-
-    // Reset first so all measurements below reflect natural layout — StrictMode double-invokes
-    // this effect in dev, and without this reset the 2nd run would measure its own scaled-down result.
-    panel.style.transition = 'none'
-    panel.style.transform = 'none'
-
-    // Scroll the panel to the top of the viewport first — the before/after grid split stays put,
-    // only the scroll position changes — then correct originRect by the same delta so the FLIP
-    // still visually starts from where the clicked card was before this scroll happened.
-    const container = scrollContainerRef.current
-    if (container && scrollAdjustRef.current === null) {
-      const containerRect = container.getBoundingClientRect()
-      const panelRectBeforeScroll = panel.getBoundingClientRect()
-      const prevScrollTop = container.scrollTop
-      container.scrollTop = prevScrollTop + (panelRectBeforeScroll.top - containerRect.top - SCROLL_TOP_GAP)
-      scrollAdjustRef.current = container.scrollTop - prevScrollTop
-    }
-    const actualDelta = scrollAdjustRef.current ?? 0
-    const adjustedOriginRect = new DOMRect(originRect.left, originRect.top - actualDelta, originRect.width, originRect.height)
-
-    const panelRect = panel.getBoundingClientRect()
-    const dx = adjustedOriginRect.left - panelRect.left
-    const dy = adjustedOriginRect.top - panelRect.top
-    const sx = adjustedOriginRect.width / panelRect.width
-    const sy = adjustedOriginRect.height / panelRect.height
-    panel.style.transformOrigin = 'top left'
-    panel.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`
-    panel.getBoundingClientRect() // force reflow so the "from" transform commits before we animate away from it
-    requestAnimationFrame(() => {
-      panel.style.transition = `transform ${FLIP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`
-      panel.style.transform = 'translate(0px, 0px) scale(1, 1)'
-    })
-  }, [originRect])
-
-  // Reverse sequence: first close the ritual "drawer" (mirrors the entrance wipe), then once the
-  // shell is empty, reverse-FLIP it back down to the origin card's position/size.
-  const [drawerClosing, setDrawerClosing] = useState(false)
-  useLayoutEffect(() => {
-    if (!isClosing) return
-    setDrawerClosing(true)
-    const flipTimeout = setTimeout(() => {
-      const panel = panelRef.current
-      if (!panel || !originRect) {
-        onCloseComplete()
-        return
-      }
-      const panelRect = panel.getBoundingClientRect()
-      const dx = originRect.left - panelRect.left
-      const dy = originRect.top - panelRect.top
-      const sx = originRect.width / panelRect.width
-      const sy = originRect.height / panelRect.height
-      panel.style.transformOrigin = 'top left'
-      panel.style.transition = `transform ${FLIP_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`
-      panel.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`
-    }, DRAWER_CLOSE_DURATION)
-    const closeTimeout = setTimeout(onCloseComplete, DRAWER_CLOSE_DURATION + FLIP_DURATION)
-    return () => {
-      clearTimeout(flipTimeout)
-      clearTimeout(closeTimeout)
-    }
-  }, [isClosing])
-
   // Hovering only previews the resource-bar highlight (see onRitualHoverChange) — the eyes stay
   // put until a ritual is actually dropped; see setEyesTo, called from the dock/undock handlers.
   // Ignored mid-drag: pointer capture means this card's own mouseenter/mouseleave can fire at
@@ -558,7 +1172,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
     setBodyColorAnim(prev => ({ from, to: target, key: (prev?.key ?? 0) + 1 }))
   }
 
-  const dragGhostRitual = dragRitualId ? god.rituals.find(r => r.id === dragRitualId) ?? null : null
+  const dragGhostRitual = dragRitualId ? effectiveRituals.find(r => r.id === dragRitualId) ?? null : null
   // Two tiers: brighter the whole time a ritual card is being dragged (any target is potentially
   // droppable), brighter still once the pointer is actually over this zone (the imminent-drop cue).
   const isDragging = dragPhase === 'dragging'
@@ -567,32 +1181,107 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
   const zoneBorderColor = zoneHighlighted ? COLORS.white : isDragging ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)'
   const zoneTextColor = zoneHighlighted ? COLORS.gray95 : isDragging ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'
 
-  // Wipes in after the FLIP move+grow lands, same choreography applied to both the drop-zone
-  // (dashed border included) and the candidate row below — the face card is a separate box
-  // that isn't part of this wipe, so its own border stays static throughout.
-  const drawerRevealStyle: React.CSSProperties = drawerClosing
-    ? { opacity: 0, clipPath: 'inset(-60px 100% -60px -60px)', transition: `opacity ${DRAWER_CLOSE_DURATION}ms ease-in, clip-path ${DRAWER_CLOSE_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)` }
-    : { animation: `homeDetailDrawerReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION}ms both` }
+  // Both the drop-zone's placeholder text ("Drag and drop an appeasement ritual") and the god's
+  // description/subtitle live INSIDE flip-target boxes (panel/name) that have to stay visible
+  // and growing for the whole flip — see those flip targets' own comments. But that means this
+  // specific TEXT, sized for its small GodCard starting point (the subtitle doesn't even exist in
+  // GodCard at all — it's entirely new content), renders immediately, cramped into a box that's
+  // still mid-grow. Gating this text's own opacity separately from its containing box's fixes it:
+  // starts at opacity 0 (so there's nothing to visibly "pop in" cramped at the small starting
+  // size — it was simply never shown then) and fades in only once HERO_TRANSITION_MS has passed
+  // and the box has finished expanding to its true size. fill-mode "both" holds opacity:0 for the
+  // whole delay (not just "forwards", which would only apply after the animation starts).
+  const postHeroFadeInStyle: React.CSSProperties = isCentered
+    ? { animation: `homeDetailPostHeroFadeIn 300ms ease-out ${HERO_TRANSITION_MS}ms both` }
+    : {}
+
+  // Slides up from below the viewport once the hero card's own grow-into-place Flip lands —
+  // delayed by HERO_TRANSITION_MS so the ritual cards only ever start appearing after the god
+  // card has fully finished enlarging, not layered on top of/racing that animation.
+  //
+  // No opacity animation anywhere here — any opacity fade (even one that finishes early, tried
+  // previously) reads as "fading in", which was explicitly unwanted. Staying hidden until the
+  // hero settles is instead done with `visibility`, a hard on/off switch with no interpolated
+  // in-between frames, so there's nothing to perceive as a fade: base style is `visibility:
+  // hidden`, then a second near-zero-duration animation flips it to visible the instant the
+  // delay elapses (`forwards` fill only — NOT "both" — so that flip doesn't retroactively apply
+  // during the delay the way it would with backwards fill). The actual slide (transform-only,
+  // "both" fill so it holds translateY(100vh) throughout the delay) runs at the same time.
+  // translateY(100vh) (not some fixed px offset like 90px, tried previously) guarantees the
+  // starting position is below the visible viewport regardless of where this row's own resting
+  // spot happens to sit on the page — a fixed px value that's smaller than the remaining distance
+  // to the bottom of the screen never actually leaves the viewport, which read as a small nudge
+  // rather than sliding in "from off screen".
+  //
+  // isCentered (god.id === heroRevealGodId, threaded down from HomeScreen — see that state's own
+  // declaration comment) gates this per-panel. It's deliberately NOT "is this the carousel's
+  // currently-centered panel" (that was tried first and replayed the reveal every time ordinary
+  // scrolling brought a new god into the centered slot) — heroRevealGodId only ever names the one
+  // god whose grid card was actually clicked to open list mode, and clears the moment the
+  // carousel settles on a different god. So this reveal plays exactly once, for exactly one god,
+  // per grid->list transition — never on plain scrolling.
+  //
+  // Applied per-card (not once on the row) with each card's own delay offset by its index —
+  // DRAWER_REVEAL_STAGGER_MS on top of the shared HERO_TRANSITION_MS base — so the three cards
+  // rise one after another left-to-right instead of as a single rigid block.
+  const drawerRevealStyle = (index: number): React.CSSProperties =>
+    isCentered
+      ? {
+          visibility: 'hidden',
+          animation: `homeDetailDrawerReveal ${DRAWER_REVEAL_DURATION_MS}ms ease-out ${HERO_TRANSITION_MS + index * DRAWER_REVEAL_STAGGER_MS}ms both, homeDetailDrawerRevealVisibility 1ms linear ${HERO_TRANSITION_MS + index * DRAWER_REVEAL_STAGGER_MS}ms forwards`,
+        }
+      : {}
 
   return (
-    <div ref={panelRef} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 24px 0', padding: '16px 24px 24px' }}>
-      <div style={{ display: 'flex', width: 'fit-content', gap: '24px', backgroundColor: COLORS.cardBg, border: `1px solid ${COLORS.gray30}`, borderRadius: '10px', padding: '16px' }}>
+    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 24px 0', padding: '16px 24px 24px' }}>
+      <div
+        // The 4th GSAP Flip target (card frame), matching GodCard's own root div — see the comment
+        // there. position: relative is *also* needed as the correct containing block for the
+        // drop-zone below once it becomes a Flip target (absolute: true); see the matching comment
+        // on the left column just below for why that matters (same reasoning, same fix).
+        data-flip-id={`${god.id}:card`}
+        style={{
+          position: 'relative',
+          display: 'flex',
+          width: `${DETAIL_CARD_WIDTH}px`,
+          gap: `${DETAIL_CARD_GAP}px`,
+          backgroundColor: isPunishing ? EYE.high.color : COLORS.cardBg,
+          // Same subtle dark radial vignette GodCard/GodPunishmentDialog use behind the punishing
+          // face, for the same reason — pure flat red there reads noticeably flatter than this
+          // card's usual look.
+          backgroundImage: isPunishing
+            ? 'radial-gradient(ellipse at 30% 55%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.35) 100%)'
+            : undefined,
+          border: `1px solid ${isPunishing ? 'rgba(77,77,77,0.56)' : COLORS.gray20}`,
+          borderRadius: '10px',
+          padding: `${DETAIL_CARD_PADDING}px`,
+        }}
+      >
         <div
           onClick={onBack}
           onMouseEnter={() => setIsFaceHovered(true)}
           onMouseLeave={() => setIsFaceHovered(false)}
-          style={{ flexShrink: 0, width: '320px', display: 'flex', flexDirection: 'column', gap: '4px', cursor: 'pointer' }}
+          // position: relative is load-bearing, not decorative — the face/name boxes below are GSAP
+          // Flip targets, and Flip's absolute: true temporarily takes them out of flow by switching
+          // them to position: absolute. Without a positioned ancestor right here, that escapes all
+          // the way up to the carousel viewport (itself position: relative, ~3x wider than this
+          // column), so Flip measures/tweens toward a wrong, way-too-wide "natural" target and then
+          // hard-snaps down to the true width the instant it hands control back to normal flow.
+          // Anchoring the absolute positioning here keeps its containing block correct.
+          style={{ position: 'relative', flexShrink: 0, width: `${DETAIL_LEFT_COLUMN_WIDTH}px`, height: `${dropZoneHeight}px`, display: 'flex', flexDirection: 'column', gap: '4px', cursor: 'pointer' }}
         >
+          {/* No homeDetailHeaderEnter delayed-reveal animation here anymore — this div is now a
+              GSAP Flip target in its own right (growing from GodCard's name label), so it needs to
+              be visible and growing throughout the flip, not held at opacity:0 until it lands. */}
           <div
+            data-flip-id={`${god.id}:name`}
             style={{
               flexShrink: 0,
               width: '100%',
               textAlign: 'center',
-              ...(drawerClosing
-                ? { opacity: 0, transform: 'translateY(-10px)', transition: `opacity ${DRAWER_CLOSE_DURATION}ms ease-in, transform ${DRAWER_CLOSE_DURATION}ms ease-in` }
-                : { animation: `homeDetailHeaderEnter 280ms cubic-bezier(0.23, 1, 0.32, 1) ${FLIP_DURATION - 80}ms both` }),
             }}
           >
+
             {/* Wraps just the name line (not the subtitle below) so the chevron's vertical center,
                 driven by this row's own height, always lines up with the name specifically. */}
             <div style={{ position: 'relative' }}>
@@ -605,32 +1294,44 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '3px',
+                  padding: '5px',
                   borderRadius: '50%',
-                  border: `1.5px solid ${isFaceHovered ? COLORS.gray95 : COLORS.gray30}`,
+                  backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
                 }}
               >
                 <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray30} />
               </div>
-              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 400, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
+              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 300, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             </div>
-            <p style={{ margin: '4px 0 0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease' }}>{god.subtitle}</p>
+            <p style={{ margin: '0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease', ...postHeroFadeInStyle }}>{god.subtitle}</p>
           </div>
-          <div style={{ flexShrink: 0, width: '100%', height: `${FACE_HEIGHT}px`, borderRadius: '10px', overflow: 'hidden' }}>
+          {/* Three independent GSAP Flip targets carry the grid<->list transition — see
+              handleSelectGod/handleBack in HomeScreen and the matching comment in GodCard.tsx.
+              This one (the face) matches GodCard's face box; the header above matches its name
+              label; the drop-zone below matches its ritual panel. Every panel gets these, not just
+              the active one — querying by the specific godId being transitioned always finds the
+              right ones regardless of which carousel panels happen to be mounted. */}
+          <div data-flip-id={`${god.id}:face`} style={{ flex: 1, minHeight: 0, width: '100%', borderRadius: '10px', overflow: 'hidden' }}>
             <GodSvg
               svgRaw={getSvgRaw(god.id)}
               angerLevel={god.angerLevel}
-              bodyColor={isActive ? currentBodyColorRef.current : COLORS.gray15}
-              bodyColorAnimation={isActive && bodyColorAnim ? { fromColor: bodyColorAnim.from, toColor: bodyColorAnim.to, duration: 0.8, id: `body-${bodyColorAnim.key}` } : undefined}
+              bodyColor={isPunishing ? COLORS.white : isActive ? currentBodyColorRef.current : COLORS.gray15}
+              bodyColorAnimation={!isPunishing && isActive && bodyColorAnim ? { fromColor: bodyColorAnim.from, toColor: bodyColorAnim.to, duration: 1.4, id: `body-${bodyColorAnim.key}` } : undefined}
               instanceId={`detail-${god.id}`}
-              eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 1, id: `eye-${eyeAnim.key}` } : undefined}
+              eyeAnimation={eyeAnim ? { fromColor: eyeAnim.from.color, fromWeight: eyeAnim.from.weight, toColor: eyeAnim.to.color, toWeight: eyeAnim.to.weight, delay: eyeAnim.delay, duration: 1.6, id: `eye-${eyeAnim.key}` } : undefined}
+              eyeColor={isPunishing ? COLORS.gray0 : undefined}
             />
           </div>
         </div>
         {/* Drop-zone — a permanent dashed base layer with the docked ritual (if any) layered on
             top; dimming the docked card during an undock-drag naturally reveals the dashed base
-            underneath, no extra state needed. */}
-        <div ref={dropZoneRef} style={{ flexShrink: 0, width: `${DROP_ZONE_WIDTH}px`, height: `${DROP_ZONE_HEIGHT}px`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', ...drawerRevealStyle }}>
+            underneath, no extra state needed. Also the GSAP Flip target matching GodCard's ritual
+            panel — already position:relative from its own pre-existing layout needs, which
+            conveniently also happens to be exactly what Flip's absolute:true needs here. No
+            drawerRevealStyle anymore (unlike the candidate row below, which keeps it) — this box
+            IS the flip target growing from GodCard's ritual panel now, so it needs to be visible
+            throughout the flip instead of held at opacity:0 until 900ms in. */}
+        <div ref={dropZoneRef} data-flip-id={`${god.id}:panel`} style={{ flexShrink: 0, width: `${RITUAL_CARD_WIDTH}px`, height: `${dropZoneHeight}px`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
             style={{
               position: 'absolute',
@@ -658,6 +1359,7 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 color: zoneTextColor,
                 pointerEvents: 'none',
                 transition: 'color 0.15s ease',
+                ...postHeroFadeInStyle,
               }}
             >
               Drag and drop an appeasement ritual
@@ -671,7 +1373,11 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 width: `${RITUAL_CARD_WIDTH}px`,
                 cursor: 'grab',
                 touchAction: 'none',
-                opacity: dragOrigin === 'dropzone' && dragRitualId === chosenRitual.id && dragPhase !== 'idle' ? 0.18 : 1,
+                // Hidden both while this exact card is mid-undock-drag AND while it's being
+                // bumped out by an incoming replacement (ejectGhost carries it from here instead).
+                // Fully hidden (not dimmed) — the dragged ghost is the only copy that should read
+                // as "this card", no half-opacity shadow left behind at the source.
+                opacity: (dragOrigin === 'dropzone' && dragRitualId === chosenRitual.id && dragPhase !== 'idle') || ejectGhost?.ritualId === chosenRitual.id ? 0 : 1,
               }}
             >
               <RitualCard
@@ -681,7 +1387,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 onHoverChange={hovered => handleRitualHover(chosenRitual, hovered)}
                 outcomeBorder
                 dropShadow={false}
-                highlight={!!highlightParticipantType && chosenRitual.participants[highlightParticipantType] > 0}
+                highlightParticipantType={highlightParticipantType}
+                highlightSite={highlightSite}
+                tierLabel={tierLabelFor(chosenRitual, effectiveRituals.findIndex(r => r.id === chosenRitual.id))}
               />
             </div>
           )}
@@ -691,21 +1399,43 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
           drop-zone above to choose it; its own slot here goes vacant (invisible, but still
           occupying its space) rather than closing up, so the other cards never have to move.
           Drag the docked card back out to bring it back to its same slot. */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '12px', ...drawerRevealStyle }}>
-        {god.rituals.map(ritual => {
+      {/* data-drawer-row names the god this row belongs to — handleBack (HomeScreen) uses it to
+          find and slide these cards back down before the hero shrinks, mirroring their own
+          slide-up-from-off-screen entrance (drawerRevealStyle above) in reverse. */}
+      <div data-drawer-row={god.id} style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '32px' }}>
+        {(() => {
+          // availableResources already has this god's own currently-docked ritual reserved out of
+          // the pool — swapping it for a different candidate frees that reservation first, so add
+          // it back before judging whether a candidate is affordable, or a same-or-cheaper swap
+          // could wrongly read as "insufficient funds".
+          const effectiveAvailable = {
+            prisoners: availableResources.prisoners + (chosenRitual?.participants.prisoners ?? 0),
+            volunteers: availableResources.volunteers + (chosenRitual?.participants.volunteers ?? 0),
+            children: availableResources.children + (chosenRitual?.participants.children ?? 0),
+            virgins: availableResources.virgins + (chosenRitual?.participants.virgins ?? 0),
+          }
+          // While this god is punishing, effectiveRituals already IS just its single Ultimate
+          // Ritual (see its own declaration above) — no separate filter needed here anymore.
+          return effectiveRituals
+          .map((ritual, index) => ({ ritual, index }))
+          .map(({ ritual, index }) => {
           const isChosen = ritual.id === chosenRitualId
+          const insufficientParticipantTypes = (['prisoners', 'volunteers', 'children', 'virgins'] as const)
+            .filter(type => ritual.participants[type] > effectiveAvailable[type])
+          const canAfford = insufficientParticipantTypes.length === 0
           return (
             <div
               key={ritual.id}
               ref={el => { rowSlotRefs.current[ritual.id] = el }}
-              onPointerDown={isChosen ? undefined : handleDragPointerDown(ritual.id, 'row')}
+              onPointerDown={isChosen || !canAfford ? undefined : handleDragPointerDown(ritual.id, 'row')}
               style={{
                 width: `${RITUAL_CARD_WIDTH}px`,
                 flexShrink: 0,
-                cursor: isChosen ? 'default' : 'grab',
+                cursor: isChosen ? 'default' : canAfford ? 'grab' : 'default',
                 touchAction: 'none',
                 pointerEvents: isChosen ? 'none' : 'auto',
-                opacity: isChosen ? 0 : dragOrigin === 'row' && dragRitualId === ritual.id && dragPhase !== 'idle' ? 0.18 : 1,
+                opacity: isChosen ? 0 : dragOrigin === 'row' && dragRitualId === ritual.id && dragPhase !== 'idle' ? 0 : 1,
+                ...drawerRevealStyle(index),
               }}
             >
               <RitualCard
@@ -714,18 +1444,22 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                 onClick={() => {}}
                 onHoverChange={hovered => handleRitualHover(ritual, hovered)}
                 outcomeBorder
-                highlight={!!highlightParticipantType && ritual.participants[highlightParticipantType] > 0}
+                highlightParticipantType={highlightParticipantType}
+                highlightSite={highlightSite}
+                tierLabel={tierLabelFor(ritual, index)}
+                insufficientResources={!canAfford}
+                insufficientParticipantTypes={insufficientParticipantTypes}
               />
             </div>
           )
-        })}
+        })
+        })()}
       </div>
       {dragGhostRitual && dragPos && createPortal(
-        // Portaled to document.body — panelRef gets a non-'none' `transform` set directly on its
-        // DOM node once the FLIP entrance animation settles (even at identity, translate(0,0)
-        // scale(1,1)), and CSS gives any transformed ancestor a new containing block for
-        // position:fixed descendants. Left nested inside panelRef, this ghost would track
-        // relative to the panel's box instead of the viewport.
+        // Portaled to document.body — the hero card above (data-flip-id) gets a GSAP-applied
+        // `transform` while it's mid-FLIP, and CSS gives any transformed ancestor a new
+        // containing block for position:fixed descendants. Left nested inside it, this ghost
+        // would track relative to the card's box instead of the viewport.
         <div
           style={{
             position: 'fixed',
@@ -735,10 +1469,9 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
             transform: `translate(${dragPos.x}px, ${dragPos.y}px)`,
             transition:
               dragPhase === 'returning' ? `transform ${RETURN_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`
-              : dragPhase === 'docking' ? `transform ${DOCK_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`
-              : dragPhase === 'undocking' ? `opacity ${DOCK_DURATION}ms ease-in`
+              : dragPhase === 'docking' || dragPhase === 'undocking' ? `transform ${DOCK_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`
               : 'none',
-            opacity: dragPhase === 'undocking' ? 0 : 1,
+            opacity: 1,
             pointerEvents: 'none',
             zIndex: 4001,
             ...(dragPhase === 'returning' && dragStartRef.current
@@ -746,23 +1479,51 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
               : {}),
           }}
         >
-          <RitualCard ritual={dragGhostRitual} isSelected={false} onClick={() => {}} outcomeBorder forcePopped />
+          <RitualCard ritual={dragGhostRitual} isSelected={false} onClick={() => {}} outcomeBorder forcePopped tierLabel={tierLabelFor(dragGhostRitual, effectiveRituals.findIndex(r => r.id === dragGhostRitual.id))} />
         </div>,
         document.body
       )}
+      {ejectGhost && (() => {
+        const ejectRitual = effectiveRituals.find(r => r.id === ejectGhost.ritualId)
+        if (!ejectRitual) return null
+        return createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              width: `${RITUAL_CARD_WIDTH}px`,
+              transform: `translate(${ejectGhost.x}px, ${ejectGhost.y}px)`,
+              transition: ejectGhost.animate ? `transform ${DOCK_DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)` : 'none',
+              pointerEvents: 'none',
+              zIndex: 4000,
+            }}
+          >
+            <RitualCard ritual={ejectRitual} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={tierLabelFor(ejectRitual, effectiveRituals.findIndex(r => r.id === ejectRitual.id))} />
+          </div>,
+          document.body
+        )
+      })()}
       <style>{`
         @keyframes homeDetailHeaderEnter {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        /* The left-to-right wipe only needs to animate the RIGHT inset (100% -> hidden, 0 ->
-           revealed) — top/bottom/left aren't part of the motion. Keeping those at a generous
-           negative inset (instead of 0) throughout means the clip-path this leaves behind
-           after the animation ends (fill-mode: both keeps the final frame forever) doesn't
-           permanently clip the ritual cards' own box-shadow flush against their own edges. */
+        /* Ritual cards rise up from below rather than fading in — no opacity animation at all,
+           purely a position move, so it never reads as a fade. See drawerRevealStyle's own
+           comment for how visibility (not opacity) handles staying hidden until the hero lands. */
         @keyframes homeDetailDrawerReveal {
-          from { opacity: 0; clip-path: inset(-60px 100% -60px -60px); }
-          to { opacity: 1; clip-path: inset(-60px -60px -60px -60px); }
+          from { transform: translateY(100vh); }
+          to { transform: translateY(0); }
+        }
+        @keyframes homeDetailDrawerRevealVisibility {
+          to { visibility: visible; }
+        }
+        /* Fades in the drop-zone placeholder and the god's description only once the hero card
+           has finished expanding — see postHeroFadeInStyle's own comment. */
+        @keyframes homeDetailPostHeroFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
     </div>
@@ -770,8 +1531,6 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
 }
 
 const ESTIMATED_PANEL_HEIGHT = 650
-
-const NOOP = () => {}
 
 // Real spacing between stacked panels — must stay >= the trailing cover's marginTop below, or
 // the cover starts before the next panel actually does and its content peeks through the gap.
@@ -788,23 +1547,28 @@ const FREE_SNAP_DURATION = 1100
 // + lock), animated with a real CSS transition — not the old continuous 1:1 finger-tracking,
 // which let a hard fling blow past several gods and, worse, let light scrolls that never crossed
 // its rounding threshold do nothing at all.
-function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, highlightParticipantType }: {
+function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexChange, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
   onSettledIndexChange: (index: number) => void
-  originRect: DOMRect | null
-  originGodId: string | null
   chosenRituals: Record<string, string>
   onChooseRitual: (godId: string, ritualId: string) => void
   onUnchooseRitual: (godId: string) => void
   onRitualHoverChange: (ritual: Ritual | null) => void
   onBack: () => void
   highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null
+  highlightSite?: 'Temple' | 'Great Pyramid' | null
+  measuredCardHeight: number | null
+  onMeasuredCardHeight: (height: number) => void
+  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }
+  punishingGodId?: string | null
+  heroRevealGodId: string | null
+  panelHeights: Record<string, number>
+  onPanelHeightsChange: React.Dispatch<React.SetStateAction<Record<string, number>>>
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const inertScrollRef = useRef<HTMLDivElement>(null)
-  const [panelHeights, setPanelHeights] = useState<Record<string, number>>({})
+  const setPanelHeights = onPanelHeightsChange
   const roRef = useRef<ResizeObserver | null>(null)
   const observedRef = useRef<Map<string, HTMLElement>>(new Map())
   // Accumulates wheel deltaY until FREE_SCROLL_STEP_THRESHOLD is crossed, then commits exactly
@@ -813,17 +1577,45 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
   const wheelAccumRef = useRef(0)
   const wheelLockRef = useRef(false)
   const wheelLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // isSnapping used to only flip true from handleWheel, so a scrollPos change coming from
-  // anywhere else (e.g. clicking a different row in the left rail, which drives scrollPos from
-  // the parent) never got the transform transition — the carousel jumped instantly instead of
-  // sliding. It only needs to be false for the very first paint (so mount doesn't animate in from
-  // nowhere); every position change after that, regardless of source, should slide. A "has
-  // mounted" ref flipped after the first paint covers both wheel- and click-driven navigation.
-  const hasMountedRef = useRef(false)
-  const isSnapping = hasMountedRef.current
-  useLayoutEffect(() => {
-    hasMountedRef.current = true
-  }, [])
+  // scrollPos (the prop) can jump by more than one god at a time — e.g. picking a far-down row
+  // in the left rail sets it directly to that god's index, not the next/previous one like a
+  // wheel step does. A CSS transition can only animate an element that's already on screen: a
+  // god whose panel wasn't mounted at all under the old position (outside FREE_CAROUSEL_WINDOW_
+  // RADIUS) has no "before" transform to transition from, so it would just pop in already at
+  // rest instead of sliding into place — no amount of widening the render window fixes that,
+  // since a freshly-inserted DOM node's initial style is never animated, only *changes* to an
+  // existing node's style are. renderScrollPos is the actual position everything below renders
+  // from; a rAF loop eases it from wherever it currently is toward the incoming scrollPos prop
+  // over FREE_SNAP_DURATION, so every intermediate god sweeps naturally into (and back out of)
+  // the render window as it travels, exactly like continuous manual scrolling — one mechanism
+  // that handles both a single wheel step and an arbitrary-distance row click. Panels no longer
+  // need a CSS `transition` on transform at all: each frame's position is already the correct
+  // eased value, computed directly, so layering a CSS transition on top would just make the
+  // element lag behind chasing a moving target.
+  const [renderScrollPos, setRenderScrollPos] = useState(scrollPos)
+  const renderScrollPosRef = useRef(scrollPos)
+  const tweenRafRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (renderScrollPosRef.current === scrollPos) return
+    if (tweenRafRef.current !== null) cancelAnimationFrame(tweenRafRef.current)
+    const from = renderScrollPosRef.current
+    const to = scrollPos
+    const startTime = performance.now()
+    // Symmetric ease-in-out (accelerate, then decelerate) — matches the curve already tuned
+    // for this carousel's single-step wheel motion; see the transform transition this replaces.
+    const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - startTime) / FREE_SNAP_DURATION)
+      const value = from + (to - from) * easeInOutCubic(t)
+      renderScrollPosRef.current = value
+      setRenderScrollPos(value)
+      tweenRafRef.current = t < 1 ? requestAnimationFrame(tick) : null
+    }
+    tweenRafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (tweenRafRef.current !== null) cancelAnimationFrame(tweenRafRef.current)
+    }
+  }, [scrollPos])
 
   useLayoutEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -876,86 +1668,17 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
     onSettledIndexChange(roundedIndex)
   }, [roundedIndex])
 
-  // roundedIndex flips to the target god the instant a scroll is triggered (it has to, so the
-  // CSS transform transition below animates toward it) — but HomeGodDetailPanel's `isActive`
-  // prop drives the face/name/subtitle color directly (no transition matching the 1100ms slide).
-  // The new (incoming) god should brighten immediately — it's already becoming the hero, and
-  // waiting until it's done sliding in reads as if it were dark the whole way up. The outgoing
-  // god should *also* stay bright for the same duration instead of snapping dark the instant the
-  // scroll starts — otherwise it visibly darkens before it's actually left. lingerUntilRef tracks
-  // the previous roundedIndex for exactly one transition's worth of time so both the outgoing and
-  // incoming panel read as active while they're actually moving, and only the true stragglers
-  // (untouched by this transition) stay dim throughout.
-  //
-  // The onset (marking the outgoing index as lingering) is done as a plain ref mutation *during
-  // render*, not inside an effect. An effect fires one commit late: React would first render with
-  // the outgoing panel already dark, paint nothing (React 18 batches this fine), but GodSvg still
-  // sees a genuinely different `bodyColor` across those two renders and — since it draws via
-  // dangerouslySetInnerHTML — tears down and rebuilds its entire SVG subtree on each "changed
-  // props" render, which is the flash: a real DOM node replacement even though the color it
-  // settles on is identical to before. Doing the bookkeeping synchronously in the render body
-  // means roundedIndex and the linger set are always consistent within a single render — GodSvg
-  // never sees the wrong intermediate value, so it never re-renders at all. Only the *reversion*
-  // (dropping the lingering index once the transition truly ends) needs a real timer/re-render,
-  // since that's a deliberate, one-time settle rather than a same-tick correction.
-  const prevRoundedRef = useRef(roundedIndex)
-  const lingerUntilRef = useRef<Map<number, number>>(new Map())
-  const [, bumpLingerTick] = useState(0)
-  if (prevRoundedRef.current !== roundedIndex) {
-    const prev = prevRoundedRef.current
-    prevRoundedRef.current = roundedIndex
-    lingerUntilRef.current.set(prev, performance.now() + FREE_SNAP_DURATION)
-  }
-  useEffect(() => {
-    const now = performance.now()
-    const pending = Array.from(lingerUntilRef.current.values()).map(until => until - now).filter(ms => ms > 0)
-    if (pending.length === 0) return
-    const t = setTimeout(() => {
-      const cutoff = performance.now()
-      for (const [idx, until] of lingerUntilRef.current) {
-        if (until <= cutoff) lingerUntilRef.current.delete(idx)
-      }
-      bumpLingerTick(v => v + 1)
-    }, Math.max(...pending) + 16)
-    return () => clearTimeout(t)
-  }, [roundedIndex])
-  const isLingering = (index: number) => (lingerUntilRef.current.get(index) ?? 0) > performance.now()
-
-  // windowIndices only needs to span FREE_CAROUSEL_WINDOW_RADIUS around scrollPos for a
-  // single-step wheel move — the old and new position are already within radius of each other,
-  // so every panel that needs to slide is already mounted. Picking a row far down the list (via
-  // the left rail) can jump scrollPos by many gods at once, though: with only the narrow window,
-  // the target god's panel would mount already at rest on its very first render (nothing to
-  // transition from) and everything in between would never render at all — no slide, just a pop.
-  // transitSpanRef captures the full old->new range on the render where scrollPos jumps (a plain
-  // ref mutation during render, same safe pattern as lingerUntilRef above — no extra render pass,
-  // so the panels in that range are already mounted with correct positions by the very first
-  // render after the jump, ready for the CSS transform transition to carry them the whole way).
-  // It's held for one transition's worth of time, then released so the window shrinks back down
-  // once things have actually settled.
-  const prevScrollPosForWindowRef = useRef(scrollPos)
-  const transitSpanRef = useRef<{ start: number; end: number } | null>(null)
-  const [, bumpWindowTick] = useState(0)
-  if (prevScrollPosForWindowRef.current !== scrollPos) {
-    const prevPos = prevScrollPosForWindowRef.current
-    prevScrollPosForWindowRef.current = scrollPos
-    transitSpanRef.current = { start: Math.min(prevPos, scrollPos), end: Math.max(prevPos, scrollPos) }
-  }
-  useEffect(() => {
-    if (!transitSpanRef.current) return
-    const t = setTimeout(() => {
-      transitSpanRef.current = null
-      bumpWindowTick(v => v + 1)
-    }, FREE_SNAP_DURATION + 50)
-    return () => clearTimeout(t)
-  }, [scrollPos])
-  const span = transitSpanRef.current
-  const windowStart = Math.max(0, Math.floor(span ? span.start : scrollPos) - FREE_CAROUSEL_WINDOW_RADIUS)
-  const windowEnd = Math.min(gods.length - 1, Math.ceil(span ? span.end : scrollPos) + FREE_CAROUSEL_WINDOW_RADIUS)
+  // windowIndices spans FREE_CAROUSEL_WINDOW_RADIUS around renderScrollPos rather than the raw
+  // scrollPos prop — since renderScrollPos itself sweeps continuously from the old position to
+  // the new one (see the tween above), every god along the way naturally enters this window as
+  // the sweep approaches it and leaves once it's passed, the same as it would under manual
+  // scrolling. No separate "hold a wide window open during the transition" bookkeeping needed.
+  const windowStart = Math.max(0, Math.floor(renderScrollPos) - FREE_CAROUSEL_WINDOW_RADIUS)
+  const windowEnd = Math.min(gods.length - 1, Math.ceil(renderScrollPos) + FREE_CAROUSEL_WINDOW_RADIUS)
   const windowIndices: number[] = []
   for (let i = windowStart; i <= windowEnd; i++) windowIndices.push(i)
 
-  const anchorTop = cumulativeTop(scrollPos)
+  const anchorTop = cumulativeTop(renderScrollPos)
   // Anchored near the top of the carousel viewport (close to the resource bar) rather than
   // vertically centered — HomeGodDetailPanel's own 24px top margin already provides the breathing
   // room, so the active panel's top edge lands just below the header area.
@@ -993,7 +1716,10 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
       {windowIndices.map(index => {
         const god = gods[index]
         const isActive = index === roundedIndex
-        const isVisuallyActive = index === roundedIndex || isLingering(index)
+        // Every panel always renders at full brightness — no dimmed/inactive state — so scrolling
+        // (single-step or a multi-hop row-click jump) never darkens a god's face/name, whether
+        // it's the target, the source, or one being swept past in between.
+        const isVisuallyActive = true
         const top = baseOffset + (cumulativeTop(index) - anchorTop)
         return (
           <div
@@ -1014,12 +1740,11 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
               transform: `translate3d(0, ${top}px, 0)`,
               willChange: 'transform',
               pointerEvents: isActive ? 'auto' : 'none',
-              // ease-in-out over the old cubic-bezier(0.23,1,0.32,1) — that curve's control points
-              // front-load almost all the motion into the first ~20% of the duration (near-instant
-              // snap, then a long slow tail), which reads as a jerky jump-then-crawl rather than one
-              // continuous glide. A symmetric ease-in-out actually feels smooth across the full
-              // (now much longer, 1100ms) duration.
-              transition: isSnapping ? `transform ${FREE_SNAP_DURATION}ms ease-in-out` : 'none',
+              // No CSS transition here — renderScrollPos's own rAF loop already produces an
+              // eased value every frame, so `top` is always the correct in-flight position
+              // directly. Adding a CSS transition on top of an already-animating value would
+              // make the element perpetually lag behind, chasing a moving target.
+              transition: 'none',
             }}
           >
             <div ref={el => registerPanelEl(god.id, el)} style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1029,13 +1754,15 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
                 onChoose={ritualId => onChooseRitual(god.id, ritualId)}
                 onUnchoose={() => onUnchooseRitual(god.id)}
                 onRitualHoverChange={onRitualHoverChange}
-                originRect={god.id === originGodId ? originRect : null}
-                isClosing={false}
-                onCloseComplete={NOOP}
-                scrollContainerRef={inertScrollRef}
                 chosenRitualId={chosenRituals[god.id]}
                 isActive={isVisuallyActive}
+                isCentered={god.id === heroRevealGodId}
                 highlightParticipantType={highlightParticipantType}
+                highlightSite={highlightSite}
+                measuredCardHeight={measuredCardHeight}
+                onMeasuredCardHeight={onMeasuredCardHeight}
+                availableResources={availableResources}
+                isPunishing={isPunishingGodId(god.id, punishingGodId)}
               />
             </div>
           </div>
@@ -1047,16 +1774,13 @@ function GodFreeCarousel({ gods, scrollPos, onScrollPosChange, onSettledIndexCha
 
 // Left rail: every god as a full GodCard (with its own ritual panel, used as-is), in a plain
 // natively-scrolling column — always visible, independent of which god is centered in the carousel.
-function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, cardRefs, originRect, originGodId, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header, highlightParticipantType }: {
+function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSettledIndexChange, onCardClick, chosenRituals, onChooseRitual, onUnchooseRitual, onRitualHoverChange, onBack, header, highlightParticipantType, highlightSite, measuredCardHeight, onMeasuredCardHeight, availableResources, punishingGodId, heroRevealGodId, panelHeights, onPanelHeightsChange }: {
   gods: God[]
   scrollPos: number
   onScrollPosChange: (pos: number) => void
   settledIndex: number
   onSettledIndexChange: (index: number) => void
   onCardClick: (godId: string) => void
-  cardRefs: React.RefObject<Record<string, HTMLDivElement | null>>
-  originRect: DOMRect | null
-  originGodId: string | null
   chosenRituals: Record<string, string>
   onChooseRitual: (godId: string, ritualId: string) => void
   onUnchooseRitual: (godId: string) => void
@@ -1064,6 +1788,14 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
   onBack: () => void
   header: React.ReactNode
   highlightParticipantType?: 'prisoners' | 'volunteers' | 'children' | 'virgins' | null
+  highlightSite?: 'Temple' | 'Great Pyramid' | null
+  measuredCardHeight: number | null
+  onMeasuredCardHeight: (height: number) => void
+  availableResources: { prisoners: number; volunteers: number; children: number; virgins: number }
+  punishingGodId?: string | null
+  heroRevealGodId: string | null
+  panelHeights: Record<string, number>
+  onPanelHeightsChange: React.Dispatch<React.SetStateAction<Record<string, number>>>
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -1079,7 +1811,15 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
         }}
       >
         {header}
+        {/* Slides open from the left every time this mounts (i.e. every grid<->list transition,
+            since GodListLayout only ever exists in list mode) rather than fading in with the
+            rest of the chrome — pulled out of CHROME_FADE_SELECTOR's opacity treatment (no more
+            data-transition-chrome here) in favor of its own transform-only reveal, matching the
+            "slide, don't fade" preference already established for the ritual candidate row. Uses
+            the same hidden-until-delay-elapses `visibility` trick as that row for the same
+            reason: an opacity-based hold would read as a fade no matter how it's tuned. */}
         <div
+          data-god-rail-rows
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -1087,42 +1827,63 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
             flexDirection: 'column',
             gap: SPACING.sm,
             padding: '12px 24px 24px',
+            ...RAIL_SLIDE_STYLE,
           }}
         >
           {gods.map((god, index) => {
             const isSelected = index === settledIndex
-            const chosenRitual = god.rituals.find(r => r.id === chosenRituals[god.id]) ?? null
+            const chosenRitual = resolveRitual(god, chosenRituals[god.id])
             const isFirstInTier = index === 0 || gods[index - 1].angerLevel !== god.angerLevel
             return (
               <Fragment key={god.id}>
-                {isFirstInTier && <ListAngerTierHeader level={god.angerLevel} isFirst={index === 0} />}
+                {isFirstInTier && <ListAngerTierHeader level={god.angerLevel} count={gods.filter(g => g.angerLevel === god.angerLevel).length} isFirst={index === 0} />}
                 <ListGodRow
                   god={god}
                   isSelected={isSelected}
                   chosenRitual={chosenRitual}
                   onClick={() => onCardClick(god.id)}
-                  domRef={el => { cardRefs.current[god.id] = el }}
+                  isPunishing={isPunishingGodId(god.id, punishingGodId)}
                 />
               </Fragment>
             )
           })}
         </div>
       </div>
-      <div style={{ flexShrink: 0, width: '1px', backgroundColor: COLORS.gray20 }} />
+      {/* The rail's right-edge divider — a separate sibling (not nested inside the rows div
+          above) so it spans the FULL column height (alongside the header too, not just the
+          scrollable rows section), matching how it looked before this became animated. Given its
+          own copy of the identical slide style (RAIL_SLIDE_STYLE, same keyframes/timing as the rows
+          above) rather than being made a child of the rows wrapper, since nesting it there
+          clipped its height down to just the rows section — leaving a gap where it used to run
+          past the header. Two elements sharing one animation move in lockstep just as reliably as
+          one element containing both. */}
+      <div data-god-rail-divider style={{ flexShrink: 0, width: '1px', backgroundColor: COLORS.gray20, ...RAIL_SLIDE_STYLE }} />
       <GodFreeCarousel
         gods={gods}
         scrollPos={scrollPos}
         onScrollPosChange={onScrollPosChange}
         onSettledIndexChange={onSettledIndexChange}
-        originRect={originRect}
-        originGodId={originGodId}
         chosenRituals={chosenRituals}
         onChooseRitual={onChooseRitual}
         onUnchooseRitual={onUnchooseRitual}
         onRitualHoverChange={onRitualHoverChange}
         onBack={onBack}
         highlightParticipantType={highlightParticipantType}
+        highlightSite={highlightSite}
+        measuredCardHeight={measuredCardHeight}
+        onMeasuredCardHeight={onMeasuredCardHeight}
+        panelHeights={panelHeights}
+        onPanelHeightsChange={onPanelHeightsChange}
+        availableResources={availableResources}
+        punishingGodId={punishingGodId}
+        heroRevealGodId={heroRevealGodId}
       />
+      <style>{`
+        @keyframes homeRailSlideIn {
+          from { transform: translateX(-320px); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
     </div>
   )
 }
@@ -1131,15 +1892,18 @@ function GodListLayout({ gods, scrollPos, onScrollPosChange, settledIndex, onSet
 // state combines with isSelected into a single `highlighted` flag that drives every
 // color/border/opacity toggle below, so hovering a row reads the same as hovering/selecting
 // a card in grid view.
-function ListGodRow({ god, isSelected, chosenRitual, onClick, domRef }: {
+function ListGodRow({ god, isSelected, chosenRitual, onClick, isPunishing }: {
   god: God
   isSelected: boolean
   chosenRitual: Ritual | null
   onClick: () => void
-  domRef: (el: HTMLDivElement | null) => void
+  isPunishing?: boolean
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const highlighted = isSelected || isHovered
+  // isPunishing folds into highlighted (not just its own border/fill branch below) so the row's
+  // name/eye-ring opacity read at full brightness the same way an actual hover/select would,
+  // instead of needing a fourth parallel "dim unless punishing" check on every value below.
+  const highlighted = isSelected || isHovered || isPunishing
   // Border and icon always share this one value — same rule as RingedIcon's borderColor/icon
   // color pairing — so the dashed/solid card and the flame read as a single unit, not two
   // independently-colored pieces. Chosen state is a flat bright white, not the ritual's own
@@ -1149,23 +1913,28 @@ function ListGodRow({ god, isSelected, chosenRitual, onClick, domRef }: {
   const fireColor = chosenRitual
     ? COLORS.white
     : highlighted ? COLORS.gray60 : COLORS.gray20
+  // Same rule as GodCard's own eyes: once a ritual is chosen, the circle shows that ritual's
+  // outcome color/weight instead of the god's base anger-level color.
+  const eyeStyle = chosenRitual ? outcomeEye(chosenRitual.outcomeColor) : EYE[god.angerLevel]
   return (
     <div
-      ref={domRef}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
         padding: '10px 12px',
-        borderRadius: '8px',
-        border: `1px solid ${highlighted ? COLORS.gray30 : COLORS.gray15}`,
+        borderRadius: '4px',
+        // Punishing tints the row red (Figma's grid-card treatment, adapted here) instead of the
+        // usual gray border/fill — takes precedence over the plain highlighted look. EYE.high (the
+        // brighter render-layer red) rather than ANGER.high, matching GodCard's own punishing fill.
+        border: `1px solid ${isPunishing ? EYE.high.color : highlighted ? COLORS.gray30 : COLORS.gray15}`,
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
         // Fill reflects isSelected only, not hover — hover changes the stroke alone.
-        backgroundColor: isSelected ? COLORS.gray18 : 'transparent',
+        backgroundColor: isPunishing ? hexToRgba(EYE.high.color, 0.18) : isSelected ? COLORS.gray18 : 'transparent',
         transition: 'background-color 0.15s ease, border-color 0.15s ease',
       }}
     >
@@ -1174,17 +1943,17 @@ function ListGodRow({ god, isSelected, chosenRitual, onClick, domRef }: {
           width: '18px',
           height: '18px',
           borderRadius: '50%',
-          boxShadow: `inset 0 0 0 ${EYE[god.angerLevel].weight}px ${EYE[god.angerLevel].color}`,
-          opacity: highlighted ? 1 : 0.12,
+          boxShadow: `inset 0 0 0 ${eyeStyle.weight}px ${eyeStyle.color}`,
+          opacity: highlighted ? 1 : 0.4,
           flexShrink: 0,
-          transition: 'opacity 0.15s ease',
+          transition: 'opacity 0.15s ease, box-shadow 0.15s ease',
         }}
       />
       <span
         style={{
           fontFamily: FONTS.spectral,
           fontSize: '13px',
-          fontWeight: 400,
+          fontWeight: 300,
           color: highlighted ? COLORS.white : COLORS.gray40,
           opacity: highlighted ? 1 : 0.4,
           textTransform: 'uppercase',
@@ -1247,11 +2016,13 @@ function ViewModeToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list'; onC
 
 // Same title treatment as AngerTierHeader below (18px EYE-weight ring + label), sized for the
 // list rail's own padding instead of the grid's 24px horizontal gutter.
-function ListAngerTierHeader({ level, isFirst }: { level: AngerLevel; isFirst?: boolean }) {
+function ListAngerTierHeader({ level, count, isFirst }: { level: AngerLevel; count: number; isFirst?: boolean }) {
   return (
-    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: isFirst ? '0 0 8px' : '16px 0 8px' }}>
+    <div data-transition-chrome style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: isFirst ? '0 0 8px' : '16px 0 8px' }}>
       <div style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${EYE[level].weight}px ${EYE[level].color}` }} />
-      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>{TIER_LABELS[level]}</span>
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>
+        {TIER_LABELS[level]} ({count})
+      </span>
     </div>
   )
 }
@@ -1259,11 +2030,13 @@ function ListAngerTierHeader({ level, isFirst }: { level: AngerLevel; isFirst?: 
 // Section header above each non-empty anger tier's card grid — an 18px EYE-weight ring
 // (never a smaller size, never solid-fill; matches the anger-label circle used everywhere else)
 // plus the tier's label.
-function AngerTierHeader({ level }: { level: AngerLevel }) {
+function AngerTierHeader({ level, count, faded }: { level: AngerLevel; count: number; faded?: boolean }) {
   return (
-    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '24px 24px 0' }}>
+    <div data-transition-chrome style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '24px 24px 0', opacity: faded ? 0 : 1, pointerEvents: faded ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
       <div style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `inset 0 0 0 ${EYE[level].weight}px ${EYE[level].color}` }} />
-      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>{TIER_LABELS[level]}</span>
+      <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.light, color: COLORS.gray80 }}>
+        {TIER_LABELS[level]} ({count})
+      </span>
     </div>
   )
 }
@@ -1281,21 +2054,148 @@ interface HomeScreenProps {
   // HomeActionBar is occupying the bottom-right corner, so it can move up out of the way
   // instead of overlapping it. See App.tsx/AiChat.tsx for the other side of this wiring.
   onActionBarVisibleChange?: (visible: boolean) => void
+  // True once the user has actually dismissed MacDesktopIntro and can see this screen. AppShell
+  // (and HomeScreen inside it) is mounted from t=0 in App.tsx, sitting behind the intro overlay —
+  // so the grid's GSAP entrance below fires off this instead of plain mount, or it would play out
+  // completely unseen behind the splash and the user would never see the cards animate in.
+  // Defaults to true so HomeScreen still animates immediately when used without that wiring.
+  entered?: boolean
+  // The punishing-god flow's subject (App.tsx's PUNISHING_GOD.id) — reskins that god's card red
+  // in both grid and list-rail view, and restricts its ritual candidates to the single costly,
+  // peaceful-outcome option in the detail panel. Null/undefined outside that flow (no god flagged).
+  punishingGodId?: string | null
+  // One-shot "jump straight to this god's list-view detail panel" trigger — set by App.tsx's
+  // "Appease Now" button on GodPunishmentDialog. openGodSignal changes (e.g. Date.now()) every
+  // time the action fires, since openGodId alone staying the same across repeat clicks wouldn't
+  // re-trigger the effect below.
+  openGodId?: string | null
+  openGodSignal?: number
 }
 
-export function HomeScreen({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, aiPanelOpen = false, onActionBarVisibleChange }: HomeScreenProps) {
+export function HomeScreen({ prisoners, volunteers, children, virgins, temples = RESOURCE_TOTALS.temples, greatTemples = RESOURCE_TOTALS.greatTemples, resourceTotals = RESOURCE_TOTALS, aiPanelOpen = false, onActionBarVisibleChange, entered = true, punishingGodId = null, openGodId = null, openGodSignal = 0 }: HomeScreenProps) {
+  // Reorders DISPLAY_GOD_BUCKETS/DISPLAY_GODS_BY_TIER so the punishing god's card leads its own
+  // tier's cards instead of sitting wherever it naturally falls in GODS order — every scroll-
+  // position index below and the list rail itself all read from these instead of the raw module
+  // constants, so grid order, list order, and index math all stay in sync with each other.
+  const orderedGodBuckets = punishingGodId
+    ? DISPLAY_GOD_BUCKETS.map(bucket => ({
+        ...bucket,
+        gods: [...bucket.gods].sort((a, b) => Number(isPunishingGodId(b.id, punishingGodId)) - Number(isPunishingGodId(a.id, punishingGodId))),
+      }))
+    : DISPLAY_GOD_BUCKETS
+  const orderedGodsByTier = orderedGodBuckets.flatMap(bucket => bucket.gods)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [listScrollPos, setListScrollPos] = useState(0)
   const [listSettledIndex, setListSettledIndex] = useState(0)
+  // Which god's ritual candidate row should play the slide-up-from-off-screen reveal (see
+  // drawerRevealStyle in HomeGodDetailPanel) — set to the clicked god's id exactly once, in
+  // handleSelectGod's actual grid->list transition below, and cleared the moment the settled
+  // carousel position moves to a different god. Without this, gating the reveal on "is this the
+  // centered panel" alone (isCentered) replayed the animation every time scrolling the carousel
+  // brought a NEW god into the centered position — this should only ever happen once, for the
+  // specific god whose grid card was just clicked, not on every ordinary scroll.
+  const [heroRevealGodId, setHeroRevealGodId] = useState<string | null>(null)
   const [chosenRituals, setChosenRituals] = useState<Record<string, string>>({})
   const [spentCost, setSpentCost] = useState<ResourceCost>(ZERO_COST)
-  const [resultEntries, setResultEntries] = useState<Array<{ god: God; ritual: Ritual }> | null>(null)
+  // Gods whose ritual has actually been authorized (as opposed to merely chosenRituals, which is
+  // cleared the moment the drain sequence finalizes) — keyed by god.id, populated at that same
+  // finalize step. Drives GodCard's separate "ritual in progress" look (darker face/eyes, no panel
+  // border, "Ritual in progress" label) instead of reverting straight to "No ritual chosen".
+  const [inProgressRituals, setInProgressRituals] = useState<Record<string, Ritual>>({})
+  // The list-view rail excludes gods with a ritual actually in progress entirely (rather than just
+  // styling them differently, the way the grid does) — they're unclickable in the grid too (see
+  // renderGrid's onClick), so there'd be nothing left to do with them in the detail panel anyway.
+  // Every list-specific index/lookup below (scroll position, settled god, view-mode toggle target)
+  // reads from this instead of the raw orderedGodsByTier, so indices stay in sync with whatever
+  // GodListLayout is actually rendering.
+  const listViewGodsByTier = orderedGodsByTier.filter(g => !inProgressRituals[g.id])
+  // Ordered snapshot of {god, ritual} entries for the CTA-click drain sequence, captured once at
+  // click time in orderedGodsByTier's visual (left-to-right/top-to-bottom) order — not
+  // Object.entries(chosenRituals)'s insertion order. Non-null for exactly the duration of the
+  // sequence; doubles as the isAuthorizing boolean below. chosenRituals/spentCost are NOT touched
+  // when this is set — only at the very end (see the effect below) — so the resource-bar countdown
+  // has a real, unchanged "before" state to animate from without a discontinuity.
+  const [authorizeEntries, setAuthorizeEntries] = useState<Array<{ god: God; ritual: Ritual }> | null>(null)
+  // -1 = chrome/non-relevant cards are fading out, no god's turn has begun yet. 0..entries.length-1
+  // = that god's pills are draining (and stay drained once begun — see GodCard's own `draining`
+  // prop comment). Never advances to entries.length — the sequencing effect below goes straight
+  // from the last god's index to finalizing.
+  const [authorizeStepIndex, setAuthorizeStepIndex] = useState(-1)
+  // Snapshot of `available* + reservedCost.*` per resource type, captured once at click time — the
+  // "as if this whole batch had never been reserved" starting point the resource bar counts down
+  // from. Frozen for the sequence's duration (not recomputed), since availableX/reservedCost keep
+  // changing meaning once spentCost/chosenRituals are touched at finalize.
+  const [authorizeBeforeCost, setAuthorizeBeforeCost] = useState<ResourceCost>(ZERO_COST)
   const [hoveredRitual, setHoveredRitual] = useState<Ritual | null>(null)
   const [hoveredResourceType, setHoveredResourceType] = useState<'prisoners' | 'volunteers' | 'children' | 'virgins' | null>(null)
-  const [originRect, setOriginRect] = useState<DOMRect | null>(null)
-  const [originGodId, setOriginGodId] = useState<string | null>(null)
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [hoveredSiteType, setHoveredSiteType] = useState<'Temple' | 'Great Pyramid' | null>(null)
+  const [ctaHovered, setCtaHovered] = useState(false)
+  // Lifted out of HomeGodDetailPanel (which unmounts every time viewMode leaves 'list') so the
+  // measured height survives across grid<->list toggles instead of resetting to null and briefly
+  // falling back to RITUAL_CARD_HEIGHT_FALLBACK on every single transition. That fallback-then-
+  // correct sequence is what caused the detail face to visibly grow to the fallback size and then
+  // snap/shrink to the real size right after the Flip transition landed — see its use below.
+  const [measuredCardHeight, setMeasuredCardHeight] = useState<number | null>(null)
+  // Lifted out of GodFreeCarousel (which unmounts every time viewMode leaves 'list') for the same
+  // reason as measuredCardHeight above: GodFreeCarousel stacks every panel via a cumulative sum of
+  // its neighbors' heights (cumulativeTop), so if this reset to {} on every grid<->list toggle, the
+  // panel above the freshly-selected god renders one frame at ESTIMATED_PANEL_HEIGHT before its
+  // ResizeObserver reports the real height, and that correction shifts every panel below it —
+  // including the hero panel still mid-Flip — producing a visible snap/glitch during the transition.
+  const [panelHeights, setPanelHeights] = useState<Record<string, number>>({})
+  // Even with measuredCardHeight lifted above, the very first grid->list transition of a session
+  // still has nothing to reuse yet. preMeasureRef points at a permanently-mounted, invisible
+  // RitualCard (rendered below, in grid mode's own subtree so it's present from first paint) whose
+  // sole purpose is to seed measuredCardHeight before the user ever clicks a god card.
+  const preMeasureRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = preMeasureRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const height = entries[0]?.contentRect.height
+      if (height) setMeasuredCardHeight(prev => prev ?? height)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // Guards handleSelectGod/handleBack's fade+Flip choreography against overlapping calls — see the
+  // comment at its first use in handleSelectGod for why that matters.
+  const heroTransitionInProgressRef = useRef(false)
+
+  // One-time GSAP entrance, gated on `entered` rather than plain mount — HomeScreen is already
+  // mounted behind MacDesktopIntro from t=0 (see App.tsx), so a mount-keyed effect would play this
+  // out fully hidden behind the splash and the user would never actually see it. hasAnimatedRef
+  // guards it to fire exactly once, the first time `entered` turns true, regardless of how many
+  // times this effect re-runs afterward. viewMode is always still 'grid' at that point, so every
+  // god card (each wrapped in a [data-grid-card] div by renderGrid) is already in the DOM to
+  // select. Deliberately does NOT re-run on every later grid<->list return trip, since handleBack's
+  // own GSAP Flip tween already animates the face growing back into place then — running both at
+  // once would fight over the same element's transform.
+  const hasAnimatedEntranceRef = useRef(false)
+  useLayoutEffect(() => {
+    if (!entered || hasAnimatedEntranceRef.current) return
+    hasAnimatedEntranceRef.current = true
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray<HTMLElement>('[data-grid-card]', scrollContainerRef.current)
+      if (cards.length === 0) return
+      gsap.from(cards, {
+        opacity: 0,
+        y: 28,
+        scale: 0.92,
+        duration: 1.2,
+        ease: 'power3.out',
+        stagger: 0.07,
+        // MacDesktopIntro's own exit fade (see MacDesktopIntro.tsx) takes 0.6s — without this
+        // delay the entrance tween starts the instant `entered` flips true and is mostly done
+        // fading/growing in *underneath* that still-fading overlay, so barely any of it reads as
+        // visible. Waiting out the overlay's fade first means the user actually sees the cards
+        // animate in, instead of finding them already settled the moment the splash clears.
+        delay: 0.6,
+      })
+    }, scrollContainerRef)
+    return () => ctx.revert()
+  }, [entered])
 
   // Resources go down the moment a ritual is assigned (reserved), and stay down once authorized.
   const reservedCost = sumRitualCost(chosenRituals)
@@ -1306,6 +2206,108 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   const availableTemples = temples - spentCost.temples - reservedCost.temples
   const availableGreatTemples = greatTemples - spentCost.greatTemples - reservedCost.greatTemples
 
+  const isAuthorizing = authorizeEntries !== null
+  // The resource bar stays in its normal dark look during the authorize/drain sequence itself —
+  // only actual CTA hover (before the click commits) lights it up as a preview.
+  const showLight = ctaHovered
+  // Global visual-order index of each relevant god within authorizeEntries — needed because
+  // renderGrid is called once per anger-tier bucket (a subset of orderedGodsByTier), so a
+  // per-bucket array index can't be used to drive sequencing across the whole page.
+  const authorizeIndexByGodId = new Map(authorizeEntries?.map((e, i) => [e.god.id, i]))
+  // Cost of every entry whose turn has begun so far (authorizeStepIndex is inclusive of the
+  // currently-draining god from the instant its turn starts, matching GodCard's own `draining`
+  // flag flipping true at that same instant) — zero while still in the initial chrome-fade phase.
+  const authorizeDrainedSoFar = authorizeEntries && authorizeStepIndex >= 0
+    ? sumEntriesCost(authorizeEntries.slice(0, authorizeStepIndex + 1))
+    : ZERO_COST
+  // The "/ total" ceiling permanently steps down by whatever's been authorized so far — wasted
+  // resources don't come back, so once the drain sequence lands on a lower total, it stays there
+  // instead of reverting to the game's original resourceTotals constant. Equals resourceTotals
+  // until the first ritual is ever authorized (spentCost is all zero then).
+  const permanentTotals: ResourceCost = {
+    prisoners: resourceTotals.prisoners - spentCost.prisoners,
+    volunteers: resourceTotals.volunteers - spentCost.volunteers,
+    children: resourceTotals.children - spentCost.children,
+    virgins: resourceTotals.virgins - spentCost.virgins,
+    temples: resourceTotals.temples - spentCost.temples,
+    greatTemples: resourceTotals.greatTemples - spentCost.greatTemples,
+  }
+  // Fed into HomeResourceBar's `resourceTotals` prop ONLY while authorizing — i.e. this animates
+  // the small "/ total" ceiling number, not the big "available" count next to it (that one stays
+  // the real, unmodified available* the whole time — see the HomeResourceBar call site below).
+  // Falls back to permanentTotals (not the raw resourceTotals constant) otherwise, so the ceiling
+  // stays at its just-drained-to value once the sequence ends — see permanentTotals above.
+  // Continuity is guaranteed by construction: at click time authorizeBeforeCost = available* +
+  // reservedCost (drainedSoFar = 0), so the display starts exactly at the pre-reservation total;
+  // once every entry has "begun" (drainedSoFar === reservedCost, since authorizeEntries is exactly
+  // what reservedCost was summed over), the display lands exactly on the real available* value —
+  // and spentCost/chosenRituals are updated in the same tick authorizeEntries clears (see the
+  // effect below), so the real available* computed on the very next render matches identically,
+  // which in turn is exactly what permanentTotals evaluates to once spentCost reflects the spend.
+  const authorizeDisplayTotals: ResourceCost = isAuthorizing
+    ? {
+        prisoners: authorizeBeforeCost.prisoners - authorizeDrainedSoFar.prisoners,
+        volunteers: authorizeBeforeCost.volunteers - authorizeDrainedSoFar.volunteers,
+        children: authorizeBeforeCost.children - authorizeDrainedSoFar.children,
+        virgins: authorizeBeforeCost.virgins - authorizeDrainedSoFar.virgins,
+        temples: authorizeBeforeCost.temples - authorizeDrainedSoFar.temples,
+        greatTemples: authorizeBeforeCost.greatTemples - authorizeDrainedSoFar.greatTemples,
+      }
+    : permanentTotals
+
+  // Drives the CTA-click drain sequence once authorizeEntries is set (see HomeActionBar's
+  // onPerform below) — one setTimeout per god's turn plus one to finalize, matching
+  // RitualResultScreen's own useEffect-with-setTimeout-array shape. Only fires once per sequence:
+  // authorizeEntries doesn't change again until it's cleared back to null at the very end, so this
+  // effect doesn't re-run mid-sequence and re-schedule anything.
+  useEffect(() => {
+    if (!authorizeEntries) return
+    const n = authorizeEntries.length
+    // Every step is pushed back by AUTHORIZE_FLY_MS so the drain (and its eye/pill animations)
+    // only starts once the fly-in Flip (triggered synchronously in onPerform, see below) has
+    // actually landed the cards in the stage — otherwise the gods would start "eating" mid-flight.
+    const timers = authorizeEntries.map((_, i) =>
+      setTimeout(() => setAuthorizeStepIndex(i), AUTHORIZE_FLY_MS + AUTHORIZE_CHROME_FADE_MS + i * (AUTHORIZE_STEP_DURATION_MS + AUTHORIZE_STEP_GAP_MS))
+    )
+    const totalDrainMs = AUTHORIZE_FLY_MS + AUTHORIZE_CHROME_FADE_MS + n * AUTHORIZE_STEP_DURATION_MS + Math.max(0, n - 1) * AUTHORIZE_STEP_GAP_MS
+    timers.push(setTimeout(() => {
+      // Capture the stage cards' current (centered) rects before finalizing swaps them back into
+      // the grid, mirroring handleSelectGod/handleBack's own Flip.getState -> flushSync -> Flip.from
+      // recipe — the "old" state here is the stage position, the "new" state is wherever each card
+      // naturally lands back in the grid (sorted to the end of its tier, per sortedGods below).
+      const flipSelector = authorizeEntries.map(({ god }) => `[data-flip-id="${god.id}:card"]`).join(',')
+      const flipEls = Array.from(document.querySelectorAll<HTMLElement>(flipSelector))
+      const state = flipEls.length > 0 ? Flip.getState(flipEls) : null
+      // Commit the spend and clear the selection HERE, at the very end — not at click time — and
+      // in the same tick as clearing authorizeEntries, so the real available*/reservedCost
+      // computed on the very next render exactly match the last override value above.
+      const spent = sumEntriesCost(authorizeEntries)
+      flushSync(() => {
+        setSpentCost(prev => ({
+          prisoners: prev.prisoners + spent.prisoners,
+          volunteers: prev.volunteers + spent.volunteers,
+          children: prev.children + spent.children,
+          virgins: prev.virgins + spent.virgins,
+          temples: prev.temples + spent.temples,
+          greatTemples: prev.greatTemples + spent.greatTemples,
+        }))
+        setChosenRituals({})
+        // Every god just authorized flips into the "ritual in progress" look (see GodCard's own
+        // ritualInProgress prop) instead of reverting straight to "No ritual chosen" — merged rather
+        // than replaced, since an earlier batch's rituals may still be in progress from before.
+        setInProgressRituals(prev => {
+          const next = { ...prev }
+          for (const { god, ritual } of authorizeEntries) next[god.id] = ritual
+          return next
+        })
+        setAuthorizeEntries(null)
+        setAuthorizeStepIndex(-1)
+      })
+      if (state) Flip.from(state, { ...AUTHORIZE_FLIP_VARS, targets: flipSelector })
+    }, totalDrainMs + AUTHORIZE_END_HOLD_MS))
+    return () => timers.forEach(clearTimeout)
+  }, [authorizeEntries])
+
   const actionBarVisible = viewMode === 'grid'
   // Update on every visibility change...
   useEffect(() => { onActionBarVisibleChange?.(actionBarVisible) }, [actionBarVisible])
@@ -1313,21 +2315,162 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
   // dependency-triggered effect above never gets a final run with actionBarVisible=false here.
   useEffect(() => () => onActionBarVisibleChange?.(false), [])
 
+  // GSAP Flip: capture each of the clicked god's four pieces' rects *before* the DOM changes,
+  // force React to commit the grid->list swap synchronously (flushSync — Flip needs the new
+  // elements to already exist to animate them), then tween whichever elements now match those
+  // recorded ids from their old rects to their natural ones. Both sides of the transition share
+  // `data-flip-id={`${godId}:card/name/face/panel`}` attributes (grid: GodCard.tsx; list:
+  // HomeGodDetailPanel) via flipIdsFor/flipSelectorFor above — this is the exact attribute name
+  // GSAP's Flip plugin uses for its own id-based matching. `targets` is deliberately narrowed to
+  // flipSelectorFor(godId) (just this god's own 4 pieces), not the wildcard '[data-flip-id]' every
+  // piece on the page uses — an earlier version passed the wildcard so Flip could re-locate the new
+  // elements after the DOM swap, which worked for matching, but once "card" (GodCard's own root,
+  // the div that actually establishes each grid cell's height) became one of the flipped pieces,
+  // Flip's own internal handling of `absolute: true` across *all* ~90+ wildcard-matched candidates
+  // (not just the ~4 with recorded state) intermittently collapsed every grid card's height at
+  // once — every tier's row of cards briefly measuring near-0 tall, which is what read as "dark
+  // rectangles"/misplaced tier headers sweeping the page. A selector scoped to just this god's own
+  // ids re-locates the same new elements (it's still a re-queried selector string, not a stale
+  // resolved reference — that specific failure mode is what made an earlier attempt at narrowing
+  // this go to `duration() === 0`, a same-tick no-op) without Flip ever touching the other cards.
+  // Everything besides the hero's own Flip growth used to happen in the same instant: flushSync
+  // swaps the grid out for the list synchronously, so every OTHER grid card and all the header/
+  // tier-header chrome just vanished the moment the click landed, and the list's rail popped in
+  // fully-formed the moment it landed — only the one clicked card actually animated. Fixed by
+  // wrapping the swap in a quick fade-out/fade-in of everything that isn't the hero: fade the old
+  // view's chrome+siblings down first (short, so it doesn't delay the Flip by much), *then* commit
+  // the view swap + kick off the Flip, then fade the new view's chrome+siblings back in around it.
   const handleSelectGod = (godId: string) => {
-    // originRect/originGodId drive HomeGodDetailPanel's FLIP grow-in animation (see the
-    // useLayoutEffect keyed on `originRect` there) — only meant to play once, when a card is
-    // first clicked from the grid. Picking a different row from the already-open list rail
-    // reuses this same handler (GodListLayout's onCardClick), but cardRefs also holds the rail
-    // rows' own (much smaller) rects; setting originRect there made the newly selected god's
-    // panel FLIP-grow from that tiny row size on every pick — a spurious rescale on top of the
-    // intended carousel scroll. Only set origin state on the actual grid->list transition.
-    if (viewMode !== 'list') {
-      const el = cardRefs.current[godId]
-      setOriginRect(el ? el.getBoundingClientRect() : null)
-      setOriginGodId(godId)
+    // This same handler is also wired to the list rail's own rows (GodListLayout's onCardClick)
+    // for re-centering the carousel on a different god while already viewing the list — not just
+    // grid-card clicks. Those two cases need completely different handling: a real grid->list
+    // switch needs the full Flip+fade choreography below, but re-centering within the SAME view
+    // isn't a view change at all — GodFreeCarousel already smoothly tweens to the new position and
+    // brightens gods as the sweep passes them (see renderScrollPos/nearestToSweep) entirely on its
+    // own. Running the fade choreography here too doubled up on that: it faded out the currently-
+    // visible panel and the whole rail as "other" content (only the *target* row was ever excluded
+    // from that fade, not whatever was already on screen), and layered a second GSAP tween on top
+    // of the carousel's own translate3d position tween on the same element — the "gods disappear
+    // while scrolling" / "nanosecond of refreshing" bugs. A plain scroll-position update is all a
+    // same-view re-center needs.
+    if (viewMode === 'list') {
+      setListScrollPos(listViewGodsByTier.findIndex(g => g.id === godId))
+      return
     }
-    setListScrollPos(DISPLAY_GODS_BY_TIER.findIndex(g => g.id === godId))
-    setViewMode('list')
+
+    // Guards only the fade+Flip choreography below, not the recenter path above — clicking rapidly
+    // (or double-clicking) used to let a second handleSelectGod/handleBack call fire mid-transition,
+    // whose OWN fadeOutTargets/fadeInTargets query would catch elements a still-running fade-in
+    // from the FIRST call was targeting. gsap.fromTo's explicit `from: {opacity:0}` would yank them
+    // back to invisible, and if a race meant nothing after that ever tweened them back up, they'd
+    // settle permanently invisible — the "cards missing their face/panel" bug. Simplest fix: while
+    // one of these transitions is running, ignore clicks that would start another.
+    if (heroTransitionInProgressRef.current) return
+    heroTransitionInProgressRef.current = true
+
+    const heroIds = new Set(flipIdsFor(godId))
+    const isHeroPiece = (el: HTMLElement) => heroIds.has(el.getAttribute('data-flip-id') ?? '')
+
+    const oldEls = Array.from(document.querySelectorAll<HTMLElement>(flipSelectorFor(godId)))
+    const state = oldEls.length > 0 ? Flip.getState(oldEls) : null
+
+    // Commits (and starts the hero Flip) immediately on click — no pre-commit chrome fade-out
+    // gating this anymore. That fade used to run to completion (CHROME_FADE_OUT_S, ~180ms) BEFORE
+    // commit() ever fired, since its targets (every OTHER grid card) get unmounted the instant
+    // setViewMode flips the DOM over, so the fade could only play out on the still-mounted old
+    // DOM. But gating the commit behind it meant the hero card itself sat still for that whole
+    // 180ms before its own Flip animation ever started — exactly the "slight delay before the
+    // transition kicks in" this was fixed for. The other grid cards now just disappear instantly
+    // with the DOM swap instead of fading first; the new view's chrome still fades IN below, which
+    // is the fade that actually matters for polish since it's what the user watches settle in.
+    flushSync(() => {
+      setListScrollPos(listViewGodsByTier.findIndex(g => g.id === godId))
+      setViewMode('list')
+      setHeroRevealGodId(godId)
+    })
+    // See setHeroPointerEvents' own comment — keeps the flying hero out of hover hit-testing so it
+    // can't flash to its hovered-face color mid-flight. Applied to the NEW (post-commit) elements,
+    // restored on the Flip tween's own completion specifically (not the fade-in's, which finishes
+    // sooner — CHROME_FADE_IN_S plus its stagger is shorter than HERO_TRANSITION_MS, so tying it to
+    // the fade-in would re-enable hover while the hero was still mid-flight).
+    setHeroPointerEvents(godId, false)
+    if (state) Flip.from(state, { ...HERO_FLIP_VARS, targets: flipSelectorFor(godId), onComplete: () => setHeroPointerEvents(godId, true) })
+    else setHeroPointerEvents(godId, true)
+    const fadeInTargets = Array.from(document.querySelectorAll<HTMLElement>(CHROME_FADE_SELECTOR)).filter(el => !isHeroPiece(el))
+    // Delayed until the hero's own grow-into-place Flip fully lands (immediateRender still holds
+    // these at opacity:0 for the whole delay) — previously this fired the instant the Flip started,
+    // so the rest of the list UI (rail rows, other carousel gods) settled in well before the hero
+    // even finished enlarging. That read as everything else "stacking up" first and the ritual
+    // cards (which do wait for HERO_TRANSITION_MS via drawerRevealStyle) arriving as an afterthought
+    // that pushed already-settled content. Now nothing else appears until the hero card itself is
+    // done, matching the ritual row's own timing.
+    if (fadeInTargets.length > 0) gsap.fromTo(fadeInTargets, { opacity: 0 }, { opacity: 1, duration: CHROME_FADE_IN_S, ease: 'power2.out', delay: state ? HERO_TRANSITION_MS / 1000 : 0, stagger: { amount: CHROME_FADE_IN_STAGGER_TOTAL_S }, onComplete: () => { heroTransitionInProgressRef.current = false } })
+    else heroTransitionInProgressRef.current = false
+  }
+
+  // Mirror-image of handleSelectGod for the reverse (list->grid) direction. Targets whichever god
+  // is currently centered in the list (listSettledIndex), since the user may have scrolled to a
+  // different one than whichever they originally clicked in from.
+  //
+  // True mirror, not just a reversed Flip: on the way in, the hero card + rail grow/slide in
+  // together first, and only once they've landed do the ritual candidate cards rise up
+  // (drawerRevealStyle, staggered left-to-right). On the way out, that has to run in reverse
+  // order too — the candidate cards slide back down first (staggered right-to-left, the exact
+  // opposite sweep direction), and only once they're gone does the hero shrink + rail slide out
+  // together. Without this, the candidate row would just vanish instantly with the rest of the
+  // DOM the moment flushSync below swaps the view, instead of leaving the way it arrived.
+  const handleBack = () => {
+    // Same lock as handleSelectGod, and the same reason — see the comment there.
+    if (heroTransitionInProgressRef.current) return
+    heroTransitionInProgressRef.current = true
+
+    const activeGod = listViewGodsByTier[listSettledIndex]
+    const heroIds = new Set(activeGod ? flipIdsFor(activeGod.id) : [])
+    const isHeroPiece = (el: HTMLElement) => heroIds.has(el.getAttribute('data-flip-id') ?? '')
+
+    const oldEls = activeGod ? Array.from(document.querySelectorAll<HTMLElement>(flipSelectorFor(activeGod.id))) : []
+    const state = oldEls.length > 0 ? Flip.getState(oldEls) : null
+
+    // All three pieces — hero card, candidate ritual cards, and the rail — start and run at the
+    // same time, over the same HERO_TRANSITION_MS, so they land together instead of one waiting
+    // on another. (An earlier version ran the ritual cards' slide-down to completion first, then
+    // started the card+rail; that read as a dead pause before anything else moved.) Both the rail
+    // and the candidate row are snapshotted into their own ghost clones (spawnRailExitGhost,
+    // spawnDrawerExitGhost) BEFORE the flushSync below unmounts the real elements — a GSAP tween
+    // can't keep animating a DOM node that's just been removed, so the clones are what actually
+    // carry the slide-away motion to completion.
+    spawnRailExitGhost()
+    if (activeGod) spawnDrawerExitGhost(activeGod.id)
+
+    // Commits (and starts the hero Flip) immediately — see the matching comment in
+    // handleSelectGod for why the old pre-commit chrome fade-out was removed.
+    flushSync(() => setViewMode('grid'))
+    // See setHeroPointerEvents' own comment (and the matching call in handleSelectGod) — same
+    // spurious-hover-mid-flight issue applies in this direction too.
+    if (activeGod) setHeroPointerEvents(activeGod.id, false)
+    if (state && activeGod) Flip.from(state, { ...HERO_FLIP_VARS, targets: flipSelectorFor(activeGod.id), onComplete: () => setHeroPointerEvents(activeGod.id, true) })
+    else if (activeGod) setHeroPointerEvents(activeGod.id, true)
+    const fadeInTargets = Array.from(document.querySelectorAll<HTMLElement>(CHROME_FADE_SELECTOR)).filter(el => !isHeroPiece(el))
+    if (fadeInTargets.length > 0) gsap.fromTo(fadeInTargets, { opacity: 0 }, { opacity: 1, duration: CHROME_FADE_IN_S, ease: 'power2.out', stagger: { amount: CHROME_FADE_IN_STAGGER_TOTAL_S }, onComplete: () => { heroTransitionInProgressRef.current = false } })
+    else heroTransitionInProgressRef.current = false
+  }
+
+  // Fires handleSelectGod once per openGodSignal change (see the prop's own comment) — the
+  // "Appease Now" jump straight into a god's list-view detail panel, from a cold grid mount.
+  const handledOpenGodSignalRef = useRef(0)
+  useEffect(() => {
+    if (!openGodId || openGodSignal === 0 || openGodSignal === handledOpenGodSignalRef.current) return
+    handledOpenGodSignalRef.current = openGodSignal
+    handleSelectGod(openGodId)
+  }, [openGodId, openGodSignal])
+
+  // Clears heroRevealGodId (see its own declaration comment) once the carousel settles on a
+  // DIFFERENT god than whichever originally triggered the grid->list reveal — plain scrolling
+  // should never trigger that reveal animation, only the one god actually clicked from the grid.
+  const handleSettledIndexChange = (index: number) => {
+    setListSettledIndex(index)
+    const settledGod = listViewGodsByTier[index]
+    if (settledGod && settledGod.id !== heroRevealGodId) setHeroRevealGodId(null)
   }
 
   const handleChooseRitual = (godId: string, ritualId: string) => {
@@ -1342,7 +2485,12 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     })
   }
 
-  const renderGrid = (gods: typeof DISPLAY_GODS) => (
+  const renderGrid = (gods: typeof DISPLAY_GODS) => {
+    // Gods with a ritual actually in progress sink to the end of their own anger section instead
+    // of sitting wherever they originally fell — a stable sort, so it only ever moves those cards,
+    // never reshuffles the rest of the section's own relative order.
+    const sortedGods = [...gods].sort((a, b) => (inProgressRituals[a.id] ? 1 : 0) - (inProgressRituals[b.id] ? 1 : 0))
+    return (
     <div
       style={{
         display: 'grid',
@@ -1351,28 +2499,83 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         padding: '24px',
       }}
     >
-      {gods.map(god => {
+      {sortedGods.map(god => {
         const chosenRitualId = chosenRituals[god.id]
-        const chosenRitual = chosenRitualId ? god.rituals.find(r => r.id === chosenRitualId) ?? null : null
+        const chosenRitual = resolveRitual(god, chosenRitualId)
+        const ritualInProgress = inProgressRituals[god.id] ?? null
+        const authorizeIndex = authorizeIndexByGodId.get(god.id) ?? -1
+        const draining = authorizeIndex !== -1 && authorizeStepIndex >= authorizeIndex
+        // A card with no chosen ritual just fades out in place while the drain sequence runs. A
+        // card WITH a chosen ritual instead flies out entirely — its real GodCard now lives in
+        // AuthorizeStage (see below) — leaving this grid slot as an invisible placeholder so the
+        // rest of the grid doesn't reflow around the gap.
+        const flyingAway = isAuthorizing && !!chosenRitual
+        const hideCard = isAuthorizing && !chosenRitual
         return (
-          <GodCard
+          // data-grid-card marks the whole rendered card for the entrance-animation stagger only
+          // (see the useLayoutEffect above) — the actual GSAP Flip targets for the grid<->list hero
+          // transition live inside GodCard itself (see its own data-flip-id comments), not on this
+          // outer wrapper. position: relative here is still load-bearing though: GodCard's own root
+          // div is one of those targets and gets Flip's absolute: true during the animation, which
+          // needs a positioned ancestor right here to anchor to — without it, it'd escape to
+          // whatever positioned ancestor is next (much further up, much bigger) and compute the
+          // wrong "natural" size to animate toward, the same bug the face/name/panel all hit before.
+          <div
             key={god.id}
-            god={god}
-            isSelected={false}
-            onClick={() => handleSelectGod(god.id)}
-            chosenRitual={chosenRitual}
-            domRef={el => { cardRefs.current[god.id] = el }}
-            onHoverChange={hovered => setHoveredRitual(hovered ? chosenRitual : null)}
-            highlightParticipantType={hoveredResourceType}
-          />
+            data-grid-card
+            style={{
+              position: 'relative',
+              width: `${CARD_WIDTH}px`,
+              height: flyingAway ? `${CARD_HEIGHT}px` : undefined,
+              opacity: hideCard ? 0 : 1,
+              // Blocks interaction on every card while authorizing — both the fading-out ones and
+              // the currently-relevant ones — so nothing can be clicked/hovered mid-sequence.
+              pointerEvents: isAuthorizing ? 'none' : 'auto',
+              transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease`,
+            }}
+          >
+            {!flyingAway && (
+              <GodCard
+                god={god}
+                isSelected={false}
+                // A ritual actually in progress has nothing left to click into (see ritualInProgress
+                // below) — GodCard already reads a missing onClick to drop its own pointer cursor.
+                onClick={ritualInProgress ? undefined : () => handleSelectGod(god.id)}
+                chosenRitual={chosenRitual}
+                onHoverChange={hovered => setHoveredRitual(hovered ? chosenRitual : null)}
+                highlightParticipantType={hoveredResourceType}
+                highlightSite={hoveredSiteType}
+                ctaHovered={showLight}
+                isPunishing={isPunishingGodId(god.id, punishingGodId)}
+                draining={draining}
+                ritualInProgress={ritualInProgress}
+              />
+            )}
+          </div>
         )
       })}
     </div>
-  )
+    )
+  }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, position: 'relative', backgroundColor: COLORS.black }}>
-      <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={resourceTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} />
+      {/* Invisible, permanently-mounted (regardless of viewMode) RitualCard purely to seed
+          measuredCardHeight before the user's very first grid->list transition — see the comment
+          on preMeasureRef above for why that matters. Must be passed the exact same props as a
+          real row-slot RitualCard (see the candidate row inside HomeGodDetailPanel) — omitting
+          tierLabel here previously made this dummy render ~39px shorter than the real card (no
+          tier-label pill), so the real card's own ResizeObserver would always overwrite this
+          pre-measurement with a taller value right after the Flip transition landed, which is
+          exactly the "settles, then grows again" jump this component exists to prevent. */}
+      {GODS[0]?.rituals[0] && (
+        <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none', visibility: 'hidden' }}>
+          <div ref={preMeasureRef} style={{ width: `${RITUAL_CARD_WIDTH}px` }}>
+            <RitualCard ritual={GODS[0].rituals[0]} isSelected={false} onClick={() => {}} outcomeBorder tierLabel={RITUAL_TIER_LABELS[0]} />
+          </div>
+        </div>
+      )}
+      <HomeResourceBar prisoners={availablePrisoners} volunteers={availableVolunteers} children={availableChildren} virgins={availableVirgins} temples={availableTemples} greatTemples={availableGreatTemples} resourceTotals={authorizeDisplayTotals} hoveredRitual={hoveredRitual} onResourceHover={setHoveredResourceType} onSiteHover={setHoveredSiteType} ctaHovered={showLight} reservedCost={reservedCost} />
       <div
         ref={scrollContainerRef}
         style={{
@@ -1388,28 +2591,27 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
       >
         {viewMode === 'grid' && (
           <>
-            <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
-              <div
-                style={{
-                  // Fixed (not absolute) so it escapes this column's overflow:auto scroll clipping
-                  // and aligns with the true viewport edge, matching the floating AI button's own
-                  // fixed right:24px offset — an absolute negative-right offset here gets clipped
-                  // by the scrollable ancestor instead of reaching the actual screen edge.
-                  position: 'fixed',
-                  top: '163px',
-                  right: '24px',
-                  zIndex: 10,
-                }}
-              >
+            {/* No data-transition-chrome here — this heading's text is identical in both grid and
+                list mode (see the matching header block in GodListLayout's `header` prop below),
+                so fading it out on one side and back in on the other after a delay just made it
+                disappear for a stretch and reappear, when the content never actually needed to
+                change. Left at its default opaque state, it swaps instantly at the same moment
+                everything else does, with nothing to visibly vanish. */}
+            <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left', opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+              {/* Fixed (not absolute) so it escapes this column's overflow:auto scroll clipping
+                  and aligns with the true viewport edge, matching the floating AI button's own
+                  fixed right:24px offset — an absolute negative-right offset here gets clipped
+                  by the scrollable ancestor instead of reaching the actual screen edge. */}
+              <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
                 <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
               </div>
-              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
-              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Avoid punishment by performing appeasement rituals for your gods</div>
+              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
+              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
             </div>
 
-            {DISPLAY_GOD_BUCKETS.map(({ level, gods }) => (
+            {orderedGodBuckets.map(({ level, gods }) => (
               <Fragment key={level}>
-                <AngerTierHeader level={level} />
+                <AngerTierHeader level={level} count={gods.length} faded={isAuthorizing} />
                 {renderGrid(gods)}
               </Fragment>
             ))}
@@ -1417,21 +2619,28 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
         )}
         {viewMode === 'list' && (
           <GodListLayout
-            gods={DISPLAY_GODS_BY_TIER}
+            gods={listViewGodsByTier}
             scrollPos={listScrollPos}
             onScrollPosChange={setListScrollPos}
             settledIndex={listSettledIndex}
-            onSettledIndexChange={setListSettledIndex}
+            onSettledIndexChange={handleSettledIndexChange}
             onCardClick={handleSelectGod}
-            cardRefs={cardRefs}
-            originRect={originRect}
-            originGodId={originGodId}
             chosenRituals={chosenRituals}
             onChooseRitual={handleChooseRitual}
             onUnchooseRitual={handleUnchooseRitual}
             onRitualHoverChange={setHoveredRitual}
-            onBack={() => setViewMode('grid')}
+            onBack={handleBack}
             highlightParticipantType={hoveredResourceType}
+            highlightSite={hoveredSiteType}
+            measuredCardHeight={measuredCardHeight}
+            onMeasuredCardHeight={setMeasuredCardHeight}
+            panelHeights={panelHeights}
+            onPanelHeightsChange={setPanelHeights}
+            availableResources={{ prisoners: availablePrisoners, volunteers: availableVolunteers, children: availableChildren, virgins: availableVirgins }}
+            punishingGodId={punishingGodId}
+            heroRevealGodId={heroRevealGodId}
+            // No data-transition-chrome here either — see the matching comment on the grid
+            // header above.
             header={
               <div style={{ flexShrink: 0, position: 'relative', padding: '24px 24px 0', textAlign: 'left' }}>
                 {/* Fixed (not absolute), matching the grid view's toggle — escapes this 260px-wide
@@ -1439,46 +2648,80 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
                   <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Choose rituals to appease the gods</div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Avoid punishment by performing appeasement rituals for your gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
               </div>
             }
           />
         )}
       </div>
       {actionBarVisible && (
-        <HomeActionBar
-          chosenCount={Object.keys(chosenRituals).length}
-          cost={reservedCost}
-          onPerform={() => {
-            setSpentCost(prev => ({
-              prisoners: prev.prisoners + reservedCost.prisoners,
-              volunteers: prev.volunteers + reservedCost.volunteers,
-              children: prev.children + reservedCost.children,
-              virgins: prev.virgins + reservedCost.virgins,
-              temples: prev.temples + reservedCost.temples,
-              greatTemples: prev.greatTemples + reservedCost.greatTemples,
-            }))
-            setResultEntries(
-              Object.entries(chosenRituals)
-                .map(([godId, ritualId]) => {
-                  const god = GODS.find(g => g.id === godId.replace(/-dup-\d+$/, ''))
-                  const ritual = god?.rituals.find(r => r.id === ritualId)
-                  return god && ritual ? { god, ritual } : null
+        <div style={{ flexShrink: 0, opacity: isAuthorizing ? 0 : 1, pointerEvents: isAuthorizing ? 'none' : 'auto', transition: `opacity ${AUTHORIZE_CHROME_FADE_MS}ms ease` }}>
+          <HomeActionBar
+            chosenCount={Object.keys(chosenRituals).length}
+            cost={reservedCost}
+            onPerform={() => {
+              const entries = orderedGodsByTier
+                .filter(g => chosenRituals[g.id])
+                .map(g => ({ god: g, ritual: resolveRitual(g, chosenRituals[g.id])! }))
+              if (entries.length === 0) return // defensive — HomeActionBar already disables the CTA when nothing's chosen
+              // Capture each chosen card's current grid rect BEFORE authorizeEntries flips the grid
+              // over to rendering an invisible placeholder in its place (see renderGrid's
+              // flyingAway branch) and mounts the real card into AuthorizeStage instead — same
+              // Flip.getState -> flushSync -> Flip.from recipe as handleSelectGod's hero transition.
+              const flipSelector = entries.map(({ god }) => `[data-flip-id="${god.id}:card"]`).join(',')
+              const flipEls = Array.from(document.querySelectorAll<HTMLElement>(flipSelector))
+              const state = flipEls.length > 0 ? Flip.getState(flipEls) : null
+              flushSync(() => {
+                setAuthorizeBeforeCost({
+                  prisoners: availablePrisoners + reservedCost.prisoners,
+                  volunteers: availableVolunteers + reservedCost.volunteers,
+                  children: availableChildren + reservedCost.children,
+                  virgins: availableVirgins + reservedCost.virgins,
+                  temples: availableTemples + reservedCost.temples,
+                  greatTemples: availableGreatTemples + reservedCost.greatTemples,
                 })
-                .filter((entry): entry is { god: God; ritual: Ritual } => !!entry)
-            )
-            setChosenRituals({})
-          }}
-          aiPanelOpen={aiPanelOpen}
-        />
+                setAuthorizeStepIndex(-1)
+                setAuthorizeEntries(entries)
+                // The action bar is about to fade out non-interactively — its own local `hovered`
+                // state (and the light-mode preview it drives everywhere) won't reset on its own.
+                setCtaHovered(false)
+              })
+              if (state) Flip.from(state, { ...AUTHORIZE_FLIP_VARS, targets: flipSelector })
+            }}
+            aiPanelOpen={aiPanelOpen}
+            onHoverChange={setCtaHovered}
+          />
+        </div>
       )}
-      {resultEntries && (
-        <RitualResultScreen
-          entries={resultEntries}
-          resources={{ prisoners: availablePrisoners, volunteers: availableVolunteers, children: availableChildren, virgins: availableVirgins }}
-          onDismiss={() => setResultEntries(null)}
-        />
+      {authorizeEntries && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1400,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignContent: 'center',
+            justifyContent: 'center',
+            gap: '24px',
+            padding: '48px',
+            // The stage itself never intercepts pointer events (nothing here is clickable while
+            // authorizing) — each individual GodCard below already renders with no onClick anyway.
+            pointerEvents: 'none',
+          }}
+        >
+          {authorizeEntries.map(({ god, ritual }, i) => (
+            <GodCard
+              key={god.id}
+              god={god}
+              chosenRitual={ritual}
+              draining={authorizeStepIndex >= i}
+              holdBaseEyes
+              isPunishing={isPunishingGodId(god.id, punishingGodId)}
+            />
+          ))}
+        </div>
       )}
     </div>
   )
