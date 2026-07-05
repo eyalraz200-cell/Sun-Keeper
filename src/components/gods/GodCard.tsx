@@ -99,6 +99,10 @@ export const CARD_WIDTH = INNER_CARD_LEFT + RITUAL_PANEL_WIDTH + RITUAL_PANEL_RI
 // larger face, so it isn't bound by CARD_WIDTH/FACE_WIDTH above at all — same aspect ratio, just bigger.
 const STAGE_FACE_WIDTH = 260
 const STAGE_FACE_HEIGHT = Math.round(STAGE_FACE_WIDTH * (194 / 125))
+// Pills sit beside the face (not stretched to its width) at roughly the grid card's own ritual
+// panel width — same relative face-left/pills-right arrangement as the grid card, just bigger,
+// so the fly-in reads as this same card growing in place rather than its contents rearranging.
+const STAGE_PILL_WIDTH = 150
 
 type ParticipantType = 'prisoners' | 'volunteers' | 'children' | 'virgins'
 
@@ -286,39 +290,45 @@ export function GodCard({ god, isSelected, onClick, chosenRitual, domRef, onHove
   if (stageMode) {
     const nameColor = isPunishing ? (highlighted ? COLORS.gray0 : COLORS.white) : highlighted ? COLORS.gray95 : dimmed ? COLORS.gray30 : COLORS.gray40
     return (
-      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-        <div style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px` }}>
-          <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
-        </div>
+      <div ref={domRef} data-flip-id={`${god.id}:card`} className="color-transition-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
         <div style={{ fontFamily: FONTS.spectral, fontSize: '13px', fontWeight: FONT_WEIGHT.light, color: nameColor, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease-out' }}>
           {god.name}
         </div>
-        {chosenRitual && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              width: `${STAGE_FACE_WIDTH}px`,
-              // Once this card's own drain finishes, the pills fade away entirely instead of
-              // sitting there drained — the face stays white, only the tributes disappear.
-              opacity: drainProgress <= 0 ? 0 : 1,
-              transition: 'opacity 0.6s ease',
-            }}
-          >
-            {([
-              { key: 'prisoners', Icon: PrisonerIcon },
-              { key: 'volunteers', Icon: VolunteerIcon },
-              { key: 'children', Icon: ChildrenIcon },
-              { key: 'virgins', Icon: VirginIcon },
-            ] as const)
-              // Only the participant types this ritual actually spends are shown at all.
-              .filter(({ key }) => chosenRitual.participants[key] > 0)
-              .map(({ key, Icon }) => (
-                <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
-              ))}
+        {/* Face left, pills right — same relative arrangement as the grid card's face-left/
+            panel-right layout, just bigger, so the fly-in reads as this card growing in place
+            rather than its contents jumping to a new arrangement. */}
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '20px' }}>
+          <div style={{ width: `${STAGE_FACE_WIDTH}px`, height: `${STAGE_FACE_HEIGHT}px`, flexShrink: 0 }}>
+            <GodSvg svgRaw={getSvgRaw(god.id)} angerLevel={god.angerLevel} bodyColor={bodyColor} bodyColorAnimation={bodyColorAnimation} eyeAnimation={eyeAnimation} instanceId={`stage-${god.id}`} />
           </div>
-        )}
+          {chosenRitual && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                width: `${STAGE_PILL_WIDTH}px`,
+                flexShrink: 0,
+                // Once this card's own drain finishes, the pills fade away entirely instead of
+                // sitting there drained — the face stays white, only the tributes disappear.
+                opacity: drainProgress <= 0 ? 0 : 1,
+                transition: 'opacity 0.6s ease',
+              }}
+            >
+              {([
+                { key: 'prisoners', Icon: PrisonerIcon },
+                { key: 'volunteers', Icon: VolunteerIcon },
+                { key: 'children', Icon: ChildrenIcon },
+                { key: 'virgins', Icon: VirginIcon },
+              ] as const)
+                // Only the participant types this ritual actually spends are shown at all.
+                .filter(({ key }) => chosenRitual.participants[key] > 0)
+                .map(({ key, Icon }) => (
+                  <RitualParticipantPill key={key} Icon={Icon} active value={chosenRitual.participants[key]} light liveValue={draining ? Math.round(chosenRitual.participants[key] * drainProgress) : undefined} round={key !== 'virgins'} />
+                ))}
+            </div>
+          )}
+        </div>
       </div>
     )
   }

@@ -64,12 +64,13 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: PRISONERS — a war goddess is fed with captives above all else.
     rituals: [
       {
         id: 'butterfly-vigil',
         name: 'Butterfly Vigil',
-        description: 'Captives and loyal warriors offered beneath obsidian wings.',
-        participants: { prisoners: 75, children: 0, virgins: 0, volunteers: 20 },
+        description: 'War captives are laid beneath obsidian wings, few others in attendance.',
+        participants: { prisoners: 90, children: 0, virgins: 0, volunteers: 10 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Evening',
         duration: '2 days',
@@ -80,8 +81,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'obsidian-wing-rite',
         name: 'Obsidian Wing Rite',
-        description: 'Sacred virgins and a host of devotees dance beneath the night sky.',
-        participants: { prisoners: 40, children: 0, virgins: 3, volunteers: 110 },
+        description: 'A great column of captives marches beneath the night sky, two virgins at its head.',
+        participants: { prisoners: 140, children: 0, virgins: 2, volunteers: 20 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '3 days',
@@ -92,8 +93,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'night-warriors-descent',
         name: "Night Warrior's Descent",
-        description: 'A grand host of captives, virgins, and devotees descends into obsidian dark.',
-        participants: { prisoners: 130, children: 0, virgins: 6, volunteers: 100 },
+        description: 'Hundreds of captives and five virgins descend into obsidian dark.',
+        participants: { prisoners: 220, children: 0, virgins: 5, volunteers: 20 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -111,12 +112,14 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: VIRGINS — young life is what the bone queen craves, present from the
+    // very first (Basic) ritual rather than only appearing as a token addition in later tiers.
     rituals: [
       {
         id: 'bone-queens-feast',
         name: "Bone Queen's Feast",
-        description: 'Prisoners are laid before the throne of the underworld queen.',
-        participants: { prisoners: 50, children: 0, virgins: 0, volunteers: 40 },
+        description: 'Devotees and two sacred virgins are laid before the throne of the underworld queen.',
+        participants: { prisoners: 20, children: 0, virgins: 2, volunteers: 70 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '2 days',
@@ -127,8 +130,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'underworld-descent',
         name: 'Underworld Descent',
-        description: 'Devotees and sacred virgins keep watch at the gates of Mictlan.',
-        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 145 },
+        description: 'Devotees and five sacred virgins keep watch at the gates of Mictlan.',
+        participants: { prisoners: 30, children: 0, virgins: 5, volunteers: 110 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Midnight',
         duration: '3 days',
@@ -139,8 +142,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'ladys-final-rite',
         name: "Lady of Mictlan's Rite",
-        description: 'A grand procession of captives and virgins crosses into the underworld.',
-        participants: { prisoners: 80, children: 0, virgins: 4, volunteers: 145 },
+        description: 'A grand procession of devotees and seven sacred virgins crosses into the underworld.',
+        participants: { prisoners: 50, children: 0, virgins: 7, volunteers: 160 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -158,12 +161,13 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: VOLUNTEERS — willing souls follow the dog-headed guide, not captives.
     rituals: [
       {
         id: 'twin-stars-toll',
         name: "Twin Star's Toll",
-        description: 'Prisoners and fire-keepers are given to the dog-headed guide.',
-        participants: { prisoners: 40, children: 0, virgins: 0, volunteers: 45 },
+        description: 'Willing devotees follow the dog-headed guide, no captives among them.',
+        participants: { prisoners: 10, children: 0, virgins: 0, volunteers: 80 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '2 days',
@@ -174,8 +178,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'evening-star-descent',
         name: 'Evening Star Descent',
-        description: 'Sacred virgins and devotees walk the sun down into darkness.',
-        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 130 },
+        description: 'A great host of devotees and three sacred virgins walk the sun down into darkness.',
+        participants: { prisoners: 15, children: 0, virgins: 3, volunteers: 125 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
@@ -186,8 +190,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'xolotls-final-guide',
         name: "Xolotl's Final Guide",
-        description: "A grand host of captives and virgins is led through the underworld's trials.",
-        participants: { prisoners: 60, children: 0, virgins: 5, volunteers: 140 },
+        description: "Hundreds of devoted followers and five virgins are led through the underworld's trials.",
+        participants: { prisoners: 25, children: 0, virgins: 5, volunteers: 175 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -205,12 +209,13 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: CHILDREN — the earth monster devours the young above all else.
     rituals: [
       {
         id: 'earthquake-offering',
         name: 'Earthquake Offering',
-        description: 'Prisoners and children are cast to still the trembling ground.',
-        participants: { prisoners: 30, children: 40, virgins: 0, volunteers: 20 },
+        description: 'Children are cast to still the trembling ground, a few devotees in tow.',
+        participants: { prisoners: 10, children: 70, virgins: 0, volunteers: 10 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '2 days',
@@ -221,8 +226,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'devourers-hunger',
         name: "Devourer's Hunger",
-        description: "Children and a sacred virgin feed the earth monster's endless hunger.",
-        participants: { prisoners: 0, children: 70, virgins: 2, volunteers: 60 },
+        description: "A great many children and two sacred virgins feed the earth monster's endless hunger.",
+        participants: { prisoners: 0, children: 110, virgins: 2, volunteers: 30 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
@@ -233,8 +238,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'world-below-rite',
         name: 'World-Below Rite',
-        description: 'Prisoners, children, and sacred virgins are given to the earth below.',
-        participants: { prisoners: 40, children: 90, virgins: 5, volunteers: 60 },
+        description: 'Hundreds of children, four sacred virgins, and a handful of captives are given to the earth below.',
+        participants: { prisoners: 20, children: 160, virgins: 4, volunteers: 30 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -252,12 +257,14 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: PRISONERS + VIRGINS — drowned captives and storm-maidens given to the sea,
+    // distinct from Itzpapalotl's prisoners-only war tribute since virgins appear from the start.
     rituals: [
       {
         id: 'storm-callers-vow',
         name: "Storm Caller's Vow",
-        description: 'Prisoners and devotees brave the gathering squall.',
-        participants: { prisoners: 25, children: 0, virgins: 0, volunteers: 55 },
+        description: 'Captives and a single storm-maiden brave the gathering squall.',
+        participants: { prisoners: 60, children: 0, virgins: 1, volunteers: 20 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '2 days',
@@ -268,8 +275,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'tempest-rite',
         name: 'Tempest Rite',
-        description: 'Sacred virgins and a great host stand against the rising tempest.',
-        participants: { prisoners: 0, children: 0, virgins: 2, volunteers: 117 },
+        description: 'A great many captives and three storm-maidens stand against the rising tempest.',
+        participants: { prisoners: 90, children: 0, virgins: 3, volunteers: 35 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dawn',
         duration: '3 days',
@@ -280,8 +287,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'hurricanes-reckoning',
         name: "Hurricane's Reckoning",
-        description: 'Captives and sacred virgins are given to calm the raging sea.',
-        participants: { prisoners: 55, children: 0, virgins: 5, volunteers: 130 },
+        description: 'Hundreds of drowned captives and six storm-maidens are given to calm the raging sea.',
+        participants: { prisoners: 140, children: 0, virgins: 6, volunteers: 50 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -299,12 +306,14 @@ const FURIOUS_FILLER_GODS: God[] = [
     angerColor: ANGER.high,
     angerLevel: 'high',
     favor: 30,
+    // Signature tribute: CHILDREN + VIRGINS — a mother goddess is given the young, distinct from
+    // Tlaltecuhtli's children-only devouring since virgins appear from the start here too.
     rituals: [
       {
         id: 'serpent-mothers-toll',
         name: "Serpent Mother's Toll",
-        description: 'Prisoners and devotees kneel before the mother of the gods.',
-        participants: { prisoners: 35, children: 0, virgins: 0, volunteers: 40 },
+        description: 'Children and a single virgin kneel before the mother of the gods.',
+        participants: { prisoners: 0, children: 50, virgins: 1, volunteers: 20 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Morning',
         duration: '2 days',
@@ -315,8 +324,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'skirt-of-serpents-rite',
         name: 'Skirt of Serpents Rite',
-        description: 'Sacred virgins and a great host renew her serpent skirt.',
-        participants: { prisoners: 0, children: 0, virgins: 3, volunteers: 105 },
+        description: 'A great many children and three virgins renew her serpent skirt.',
+        participants: { prisoners: 0, children: 75, virgins: 3, volunteers: 35 },
         sacredSite: { name: 'Temple', count: 1 },
         schedule: 'Dusk',
         duration: '3 days',
@@ -327,8 +336,8 @@ const FURIOUS_FILLER_GODS: God[] = [
       {
         id: 'birth-of-war-rite',
         name: 'Birth of War Rite',
-        description: 'Captives and sacred virgins reenact the birth of Huitzilopochtli.',
-        participants: { prisoners: 65, children: 0, virgins: 4, volunteers: 120 },
+        description: 'Hundreds of children, five virgins, and a handful of captives reenact the birth of Huitzilopochtli.',
+        participants: { prisoners: 20, children: 110, virgins: 5, volunteers: 40 },
         sacredSite: { name: 'Great Pyramid', count: 1 },
         schedule: 'Midnight',
         duration: '4 days',
@@ -479,9 +488,14 @@ const AUTHORIZE_END_HOLD_MS = 450
 // sequence begins (and fly back into the grid, as ritual-in-progress cards, once it ends) — see
 // the CTA's onPerform and the finalize timeout below. Mirrors the grid<->list hero transition's
 // own GSAP Flip recipe (HERO_FLIP_VARS/handleSelectGod) but for a single rigid card box rather
-// than 4 independently-resizing pieces, so no `nested` flag is needed.
+// than 4 independently-resizing pieces, so no `nested` flag is needed. `scale: true` is required
+// here specifically (the hero transition doesn't need it): the stage card's face/pills are laid
+// out at fixed pixel sizes rather than ones that reflow with their container, so without `scale`
+// GSAP would tween the box's literal width/height while that fixed-size content just sat there at
+// full size inside it — growing container, static content, instead of the whole card visibly
+// scaling as one piece.
 const AUTHORIZE_FLY_MS = 700
-const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, zIndex: 1500 }
+const AUTHORIZE_FLIP_VARS = { duration: AUTHORIZE_FLY_MS / 1000, ease: 'power3.out', absolute: true, scale: true, zIndex: 1500 }
 
 // Tweens the displayed value toward `value` over `duration`ms instead of snapping — used so
 // docking/undocking a ritual reads as spending/refunding resources rather than a hard cut.
@@ -837,9 +851,8 @@ function spawnRailExitGhost() {
 // flushSync commits, so only a clone can carry the shrink animation to completion.
 function spawnDividerExitGhost() {
   const dividerEl = document.querySelector<HTMLElement>('[data-god-rail-divider]')
-  if (!dividerEl) { console.log('DEBUG no dividerEl'); return }
+  if (!dividerEl) return
   const rect = dividerEl.getBoundingClientRect()
-  console.log('DEBUG dividerRect', JSON.stringify({ top: rect.top, left: rect.left, width: rect.width, height: rect.height }))
   const ghost = dividerEl.cloneNode(true) as HTMLElement
   ghost.style.position = 'fixed'
   ghost.style.top = `${rect.top}px`
@@ -857,6 +870,46 @@ function spawnDividerExitGhost() {
     ghost.style.transform = 'scaleY(0)'
   })
   setTimeout(() => ghost.remove(), DIVIDER_EXIT_DURATION_MS + 50)
+}
+
+// The "Appease the Gods" heading + subtitle is literally the same text in both grid and list mode
+// (see the "No data-transition-chrome here" comments at both header call sites), so it's never
+// faded or animated itself — left alone, it just swaps instantly along with everything else the
+// flushSync below commits. But the two versions aren't laid out identically: the list header sits
+// in a ~252px-wide rail column, so its subtitle wraps across 2 lines (no whiteSpace: nowrap),
+// while the grid header has the full content width and stays on one line (whiteSpace: nowrap). The
+// instant the view swaps back to grid, that subtitle visibly snaps from wrapped to unwrapped in
+// the same frame the divider starts its own retract — this masks that snap by holding a static
+// clone of the OLD (wrapped) text in place over the same spot, opaque, until the divider has
+// fully finished disappearing (DIVIDER_EXIT_DURATION_MS), then removing it to reveal the already-
+// unwrapped grid header underneath. No animation on the clone itself — it's a hold, not a tween.
+function spawnHeaderExitGhost() {
+  const headerEl = document.querySelector<HTMLElement>('[data-god-header-text]')
+  if (!headerEl) return
+  const rect = headerEl.getBoundingClientRect()
+
+  // Separate mask + content: the grid header underneath renders its subtitle on one un-wrapped
+  // line that runs well past where the list version's text wrapped, so the opaque backdrop has to
+  // reach all the way to the viewport edge to fully hide it — but the CLONED content itself must
+  // stay pinned to the original narrow width, or its own subtitle div (block-level, no fixed
+  // width) would immediately re-wrap to fit the wider box, defeating the point of holding the old
+  // wrapped look in place.
+  const mask = document.createElement('div')
+  mask.style.position = 'fixed'
+  mask.style.top = `${rect.top}px`
+  mask.style.left = `${rect.left}px`
+  mask.style.width = `${window.innerWidth - rect.left}px`
+  mask.style.height = `${rect.height}px`
+  mask.style.backgroundColor = COLORS.black
+  mask.style.zIndex = '2000'
+  mask.style.pointerEvents = 'none'
+
+  const content = headerEl.cloneNode(true) as HTMLElement
+  content.style.width = `${rect.width}px`
+  mask.appendChild(content)
+
+  document.body.appendChild(mask)
+  setTimeout(() => mask.remove(), DIVIDER_EXIT_DURATION_MS)
 }
 
 // Same problem, same fix as spawnRailExitGhost above, for the candidate ritual row instead of the
@@ -1349,11 +1402,11 @@ function HomeGodDetailPanel({ god, onBack, onChoose, onUnchoose, onRitualHoverCh
                   backgroundColor: isFaceHovered ? COLORS.gray18 : 'transparent',
                 }}
               >
-                <CaretLeft size={16} weight="bold" color={isFaceHovered ? COLORS.gray95 : COLORS.gray30} />
+                <CaretLeft size={16} weight="bold" color={isPunishing ? (isFaceHovered ? COLORS.white : COLORS.gray95) : isFaceHovered ? COLORS.gray95 : COLORS.gray30} />
               </div>
-              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 300, color: isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
+              <span style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: 300, color: isPunishing ? COLORS.gray95 : isActive ? COLORS.gray60 : COLORS.gray15, textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s ease' }}>{god.name}</span>
             </div>
-            <p style={{ margin: '0', fontFamily: FONTS.spectral, fontSize: '16px', color: isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease', ...postHeroFadeInStyle }}>{god.subtitle}</p>
+            <p style={{ margin: '0', fontFamily: FONTS.spectral, fontSize: '16px', color: isPunishing ? COLORS.gray95 : isActive ? '#909090' : COLORS.gray15, transition: 'color 0.15s ease', ...postHeroFadeInStyle }}>{god.subtitle}</p>
           </div>
           {/* Three independent GSAP Flip targets carry the grid<->list transition — see
               handleSelectGod/handleBack in HomeScreen and the matching comment in GodCard.tsx.
@@ -2494,6 +2547,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     // so the clones are what actually carry the slide/shrink-away motion to completion.
     spawnRailExitGhost()
     spawnDividerExitGhost()
+    spawnHeaderExitGhost()
     if (activeGod) spawnDrawerExitGhost(activeGod.id)
 
     // Commits (and starts the hero Flip) immediately — see the matching comment in
@@ -2661,8 +2715,15 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
               <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
                 <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
               </div>
-              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
-              <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
+              {/* data-god-header-text (not the outer wrapper above, which also holds the fixed-
+                  position toggle) — handleBack clones just this piece into a placeholder ghost
+                  that holds the OLD (narrow, wrapped) list-header text in place over this new
+                  grid header until the rail divider finishes retracting. See
+                  spawnHeaderExitGhost's own comment for why. */}
+              <div data-god-header-text>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
+                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px', whiteSpace: 'nowrap' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
+              </div>
             </div>
 
             {orderedGodBuckets.map(({ level, gods }) => (
@@ -2704,8 +2765,14 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
                   <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
-                <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
+                {/* data-god-header-text — see the matching grid-header comment above. This
+                    (narrow, wrapped-to-2-lines) version is what handleBack's placeholder ghost
+                    clones right before the swap to grid, so the sudden reflow to the grid's wider
+                    single-line version stays hidden until the divider's retract finishes. */}
+                <div data-god-header-text>
+                  <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.regular, color: COLORS.gray80 }}>Appease the Gods</div>
+                  <div style={{ fontFamily: FONTS.spectral, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.light, color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Choose rituals and pay tributes to avoid the Gods punishments</div>
+                </div>
               </div>
             }
           />
