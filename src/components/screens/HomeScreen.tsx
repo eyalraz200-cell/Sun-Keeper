@@ -1080,7 +1080,7 @@ const DETAIL_CARD_WIDTH = DETAIL_LEFT_COLUMN_WIDTH + DETAIL_CARD_GAP + RITUAL_CA
 // CANDIDATE_ROW_MARGIN_TOP_DENSE when the viewport is too short to fit the full stack (see
 // compactSpacing in the main HomeScreen component below, and COMPACT_HEIGHT_THRESHOLD).
 const CANDIDATE_ROW_MARGIN_TOP = 24
-const CANDIDATE_ROW_MARGIN_TOP_DENSE = 12
+const CANDIDATE_ROW_MARGIN_TOP_DENSE = 8
 // Estimated normal-mode height of everything stacked above and around the candidate row that
 // eats into the viewport's available vertical space: the resource bar, the detail panel's own
 // container padding (16px top + 24px bottom), the combined detail card (RITUAL_CARD_HEIGHT_
@@ -2694,6 +2694,24 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
     handleSelectGod(openGodId)
   }, [openGodId, openGodSignal])
 
+  // ViewModeToggle's own onChange — routes through the exact same choreography as clicking a
+  // grid card (handleSelectGod) / the back chevron (handleBack) instead of calling setViewMode
+  // directly. A bare setViewMode was the original wiring here, and it skipped the whole hero
+  // Flip + drawerRevealStyle reveal: heroRevealGodId never got set, so isCentered was false for
+  // every panel and the candidate ritual cards rendered at full opacity/position with no
+  // slide-in at all — they were just already there the instant the DOM swapped. That's the
+  // "I can see the ritual cards before they slide in" bug: not a timing race, a whole different
+  // (non-animated) code path landing on the same screen.
+  const handleViewModeToggle = (mode: 'grid' | 'list') => {
+    if (mode === viewMode) return
+    if (mode === 'list') {
+      const targetGod = listViewGodsByTier[listSettledIndex] ?? listViewGodsByTier[0]
+      if (targetGod) handleSelectGod(targetGod.id)
+    } else {
+      handleBack()
+    }
+  }
+
   // Clears heroRevealGodId (see its own declaration comment) once the carousel settles on a
   // DIFFERENT god than whichever originally triggered the grid->list reveal — plain scrolling
   // should never trigger that reveal animation, only the one god actually clicked from the grid.
@@ -2843,7 +2861,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                   fixed right:24px offset — an absolute negative-right offset here gets clipped
                   by the scrollable ancestor instead of reaching the actual screen edge. */}
               <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
-                <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+                <ViewModeToggle viewMode={viewMode} onChange={handleViewModeToggle} />
               </div>
               {/* data-god-header-text (not the outer wrapper above, which also holds the fixed-
                   position toggle) — handleBack clones just this piece into a placeholder ghost
@@ -2894,7 +2912,7 @@ export function HomeScreen({ prisoners, volunteers, children, virgins, temples =
                 {/* Fixed (not absolute), matching the grid view's toggle — escapes this 260px-wide
                     list rail to sit at the true viewport edge instead of the rail's own right edge. */}
                 <div style={{ position: 'fixed', top: '163px', right: '24px', zIndex: 10 }}>
-                  <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+                  <ViewModeToggle viewMode={viewMode} onChange={handleViewModeToggle} />
                 </div>
                 {/* data-god-header-text — see the matching grid-header comment above. This
                     (narrow, wrapped-to-2-lines) version is what handleBack's placeholder ghost
